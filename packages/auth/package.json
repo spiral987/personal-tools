@@ -1,0 +1,23 @@
+{
+  "name": "@personal-tools/auth",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts",
+    "./server": "./src/server.ts",
+    "./proxy": "./src/proxy.ts",
+    "./react": "./src/react.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
+    "@personal-tools/core": "workspace:*",
+    "@personal-tools/api-client": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": "^16.4.3",
+    "react": "^19.3.1"
+  }
+}

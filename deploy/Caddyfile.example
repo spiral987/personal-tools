@@ -1,0 +1,10 @@
+# Replace the domain and upstream origins before use; this is a later HTTPS deployment example.
+# This example runs Caddy and both app processes on the same machine.
+# Each backend app is built with basePath /recall or /sketchbook; do not strip the prefix.
+tools.example.com {
+    @recall path /recall /recall/*
+    reverse_proxy @recall 127.0.0.1:3102
+    @sketchbook path /sketchbook /sketchbook/*
+    reverse_proxy @sketchbook 127.0.0.1:3101
+    redir / /recall/ 302
+}

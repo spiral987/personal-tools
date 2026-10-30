@@ -1,0 +1,26 @@
+{
+  "name": "personal-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "scripts": {
+    "dev": "node scripts/run-apps.mjs dev",
+    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook build",
+    "start": "node scripts/run-apps.mjs start",
+    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook typecheck",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "dev:recall": "pnpm --filter @personal-tools/recall dev",
+    "dev:sketchbook": "pnpm --filter @personal-tools/sketchbook dev",
+    "dev:gateway": "node scripts/gateway.mjs",
+    "start:gateway": "node scripts/gateway.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.12",
+    "fake-indexeddb": "^6.2.4",
+    "typescript": "^5.9.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {createRequire} from "node:module";
+import {sketchbookOrigin,sketchbookRewrites} from "../scripts/zones.mjs";
+// Use the pinned Next matcher/compiler to catch real route-normalization regressions.
+// These are test-only internals; production uses the documented rewrite configuration.
+const require=createRequire(new URL("../apps/recall/package.json",import.meta.url));
+const {getPathMatch}=require("next/dist/shared/lib/router/utils/path-match");
+const {prepareDestination}=require("next/dist/shared/lib/router/utils/prepare-destination");
+test("multi-zone route preserves page slashes, files, nested assets and query in the Next compiler",()=>{
+  const [rule]=sketchbookRewrites("http://127.0.0.1:3301");
+  assert.equal(rule.basePath,false);
+  const match=getPathMatch(rule.source,{strict:true});
+  for(const pathname of ["/sketchbook/","/sketchbook/deep/page/","/sketchbook/manifest.webmanifest","/sketchbook/sw.js","/sketchbook/_next/static/chunks/app/page.js"]){
+    const params=match(pathname);assert.ok(params,pathname);
+    const {parsedDestination}=prepareDestination({destination:rule.destination,params,query:{from:"note-123",item:"sketch-456"},appendParamsToQuery:false});
+    assert.equal(parsedDestination.pathname,pathname,`Do not add/drop '/' for ${pathname}`);
+    assert.deepEqual(parsedDestination.query,{from:"note-123",item:"sketch-456"});
+    assert.equal(parsedDestination.origin,"http://127.0.0.1:3301");
+  }
+  assert.equal(match("/recall/"),false);assert.equal(match("/sketchbook-foreign/"),false);
+  assert.equal(sketchbookOrigin("https://sketch.example.com/"),"https://sketch.example.com");
+});
+test("zone destination accepts an origin, never credentials, arbitrary paths or nonlocal plaintext",()=>{
+  for(const input of ["https://user:secret@example.com","https://example.com/sketchbook","https://example.com/?secret=x","https://example.com/#x","http://example.com","file:///C:/secrets"]){assert.throws(()=>sketchbookOrigin(input));}
+});
