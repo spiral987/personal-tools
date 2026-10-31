@@ -8,7 +8,7 @@ import {getBrowserAuthClient} from "@personal-tools/auth/browser";
 import {DrawingCanvas,SketchThumbnail} from "./drawing-canvas";
 import {commitStroke,undoStroke,redoStroke,drawingPng} from "./drawing";
 
-const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[]};
+const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[],resources:[]};
 const blank=():SketchDraft=>({title:"",strokes:[],spaceIds:[]});
 const fingerprint=(draft:SketchDraft)=>JSON.stringify({title:draft.title.trim(),strokes:draft.strokes,spaceIds:[...draft.spaceIds].sort()});
 const draftOf=(sketch:Sketch):SketchDraft=>({title:sketch.title,strokes:sketch.strokes,spaceIds:sketch.spaceIds,editingId:sketch.id,expectedRevision:sketch.localRevision});
@@ -28,6 +28,7 @@ function Modal({title,children,onClose}:{title:string;children:ReactNode;onClose
 }
 function Version({record}:{record:SyncRecord}){
   if("kind" in record&&record.kind==="sketch")return <div className="version"><SketchThumbnail strokes={record.strokes}/><p>{record.title||"無題のスケッチ"}{record.deletedAt?"（ごみ箱）":""}</p></div>;
+  if("kind" in record&&record.kind==="resource")return <p className="version-text">{record.title||record.url||"収集した画像"}<br/>{record.memo}</p>;
   if("body" in record)return <p className="version-text">{record.body}</p>;
   if("name" in record)return <p>{record.name}</p>;
   return <p className="muted">メモとの関連付け{record.deletedAt?"（解除済み）":""}</p>;
@@ -151,7 +152,7 @@ export default function Sketchbook(){
       <label className="search"><span className="sr-only">スケッチを探す</span><input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="タイトルで探す"/></label>
       <select className="space-filter" aria-label="スペースで絞り込む" value={spaceFilter} onChange={event=>setSpaceFilter(event.target.value)}><option value="">すべてのスペース</option>{data.spaces.map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select>
       <div className="gallery">{shown.length?shown.map(sketch=><button className={`gallery-card ${editor.editingId===sketch.id?"selected":""}`} key={sketch.id} onClick={()=>open(sketch)}><SketchThumbnail strokes={sketch.strokes} label={`${sketch.title||"無題のスケッチ"}を開く`}/><span className="gallery-meta"><strong>{sketch.title||"無題のスケッチ"}</strong><time>{date(sketch.updatedAt)}</time></span>{cloud.pendingItemIds.includes(sketch.id)&&<span className="gallery-pending">同期待ち</span>}</button>):<div className="gallery-empty"><Icon name="pen" size={26}/><p>{view==="trash"?"ごみ箱は空です":"最初の一枚を描いてみましょう"}</p></div>}</div>
-      <div className="sidebar-bottom"><a href="/recall/" onClick={event=>appLink(event,"/recall/")}><span className="recall-mark">◌</span><span>Recall<small>ことばで残す</small></span><Icon name="arrow" size={16}/></a><button className="settings-link" onClick={()=>setModal("settings")}><Icon name="settings"/>保存とアカウント</button></div>
+      <div className="sidebar-bottom"><a href="/collect/" onClick={event=>appLink(event,"/collect/")}><span className="recall-mark">▧</span><span>Collect<small>資料を集める</small></span><Icon name="arrow" size={16}/></a><a href="/recall/" onClick={event=>appLink(event,"/recall/")}><span className="recall-mark">◌</span><span>Recall<small>ことばで残す</small></span><Icon name="arrow" size={16}/></a><button className="settings-link" onClick={()=>setModal("settings")}><Icon name="settings"/>保存とアカウント</button></div>
     </aside>
     <main className="main-pane">
       <header className="topbar"><div className="breadcrumb"><span>Personal tools</span><i>/</i>Sketchbook</div><a className="mobile-brand" href="/recall/" onClick={event=>appLink(event,"/recall/")}>◌ Recall <Icon name="arrow" size={14}/></a><button className={`status ${cloud.syncStatus.phase==="error"||failedPreviews?"warning":""}`} onClick={()=>setModal("settings")}><span className="status-dot"/>{status}</button></header>

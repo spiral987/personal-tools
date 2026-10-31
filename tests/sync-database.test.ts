@@ -27,7 +27,7 @@ async function device(t: TestContext, userId: string, name = uniqueDatabase()) {
   return repo;
 }
 function sqlTransport(userId: string): SyncTransport {
-  // The production adapter validates the actual JSON emitted by the unchanged migration.
+  // The production adapter validates the actual JSON emitted by the migrations.
   // Supabase's documented invocation shape: https://supabase.com/docs/reference/javascript/rpc
   return createSupabaseSyncTransport({
     async rpc(name, args) {
@@ -37,6 +37,9 @@ function sqlTransport(userId: string): SyncTransport {
         }
         if (name === "pull_suite_changes") {
           return {data: await database.pullSuite(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
+        }
+        if (name === "pull_tools_changes") {
+          return {data: await database.pullTools(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
         }
         throw new Error(`Unexpected RPC: ${name}`);
       } catch (error) {

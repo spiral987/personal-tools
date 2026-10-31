@@ -1,5 +1,5 @@
 // Only an anonymous public shell and this app's static files enter the offline cache.
-const CACHE="sketchbook-shell-v1",BASE="/sketchbook",SHELL=`${BASE}/`;
+const CACHE="sketchbook-shell-v3",BASE="/sketchbook",SHELL=`${BASE}/`;
 self.addEventListener("install",event=>event.waitUntil((async()=>{
   const cache=await caches.open(CACHE);
   const response=await fetch(SHELL,{cache:"reload",credentials:"omit"});

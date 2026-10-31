@@ -1,3 +1,5 @@
+import type {Resource} from "./collect.ts";
+export * from "./collect.ts";
 import { jsonbByteLength } from "./jsonb.ts";
 export { jsonbByteLength } from "./jsonb.ts";
 export type AppId = "recall" | "sketchbook" | "collect" | "atlas";
@@ -44,7 +46,7 @@ export type ItemRelation = Relation & {
     createdAt: string; updatedAt: string; deletedAt: string | null;
     localRevision: number; serverRevision: number | null;
 };
-export type SyncRecord = Note | Space | Sketch | ItemRelation;
+export type SyncRecord = Note | Space | Sketch | ItemRelation | Resource;
 export type SketchDraft = { title: string; strokes: SketchStroke[]; spaceIds: string[]; editingId?: string; expectedRevision?: number };
 export type SketchBackup = {
     format: "personal-tools.sketchbook"; version: 1; exportedAt: string;
@@ -68,7 +70,7 @@ export type Backup = {
 };
 export type SyncOperation = {
     id: string;
-    kind: "put_note" | "put_space" | "put_sketch" | "put_relation";
+    kind: "put_note" | "put_space" | "put_sketch" | "put_relation" | "put_resource";
     entityId: string;
     baseRevision: number | null;
     previousOperationId?: string;
@@ -77,7 +79,7 @@ export type SyncOperation = {
 };
 export type SyncConflict = {
     id: string;
-    entity: "note" | "space" | "sketch" | "relation";
+    entity: "note" | "space" | "sketch" | "relation" | "resource";
     entityId: string;
     local: SyncRecord;
     remote: SyncRecord;
@@ -85,7 +87,7 @@ export type SyncConflict = {
 };
 export type SyncChange = {
     cursor: string;
-    entity: "note" | "space" | "sketch" | "relation";
+    entity: "note" | "space" | "sketch" | "relation" | "resource";
     record: SyncRecord;
 };
 export type SyncPushResult = {

@@ -5,6 +5,7 @@ import type {SyncRecord} from "@personal-tools/core";
 import type {useRecallCloud} from "./use-recall-cloud";
 type Cloud=ReturnType<typeof useRecallCloud>;
 const versionText=(record:SyncRecord)=>{
+  if("kind" in record&&record.kind==="resource")return `${record.deletedAt?"［ごみ箱の版］\n":""}${record.title||record.url||"収集した画像"}\n${record.memo}`;
   if("body" in record)return `${record.deletedAt?"［ごみ箱の版］\n":""}${record.body}`;
   if("kind" in record&&record.kind==="sketch")return `${record.deletedAt?"［ごみ箱の版］\n":""}${record.title||"無題のスケッチ"}\n${record.strokes.length}ストローク`;
   if("kind" in record&&record.kind==="relation")return `着想元とのつながり${record.deletedAt?"（解除）":""}`;

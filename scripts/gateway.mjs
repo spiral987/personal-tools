@@ -11,14 +11,16 @@ export function getGatewayConfig(env=process.env){
   const gatewayPort=port(env.GATEWAY_PORT??env.RECALL_PORT,3100,"GATEWAY_PORT");
   const recallPort=port(env.RECALL_BACKEND_PORT,gatewayPort+2,"RECALL_BACKEND_PORT");
   const sketchbookPort=port(env.SKETCHBOOK_PORT,gatewayPort+1,"SKETCHBOOK_PORT");
-  if(new Set([gatewayPort,recallPort,sketchbookPort]).size!==3)throw new Error("The gateway and app backends require different ports.");
-  return {gatewayPort,recallPort,sketchbookPort};
+  const collectPort=port(env.COLLECT_PORT,gatewayPort+3,"COLLECT_PORT");
+  if(new Set([gatewayPort,recallPort,sketchbookPort,collectPort]).size!==4)throw new Error("The gateway and app backends require different ports.");
+  return {gatewayPort,recallPort,sketchbookPort,collectPort};
 }
 function upstreamPort(rawUrl,config){
   if(typeof rawUrl!=="string"||!rawUrl.startsWith("/")||rawUrl.startsWith("//"))return null;
   const pathname=rawUrl.split("?",1)[0];
   if(/^\/recall(?:\/|$)/.test(pathname))return config.recallPort;
   if(/^\/sketchbook(?:\/|$)/.test(pathname))return config.sketchbookPort;
+  if(/^\/collect(?:\/|$)/.test(pathname))return config.collectPort??null;
   return null;
 }
 function forwardedHeaders(request){

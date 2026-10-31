@@ -25,6 +25,10 @@ function transport(userId: string, pageSize = 100): SyncTransport {
                     return {
                         data: await database.pullSuite(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
                     };
+                if (name === "pull_tools_changes")
+                    return {
+                        data: await database.pullTools(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
+                    };
                 throw new Error("Unknown application RPC");
             }
             catch (error) {
@@ -97,7 +101,7 @@ test("v1端末DBを移行してメモと下書きを保持する", async () => {
     assert.equal((await repo.loadDraft()).body, "書きかけ");
     repo.close();
     const upgraded = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open(name, 3);
+        const req = indexedDB.open(name, 4);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
     });

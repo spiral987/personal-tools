@@ -1,0 +1,22 @@
+{
+  "name": "@personal-tools/collect",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3103",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3103",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@personal-tools/core": "workspace:*",
+    "@personal-tools/api-client": "workspace:*",
+    "@personal-tools/auth": "workspace:*",
+    "htmlparser2": "10.0.0",
+    "ipaddr.js": "2.3.0"
+  }
+}

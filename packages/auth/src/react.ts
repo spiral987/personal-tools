@@ -3,12 +3,12 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {accountDatabaseName,callbackLocation,createSharedSessionRefresh,getPublicSupabaseConfig,type Identity,type SharedSessionRefreshBoundary} from "./index.ts";
 import {getBrowserAuthClient,type BrowserAuthClient} from "./browser.ts";
 import {openRecallRepository,openAccountRecallRepository,createSyncEngine,createSupabaseSyncTransport,type RecallRepository,type AccountRecallRepository} from "@personal-tools/api-client";
-import type {Note,Space,Sketch,ItemRelation,SketchDraft,SyncConflict,SyncStatus} from "@personal-tools/core";
+import type {Note,Space,Sketch,ItemRelation,SketchDraft,CollectDraft,Resource,SyncConflict,SyncStatus} from "@personal-tools/core";
 
-export type CloudApp="recall"|"sketchbook";
-export type CloudSnapshot={notes:Note[];spaces:Space[];sketches:Sketch[];relations:ItemRelation[]};
-type DraftFor<A extends CloudApp>=A extends "sketchbook"?SketchDraft:{body:string;spaceIds:string[]};
-type ImportFor<A extends CloudApp>=A extends "sketchbook"?{sketches:number;spaces:number}:{notes:number;spaces:number};
+export type CloudApp="recall"|"sketchbook"|"collect";
+export type CloudSnapshot={notes:Note[];spaces:Space[];sketches:Sketch[];relations:ItemRelation[];resources:Resource[]};
+type DraftFor<A extends CloudApp>=A extends "collect"?CollectDraft:A extends "sketchbook"?SketchDraft:{body:string;spaceIds:string[]};
+type ImportFor<A extends CloudApp>=A extends "collect"?{resources:number;spaces:number}:A extends "sketchbook"?{sketches:number;spaces:number}:{notes:number;spaces:number};
 export type CloudCallbacks<A extends CloudApp>={reset:()=>void;ready:(repository:RecallRepository,data:CloudSnapshot,draft:DraftFor<A>)=>void;snapshot:(data:CloudSnapshot)=>void;failure:(error:unknown)=>void};
 type User={id:string;email?:string};
 type CachedSession=Awaited<ReturnType<BrowserAuthClient["auth"]["getSession"]>>["data"]["session"];
@@ -72,7 +72,7 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
       const project=getPublicSupabaseConfig();
       const repository=next.mode==="account"&&project?await openAccountRecallRepository(next.userId,{name:accountDatabaseName(next.userId,project.url)}):await openRecallRepository();
       if(!mounted.current||epoch!==generation.current){repository.close();return;}
-      const [data,draft]=await Promise.all([repository.snapshot(),(app==="sketchbook"?repository.loadSketchDraft():repository.loadDraft())]);
+      const [data,draft]=await Promise.all([repository.snapshot(),(app==="collect"?repository.loadCollectDraft():app==="sketchbook"?repository.loadSketchDraft():repository.loadDraft())]);
       if(!mounted.current||epoch!==generation.current){repository.close();return;}
       current.current=repository;callbacksRef.current.ready(repository,data,draft as DraftFor<A>);
       const account=accountRepository(repository);
@@ -83,7 +83,7 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
         cleanups.current.push(sync.subscribe(status=>{if(mounted.current&&epoch===generation.current)setSyncStatus(status);}));
         setSyncStatus(sync.getStatus());
         const local=await openRecallRepository();
-        try{const snapshot=await local.snapshot();if(mounted.current&&epoch===generation.current)setLocalCount(app==="sketchbook"?snapshot.sketches.length:snapshot.notes.length);}finally{local.close();}
+        try{const snapshot=await local.snapshot();if(mounted.current&&epoch===generation.current)setLocalCount(app==="collect"?snapshot.resources.length:app==="sketchbook"?snapshot.sketches.length:snapshot.notes.length);}finally{local.close();}
         if(!mounted.current||epoch!==generation.current)return;
         void runSync(false);
       }
@@ -204,7 +204,10 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
   async function importDevice(){
     const repository=accountRepository(current.current),epoch=generation.current;if(!repository)return null;
     let result:ImportFor<A>;
-    if(app==="sketchbook"){
+    if(app==="collect"){
+      const local=await openRecallRepository();
+      try{const backup=await local.exportCollectBackup();if(epoch!==generation.current)return null;result=await repository.importCollectBackup(backup) as ImportFor<A>;}finally{local.close();}
+    }else if(app==="sketchbook"){
       const local=await openRecallRepository();
       try{result=await repository.importSketchBackup(await local.exportSketchBackup()) as ImportFor<A>;}finally{local.close();}
     }else result=await repository.importDeviceData() as ImportFor<A>;

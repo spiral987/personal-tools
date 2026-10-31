@@ -1,4 +1,5 @@
-import { parseBackup, parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, assertSketchSyncBudget, jsonbByteLength, type Backup, type SketchBackup, type Sketch, type SketchDraft, type ItemRelation, type SyncRecord, type Note, type Space, type LocalOperation, type SyncOperation, type SyncConflict, type SyncPushResult, type SyncPullResult } from "@personal-tools/core";
+import { parseBackup, parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, assertSketchSyncBudget, jsonbByteLength, parseResource, parseResourceImage, parseCollectDraft, parseCollectBackup, resourceUrl, canonicalResourceUrl, emptyResourceMetadata, MAX_COLLECT_BACKUP_BYTES, MAX_COLLECT_BACKUP_JSON_BYTES, type Resource, type CollectDraft, type CollectBackup, type ResourceImage, type ResourceMetadataJob, type Backup, type SketchBackup, type Sketch, type SketchDraft, type ItemRelation, type SyncRecord, type Note, type Space, type LocalOperation, type SyncOperation, type SyncConflict, type SyncPushResult, type SyncPullResult } from "@personal-tools/core";
+import {prepareResourceImage,blobToBase64,base64ToBlob} from "./resource-files.ts";
 export class ConflictError extends Error {
     constructor() {
         super("別の画面でこのメモが更新されました。入力を残したまま、最新のメモを読み直してください。");
@@ -12,7 +13,9 @@ type SaveNoteInput = {
     deletedAt?: string | null;
 };
 export type SaveSketchInput = SketchDraft & { id?: string; pinned?: boolean; deletedAt?: string | null; expectedRevision?: number };
-export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[] };
+export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[] };
+export type SaveResourceInput = Omit<CollectDraft,"editingId"|"expectedRevision"> & {id?:string;file?:Blob;pinned?:boolean;deletedAt?:string|null;metadata?:Resource["metadata"]};
+export type ResourceChanges = Partial<Pick<Resource,"title"|"memo"|"url"|"sourceUrl"|"spaceIds"|"inbox"|"pinned"|"deletedAt">>;
 export type SyncState = {
     pending: number;
     pendingItemIds: string[];
@@ -36,6 +39,19 @@ export interface RecallRepository {
     saveSketchDraft(draft: SketchDraft): Promise<void>;
     exportSketchBackup(): Promise<SketchBackup>;
     importSketchBackup(input: unknown): Promise<{ sketches: number; spaces: number }>;
+    saveResource(input:SaveResourceInput,expectedRevision?:number):Promise<Resource>;
+    updateResource(id:string,changes:ResourceChanges,expectedRevision:number):Promise<Resource>;
+    loadCollectDraft():Promise<CollectDraft>;
+    saveCollectDraft(draft:CollectDraft,file?:Blob|null):Promise<void>;
+    getCollectDraftFile():Promise<Blob|null>;
+    getResourceFile(id:string):Promise<Blob|null>;
+    cacheResourceFile(id:string,file:Blob):Promise<void>;
+    duplicateResources(input:{url?:string|null;image?:ResourceImage|null},excludeId?:string):Promise<Resource[]>;
+    startResourceMetadata(id:string,expectedRevision:number):Promise<ResourceMetadataJob>;
+    finishResourceMetadata(id:string,token:string,result:{title:string;description:string}|null):Promise<Resource|null>;
+    getResourceMetadataJob(id:string):Promise<ResourceMetadataJob|null>;
+    exportCollectBackup(ids?:string[]):Promise<CollectBackup>;
+    importCollectBackup(input:unknown):Promise<{resources:number;spaces:number}>;
     createSpace(name: string): Promise<Space>;
     exportBackup(): Promise<Backup>;
     importBackup(input: unknown): Promise<{
@@ -63,10 +79,12 @@ export interface AccountRecallRepository extends RecallRepository {
     markSynced(): Promise<void>;
 }
 const DEVICE_DB = "personal-tools-recall-local-v1";
-const STORES = ["notes", "spaces", "sketches", "relations", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
+const STORES = ["notes", "spaces", "sketches", "relations", "resources", "resourceFiles", "resourceJobs", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
 const DEFAULT_SPACES = [["daily", "日常", "#729379"], ["creative", "創作", "#8b7bae"], ["research", "研究", "#b38c58"]] as const;
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const copy = <T>(value: T): T => structuredClone(value);
+const sameResourceImage=(a:ResourceImage|null,b:ResourceImage|null)=>a===null||b===null?a===b:
+    a.sha256===b.sha256&&a.mimeType===b.mimeType&&a.size===b.size&&a.filename===b.filename;
 function request<T>(req: IDBRequest<T>): Promise<T> {
     return new Promise((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);
@@ -101,8 +119,8 @@ async function atomic<T>(tx: IDBTransaction, work: () => Promise<T> | T): Promis
     }
 }
 const isNote = (record: SyncRecord): record is Note => "kind" in record && record.kind === "note";
-const entityOf = (record: SyncRecord): "note" | "space" | "sketch" | "relation" => "kind" in record ? record.kind : "space";
-const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations" }[entity]!);
+const entityOf = (record: SyncRecord): "note" | "space" | "sketch" | "relation" | "resource" => "kind" in record ? record.kind : "space";
+const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations",resource:"resources" }[entity]!);
 const revision = (record: SyncRecord) => record.serverRevision ?? 0;
 function portable(data: {
     notes: Note[];
@@ -134,16 +152,16 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
     let invalidated = false;
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
         let blocked = false;
-        const req = indexedDB.open(name, 3);
+        const req = indexedDB.open(name, 4);
         req.onupgradeneeded = (event) => {
             for (const store of STORES)
                 if (!req.result.objectStoreNames.contains(store))
                     req.result.createObjectStore(store, {
                         keyPath: "id"
                     });
-            // A v2 cursor may already have passed a sketch hidden from the legacy stream.
+            // A v3 cursor may already have passed a resource hidden from its stream.
             // Replay the full owner stream once; server revisions protect cached newer values.
-            if (event.oldVersion < 3) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
+            if (event.oldVersion < 4) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
         };
         req.onsuccess = () => {
             if (blocked) {
@@ -212,7 +230,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                 previousOperationId: prior.id
             } : {}), payload: copy(record), createdAt: new Date().toISOString(), sequence, localRevision: record.localRevision ?? 1
         };
-        if (kind === "put_sketch") {
+        if (kind === "put_sketch" || kind==="put_resource") {
             const { sequence: _sequence, localRevision: _localRevision, ...wire } = operation;
             if (jsonbByteLength(wire) > 1048576) throw new Error("スケッチのデータが大きすぎます。別のスケッチに分けてください。");
         }
@@ -283,11 +301,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             });
         },
         async snapshot() {
-            const tx = transaction(["notes", "spaces", "sketches", "relations"], "readonly");
+            const tx = transaction(["notes", "spaces", "sketches", "relations","resources"], "readonly");
             return atomic(tx, async () => {
-                const [notes, spaces, sketches, relations] = await Promise.all([request(tx.objectStore("notes").getAll()) as Promise<Note[]>, request(tx.objectStore("spaces").getAll()) as Promise<Space[]>, request(tx.objectStore("sketches").getAll()) as Promise<Sketch[]>, request(tx.objectStore("relations").getAll()) as Promise<ItemRelation[]>]);
+                const [notes, spaces, sketches, relations,resources] = await Promise.all([request(tx.objectStore("notes").getAll()) as Promise<Note[]>, request(tx.objectStore("spaces").getAll()) as Promise<Space[]>, request(tx.objectStore("sketches").getAll()) as Promise<Sketch[]>, request(tx.objectStore("relations").getAll()) as Promise<ItemRelation[]>,request(tx.objectStore("resources").getAll()) as Promise<Resource[]>]);
                 return {
-                    notes, spaces, sketches, relations
+                    notes, spaces, sketches, relations,resources
                 };
             });
         },
@@ -395,6 +413,145 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                 }
             });
             emit(); return { sketches: data.sketches.length, spaces: data.spaces.length };
+        },
+        async loadCollectDraft(){
+            const tx=transaction(["drafts"],"readonly");
+            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));return draft?parseCollectDraft(draft):{resourceType:"link",url:"",sourceUrl:"",title:"",memo:"",spaceIds:[],inbox:true,image:null};});
+        },
+        async saveCollectDraft(input,file){
+            const draft=parseCollectDraft(input);
+            if(file){const image=await prepareResourceImage(file,draft.image?.filename);if(!draft.image||image.sha256!==draft.image.sha256||image.mimeType!==draft.image.mimeType||image.size!==draft.image.size)throw new Error("下書きの原本が一致しません。");}
+            const tx=transaction(["drafts","resourceFiles","resources"]);
+            await atomic(tx,async()=>{
+                if(draft.image){
+                    if(file)tx.objectStore("resourceFiles").put({id:draft.image.sha256,blob:file});
+                    else if(!await request(tx.objectStore("resourceFiles").get(draft.image.sha256))){
+                        const existing=draft.editingId?await request(tx.objectStore("resources").get(draft.editingId)) as Resource|undefined:undefined;
+                        if(!existing||!sameResourceImage(existing.image,draft.image))throw new Error("下書きの画像をもう一度選んでください。");
+                    }
+                }
+                tx.objectStore("drafts").put({id:"collect-composer",...draft});
+            });
+        },
+        async getCollectDraftFile(){
+            const tx=transaction(["drafts","resourceFiles"],"readonly");
+            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));if(!draft?.image)return null;const stored=await request(tx.objectStore("resourceFiles").get(draft.image.sha256));return stored?.blob??null;});
+        },
+        async saveResource(input,expectedRevision){
+            let original:ResourceImage|null=null;
+            if(input.file){original=await prepareResourceImage(input.file,input.image?.filename);if(input.image&&(original.sha256!==input.image.sha256||original.size!==input.image.size||original.mimeType!==input.image.mimeType))throw new Error("画像の原本が一致しません。");}
+            const id=input.id??crypto.randomUUID(),tx=transaction();
+            const saved=await atomic(tx,async()=>{
+                const previous=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
+                if((input.id&&!previous)||(previous&&expectedRevision!==previous.localRevision))throw new ConflictError();
+                const image=original??(input.image?parseResourceImage(input.image):null);
+                if(previous&&(previous.resourceType!==input.resourceType||!sameResourceImage(previous.image,image)))throw new Error("画像の原本を変更するときは、新しい資料として追加してください。");
+                const now=new Date().toISOString(),url=resourceUrl(input.url,input.resourceType==="image");
+                const resource=parseResource({
+                    id,kind:"resource",originApp:"collect",ownerId,resourceType:input.resourceType,url,sourceUrl:resourceUrl(input.sourceUrl||url,true),
+                    title:input.title.trim(),memo:input.memo,spaceIds:input.spaceIds,inbox:input.inbox,pinned:input.pinned??previous?.pinned??false,image,
+                    metadata:previous&&previous.url!==url?emptyResourceMetadata():input.metadata??previous?.metadata??emptyResourceMetadata(),
+                    createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:input.deletedAt===undefined?previous?.deletedAt??null:input.deletedAt,
+                    localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null,
+                });
+                const spaces=await request(tx.objectStore("spaces").getAllKeys());if(resource.spaceIds.some(spaceId=>!spaces.includes(spaceId)))throw new Error("スペースが見つかりません。");
+                if(image){
+                    if(input.file)tx.objectStore("resourceFiles").put({id:image.sha256,blob:input.file});
+                    else if(!previous&&!await request(tx.objectStore("resourceFiles").get(image.sha256)))throw new Error("画像の原本を選んでください。");
+                }
+                if(previous?.url!==resource.url||resource.deletedAt)tx.objectStore("resourceJobs").delete(id);
+                tx.objectStore("resources").put(resource);await queue(tx,resource);
+                if(!input.id)tx.objectStore("drafts").delete("collect-composer");
+                return resource;
+            });emit();return saved;
+        },
+        async updateResource(id,changes,expectedRevision){
+            const resource=(await readAll<Resource>("resources")).find(value=>value.id===id);if(!resource)throw new ConflictError();
+            return repo.saveResource({...resource,...changes,id,url:changes.url===undefined?resource.url??"":changes.url??"",sourceUrl:changes.sourceUrl===undefined?resource.sourceUrl??"":changes.sourceUrl??""},expectedRevision);
+        },
+        async getResourceFile(id){
+            const tx=transaction(["resources","resourceFiles"],"readonly");
+            return atomic(tx,async()=>{const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!resource?.image)return null;const stored=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));return stored?.blob??null;});
+        },
+        async cacheResourceFile(id,file){
+            const resource=(await readAll<Resource>("resources")).find(value=>value.id===id);if(!resource?.image)throw new Error("画像資料が見つかりません。");
+            const image=await prepareResourceImage(file,resource.image.filename);
+            if(image.sha256!==resource.image.sha256||image.size!==resource.image.size||image.mimeType!==resource.image.mimeType)throw new Error("取得した原本が一致しません。");
+            const tx=transaction(["resources","resourceFiles"]);
+            await atomic(tx,async()=>{const latest=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!latest?.image||latest.image.sha256!==image.sha256)throw new Error("画像資料が更新されました。");tx.objectStore("resourceFiles").put({id:image.sha256,blob:file});});emit();
+        },
+        async duplicateResources(input,excludeId){
+            const url=input.url?canonicalResourceUrl(input.url):null;
+            return (await readAll<Resource>("resources")).filter(resource=>!resource.deletedAt&&resource.id!==excludeId&&
+                ((!!url&&!!resource.url&&canonicalResourceUrl(resource.url)===url)||(!!input.image&&resource.image?.sha256===input.image.sha256)));
+        },
+        async startResourceMetadata(id,expectedRevision){
+            const tx=transaction();
+            const job=await atomic(tx,async()=>{
+                const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
+                if(!resource||resource.deletedAt||resource.localRevision!==expectedRevision)throw new ConflictError();
+                if(resource.resourceType!=="link"||!resource.url)throw new Error("URLの資料を選んでください。");
+                const job:ResourceMetadataJob={id,resourceId:id,token:crypto.randomUUID(),url:resource.url,createdAt:new Date().toISOString()};
+                const next:Resource={...resource,metadata:{...resource.metadata,status:"pending"},localRevision:resource.localRevision+1,updatedAt:new Date().toISOString()};
+                tx.objectStore("resourceJobs").put(job);tx.objectStore("resources").put(next);await queue(tx,next);return job;
+            });emit();return job;
+        },
+        async finishResourceMetadata(id,token,result){
+            const tx=transaction();
+            const saved=await atomic(tx,async()=>{
+                const job=await request(tx.objectStore("resourceJobs").get(id)) as ResourceMetadataJob|undefined;
+                const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
+                if(!job||job.token!==token)return null;
+                if(!resource||resource.deletedAt||resource.url!==job.url){tx.objectStore("resourceJobs").delete(id);return null;}
+                const next=parseResource({...resource,metadata:result?{status:"ready",title:result.title,description:result.description,fetchedAt:new Date().toISOString()}:{...resource.metadata,status:"failed"},
+                    localRevision:resource.localRevision+1,updatedAt:new Date().toISOString()});
+                tx.objectStore("resourceJobs").delete(id);tx.objectStore("resources").put(next);await queue(tx,next);return next;
+            });if(saved)emit();return saved;
+        },
+        async getResourceMetadataJob(id){
+            const tx=transaction(["resourceJobs"],"readonly");return atomic(tx,async()=>await request(tx.objectStore("resourceJobs").get(id)) as ResourceMetadataJob??null);
+        },
+        async exportCollectBackup(ids){
+            const tx=transaction(["resources","spaces","resourceFiles","conflicts"],"readonly");
+            const stored=await atomic(tx,async()=>{
+                const resources=await request(tx.objectStore("resources").getAll()) as Resource[];
+                const conflicts=await request(tx.objectStore("conflicts").getAll()) as SyncConflict[];
+                const selected=resources.filter(resource=>!ids||ids.includes(resource.id));
+                for(const conflict of conflicts)if("kind" in conflict.local&&conflict.local.kind==="resource"&&(!ids||ids.includes(conflict.entityId)))selected.push({...conflict.local,id:crypto.randomUUID()});
+                const spaces=await request(tx.objectStore("spaces").getAll()) as Space[];
+                const files: {image:ResourceImage;blob:Blob}[]=[];const seen=new Set<string>();let total=0;
+                for(const resource of selected)if(resource.image&&!seen.has(resource.image.sha256)){
+                    const file=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));
+                    if(!file?.blob)throw new Error("原本の画像を取得してからバックアップしてください。");
+                    total+=resource.image.size;if(total>MAX_COLLECT_BACKUP_BYTES)throw new Error("画像の合計が32MBを超えています。資料ごとに分けて書き出してください。");
+                    seen.add(resource.image.sha256);files.push({image:resource.image,blob:file.blob});
+                }
+                return {resources:selected,spaces,files};
+            });
+            const backup:CollectBackup={format:"personal-tools.collect",version:1,exportedAt:new Date().toISOString(),
+                resources:stored.resources.map(resource=>({...resource,ownerId:null,serverRevision:null})),
+                spaces:stored.spaces.map(space=>({id:space.id,name:space.name,color:space.color,createdAt:space.createdAt})),
+                files:await Promise.all(stored.files.map(async file=>({...file.image,data:await blobToBase64(file.blob)})))};
+            if(new TextEncoder().encode(JSON.stringify(backup,null,2)).byteLength>MAX_COLLECT_BACKUP_JSON_BYTES)throw new Error("バックアップが64MBを超えています。資料ごとに分けて書き出してください。");
+            return backup;
+        },
+        async importCollectBackup(input){
+            const data=parseCollectBackup(input),files=await Promise.all(data.files.map(async file=>{
+                const blob=base64ToBlob(file.data,file.mimeType),image=await prepareResourceImage(blob,file.filename);
+                if(image.sha256!==file.sha256||image.size!==file.size||image.mimeType!==file.mimeType)throw new Error("バックアップの原本画像が一致しません。");
+                return {image,blob};
+            }));
+            const tx=transaction();
+            await atomic(tx,async()=>{
+                const spaces=new Map<string,string>();
+                for(const space of data.spaces){const id=crypto.randomUUID();spaces.set(space.id,id);const saved:Space={...space,id,...(ownerId?{ownerId,serverRevision:null,localRevision:1}:{})};tx.objectStore("spaces").put(saved);await queue(tx,saved);}
+                for(const file of files)tx.objectStore("resourceFiles").put({id:file.image.sha256,blob:file.blob});
+                for(const resource of data.resources){
+                    const saved=parseResource({...resource,id:crypto.randomUUID(),ownerId,spaceIds:resource.spaceIds.map(id=>spaces.get(id)!),serverRevision:null,localRevision:1,
+                        metadata:resource.metadata.status==="pending"?{...resource.metadata,status:"none"}:resource.metadata});
+                    tx.objectStore("resources").put(saved);await queue(tx,saved);
+                }
+            });emit();return {resources:data.resources.length,spaces:data.spaces.length};
         },
         async saveNote(input, expectedRevision) {
             if (!input.body.trim() || input.body.length > 100000)

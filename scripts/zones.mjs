@@ -14,3 +14,12 @@ export function sketchbookRewrites(value) {
   // page / and file .js keep their distinct spelling with trailingSlash:true.
   return [{source:"/sketchbook/:path(.*)",destination:`${origin}/sketchbook/:path`,basePath:false}];
 }
+
+/** Collect is an independent zone; only a server-configured origin is accepted. */
+export function collectOrigin(value = "http://127.0.0.1:3103") {
+  try { return sketchbookOrigin(value); }
+  catch { throw new Error("COLLECT_ORIGIN must be an HTTPS origin (or a local loopback HTTP origin)."); }
+}
+export function collectRewrites(value) {
+  return [{source:"/collect/:path(.*)",destination:`${collectOrigin(value)}/collect/:path`,basePath:false}];
+}

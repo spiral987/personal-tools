@@ -33,11 +33,11 @@ async function request(port:number,path:string,method="GET",body=""){
   });
 }
 test("local gateway forwards exact paths, queries, cookies, HEAD, streamed bodies and independent app outages",async t=>{
-  const recall=await upstream("recall"),sketch=await upstream("sketchbook");
-  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port});
+  const recall=await upstream("recall"),sketch=await upstream("sketchbook"),collect=await upstream("collect");
+  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port,collectPort:collect.port});
   gateway.server.listen(0,"127.0.0.1");await once(gateway.server,"listening");const address=gateway.server.address();assert.ok(address&&typeof address!=="string");const port=address.port;
   let recallClosed=false;
-  t.after(async()=>{await gateway.close();if(!recallClosed)await recall.close();await sketch.close();});
+  t.after(async()=>{await gateway.close();if(!recallClosed)await recall.close();await sketch.close();await collect.close();});
   const path="/sketchbook/_next/static/%5Bchunk%5D.js?from=note%2Fone&item=sketch-1";
   const reply=await request(port,path,"POST","payload across chunks");assert.equal(reply.status,200);
   assert.deepEqual(JSON.parse(reply.body),{app:"sketchbook",path,method:"POST",cookie:"test-cookie=not-a-real-session",authorization:"Bearer test-only",host:`127.0.0.1:${port}`,forwarded:`127.0.0.1:${port}`,body:"payload across chunks"});
@@ -49,23 +49,24 @@ test("local gateway forwards exact paths, queries, cookies, HEAD, streamed bodie
   await recall.close();recallClosed=true;
   const down=await request(port,"/recall/");assert.equal(down.status,503);assert.equal(down.headers["cache-control"],"no-store");
   assert.equal((await request(port,"/sketchbook/")).status,200);
+  const collected=await request(port,"/collect/?url=https%3A%2F%2Fexample.com%2F");assert.equal(collected.status,200);assert.equal(JSON.parse(collected.body).app,"collect");
 });
 test("local gateway routes Upgrade handshakes and buffered bidirectional bytes to the correct HMR backend",async t=>{
-  const recall=await upstream("recall"),sketch=await upstream("sketchbook");
-  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port});
+  const recall=await upstream("recall"),sketch=await upstream("sketchbook"),collect=await upstream("collect");
+  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port,collectPort:collect.port});
   gateway.server.listen(0,"127.0.0.1");await once(gateway.server,"listening");const address=gateway.server.address();assert.ok(address&&typeof address!=="string");
-  const client=net.connect(address.port,"127.0.0.1");t.after(async()=>{client.destroy();await gateway.close();await recall.close();await sketch.close();});await once(client,"connect");
+  const client=net.connect(address.port,"127.0.0.1");t.after(async()=>{client.destroy();await gateway.close();await recall.close();await sketch.close();await collect.close();});await once(client,"connect");
   const received:Buffer[]=[];let resolveBytes:(value:string)=>void=()=>{};let rejectBytes:(error:Error)=>void=()=>{};
   const result=new Promise<string>((resolve,reject)=>{resolveBytes=resolve;rejectBytes=reject;});
   client.on("data",chunk=>{received.push(chunk);const text=Buffer.concat(received).toString();if(text.includes("first-client-bytes")&&!text.includes("second-client-bytes"))client.write("second-client-bytes");if(text.includes("second-client-bytes"))resolveBytes(text);});
   client.once("error",rejectBytes);
   const timer=setTimeout(()=>rejectBytes(new Error("Upgrade relay did not exchange bytes")),3000);t.after(()=>clearTimeout(timer));
-  client.write(`GET /sketchbook/_next/webpack-hmr?token=test-only HTTP/1.1\r\nHost: 127.0.0.1:${address.port}\r\nConnection: Upgrade\r\nUpgrade: test-relay\r\nCookie: test-session=not-real\r\n\r\nfirst-client-bytes`);
-  const text=await result;assert.match(text,/^HTTP\/1\.1 101 Switching Protocols/);assert.ok(text.includes("backend-head:sketchbook:/sketchbook/_next/webpack-hmr?token=test-only:first-client-bytes"));assert.ok(text.includes("second-client-bytes"));
+  client.write(`GET /collect/_next/webpack-hmr?token=test-only HTTP/1.1\r\nHost: 127.0.0.1:${address.port}\r\nConnection: Upgrade\r\nUpgrade: test-relay\r\nCookie: test-session=not-real\r\n\r\nfirst-client-bytes`);
+  const text=await result;assert.match(text,/^HTTP\/1\.1 101 Switching Protocols/);assert.ok(text.includes("backend-head:collect:/collect/_next/webpack-hmr?token=test-only:first-client-bytes"));assert.ok(text.includes("second-client-bytes"));
 });
 test("local gateway configuration keeps public origin stable and validates distinct loopback ports",()=>{
-  assert.deepEqual(getGatewayConfig({}),{gatewayPort:3100,recallPort:3102,sketchbookPort:3101});
-  assert.deepEqual(getGatewayConfig({RECALL_PORT:"3300"}),{gatewayPort:3300,recallPort:3302,sketchbookPort:3301});
-  assert.deepEqual(getGatewayConfig({GATEWAY_PORT:"3400",RECALL_PORT:"3300",RECALL_BACKEND_PORT:"3408",SKETCHBOOK_PORT:"3409"}),{gatewayPort:3400,recallPort:3408,sketchbookPort:3409});
-  for(const env of [{GATEWAY_PORT:"80"},{GATEWAY_PORT:"65535"},{SKETCHBOOK_PORT:"3100"},{RECALL_BACKEND_PORT:"not-a-port"}])assert.throws(()=>getGatewayConfig(env));
+  assert.deepEqual(getGatewayConfig({}),{gatewayPort:3100,recallPort:3102,sketchbookPort:3101,collectPort:3103});
+  assert.deepEqual(getGatewayConfig({RECALL_PORT:"3300"}),{gatewayPort:3300,recallPort:3302,sketchbookPort:3301,collectPort:3303});
+  assert.deepEqual(getGatewayConfig({GATEWAY_PORT:"3400",RECALL_PORT:"3300",RECALL_BACKEND_PORT:"3408",SKETCHBOOK_PORT:"3409"}),{gatewayPort:3400,recallPort:3408,sketchbookPort:3409,collectPort:3403});
+  for(const env of [{GATEWAY_PORT:"80"},{GATEWAY_PORT:"65535"},{SKETCHBOOK_PORT:"3100"},{COLLECT_PORT:"3102"},{RECALL_BACKEND_PORT:"not-a-port"}])assert.throws(()=>getGatewayConfig(env));
 });

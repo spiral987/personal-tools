@@ -1,4 +1,4 @@
-import { parseSketchStrokes, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus } from "@personal-tools/core";
+import { parseSketchStrokes, parseResource, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus } from "@personal-tools/core";
 import type { AccountRecallRepository } from "./repository.ts";
 export interface SyncTransport {
     readonly userId: string;
@@ -52,6 +52,9 @@ function validateRecord(value: unknown, userId: string): SyncRecord {
         if (record.type !== "inspired_by" || typeof record.fromItemId !== "string" || !uuid.test(record.fromItemId) || typeof record.toItemId !== "string" || !uuid.test(record.toItemId) || record.fromItemId === record.toItemId ||
             !isDate(record.updatedAt) || !(record.deletedAt === null || isDate(record.deletedAt))) throw new SyncTransportError("関連付けの同期応答が正しくありません。");
     }
+    else if(record.kind==="resource"){
+        try{parseResource(record);}catch{throw new SyncTransportError("資料の同期応答が正しくありません。");}
+    }
     else if ("kind" in record || typeof record.name !== "string" || !record.name.trim() || record.name.length > 40 || typeof record.color !== "string" || !/^#[0-9a-f]{6}$/i.test(record.color))
         throw new SyncTransportError("スペースの同期応答が正しくありません。");
     return value as SyncRecord;
@@ -80,7 +83,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string): 
             };
         },
         async pull(cursor, limit) {
-            const { data, error } = await client.rpc("pull_suite_changes", {
+            const { data, error } = await client.rpc("pull_tools_changes", {
                 p_cursor: cursor, p_limit: limit
             });
             if (error)
@@ -91,7 +94,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string): 
             let previousCursor = BigInt(cursor);
             const changes: SyncChange[] = result.changes.map(value => {
                 const change = asObject(value);
-                if (!["note", "space", "sketch", "relation"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
+                if (!["note", "space", "sketch", "relation","resource"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
                     throw new SyncTransportError("同期の変更位置が正しくありません。");
                 previousCursor = BigInt(change.cursor);
                 const record = validateRecord(change.record, userId);

@@ -6,14 +6,15 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "node scripts/run-apps.mjs dev",
-    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook build",
+    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect build",
     "start": "node scripts/run-apps.mjs start",
-    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook typecheck",
+    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect typecheck",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "dev:recall": "pnpm --filter @personal-tools/recall dev",
     "dev:sketchbook": "pnpm --filter @personal-tools/sketchbook dev",
     "dev:gateway": "node scripts/gateway.mjs",
-    "start:gateway": "node scripts/gateway.mjs"
+    "start:gateway": "node scripts/gateway.mjs",
+    "dev:collect": "pnpm --filter @personal-tools/collect dev"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.12",

@@ -20,7 +20,7 @@ export async function createTestDatabase() {
     grant execute on function auth.uid() to anon,authenticated;
     create schema storage;
     create table storage.buckets(id text primary key,name text not null,public boolean not null default false,file_size_limit bigint);
-    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,owner_id text);
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text references storage.buckets(id),name text not null,owner_id text,metadata jsonb);
     alter table storage.objects enable row level security;
     create function storage.foldername(name text) returns text[] language sql immutable as
       $$ select (string_to_array(name,'/'))[1:greatest(array_length(string_to_array(name,'/'),1)-1,0)] $$;
@@ -54,6 +54,10 @@ export async function createTestDatabase() {
     async pullSuite(userId:string,cursor="0",limit=100) {
       const result=await queryAs(userId,"select public.pull_suite_changes($1,$2) as result",[cursor,limit]);
       return result.rows[0].result as {changes:{cursor:string;entity:"note"|"space"|"sketch"|"relation";record:Record<string,unknown>}[];cursor:string;hasMore:boolean};
+    },
+    async pullTools(userId:string,cursor="0",limit=100) {
+      const result=await queryAs(userId,"select public.pull_tools_changes($1,$2) as result",[cursor,limit]);
+      return result.rows[0].result as {changes:{cursor:string;entity:"note"|"space"|"sketch"|"relation"|"resource";record:Record<string,unknown>}[];cursor:string;hasMore:boolean};
     },
     close:()=>db.close(),
   };
