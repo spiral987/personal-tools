@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {accountDatabaseName,callbackLocation,createSharedSessionRefresh,getPublicSupabaseConfig,type Identity,type SharedSessionRefreshBoundary} from "./index.ts";
+import {accountDatabaseName,authCallbackErrorMessage,callbackLocation,createSharedSessionRefresh,getPublicSupabaseConfig,type Identity,type SharedSessionRefreshBoundary} from "./index.ts";
 import {getBrowserAuthClient,type BrowserAuthClient} from "./browser.ts";
 import {openRecallRepository,openAccountRecallRepository,createSyncEngine,createEncryptedSyncTransport,type RecallRepository,type AccountRecallRepository,type SuiteSnapshot} from "@personal-tools/api-client";
 import {prepareVaultRetention} from "../../api-client/src/vault-retention.ts";
@@ -117,7 +117,7 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
     }
     const failure=url.searchParams.get("auth_error");
     if(failure){
-      setAuthMessage(failure==="not_configured"?"クラウド接続の設定がまだありません。端末内モードを利用できます。":"ログインリンクを確認できませんでした。同じブラウザから新しいリンクを送ってください。");
+      setAuthMessage(authCallbackErrorMessage(failure));
       url.searchParams.delete("auth_error");window.history.replaceState(null,"",url.pathname+url.search+url.hash);
     }
     const auth=config?getBrowserAuthClient():null;client.current=auth;

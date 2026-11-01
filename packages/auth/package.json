@@ -9,7 +9,9 @@
     "./server": "./src/server.ts",
     "./proxy": "./src/proxy.ts",
     "./react": "./src/react.ts",
-    "./vault": "./src/vault.tsx"
+    "./vault": "./src/vault.tsx",
+    "./google": "./src/google-sign-in.tsx",
+    "./drive": "./src/drive.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

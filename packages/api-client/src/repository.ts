@@ -1,6 +1,7 @@
 import {trashIsExpired} from "@personal-tools/core";
 import { parseBackup, parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, assertSketchSyncBudget, jsonbByteLength, parseResource, parseResourceImage, parseCollectDraft, parseCollectBackup, resourceUrl, canonicalResourceUrl, emptyResourceMetadata, MAX_COLLECT_BACKUP_BYTES, MAX_COLLECT_BACKUP_JSON_BYTES, type Resource, type CollectDraft, type CollectBackup, type ResourceImage, type ResourceMetadataJob, type Backup, type SketchBackup, type Sketch, type SketchDraft, type ItemRelation, type SyncRecord, type Note, type Space, type LocalOperation, type SyncOperation, type SyncConflict, type SyncPushResult, type SyncPullResult } from "@personal-tools/core";
-import {prepareResourceImage,blobToBase64,base64ToBlob} from "./resource-files.ts";
+import {prepareResourceImage,prepareResourceFile,blobToBase64,base64ToBlob} from "./resource-files.ts";
+import {resourceOriginal,parseResourceFile,parseResourceDrive,type ResourceFile,type ResourceDrive} from "@personal-tools/core";
 import {requireVault,assertVault} from "./vault.ts";
 import {encryptedTransaction,migrateEncryptedDatabase} from "./vault-idb.ts";
 import {RELATION_TYPES,parseProjectFields,parseTags,type AtlasProject,type ItemLabels,type RelationType,type AtlasItem} from "@personal-tools/core";
@@ -20,8 +21,9 @@ type SaveNoteInput = {
 };
 export type SaveSketchInput = SketchDraft & { id?: string; pinned?: boolean; deletedAt?: string | null; expectedRevision?: number };
 export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[];projects:AtlasProject[];labels:ItemLabels[] };
-export type SaveResourceInput = Omit<CollectDraft,"editingId"|"expectedRevision"> & {id?:string;file?:Blob;pinned?:boolean;deletedAt?:string|null;metadata?:Resource["metadata"]};
+export type SaveResourceInput = Omit<CollectDraft,"editingId"|"expectedRevision"> & {id?:string;newId?:string;preserveDraft?:boolean;file?:Blob;pinned?:boolean;deletedAt?:string|null;metadata?:Resource["metadata"]};
 export type ResourceChanges = Partial<Pick<Resource,"title"|"memo"|"url"|"sourceUrl"|"spaceIds"|"inbox"|"pinned"|"deletedAt">>;
+export type CollectDriveSettings={folderId:string;folderName:string;accountId:string;target:"vault"|"drive"};
 export type SyncState = {
     pending: number;
     pendingItemIds: string[];
@@ -58,17 +60,21 @@ export interface RecallRepository {
     exportSketchBackup(): Promise<SketchBackup>;
     importSketchBackup(input: unknown): Promise<{ sketches: number; spaces: number }>;
     saveResource(input:SaveResourceInput,expectedRevision?:number):Promise<Resource>;
-    updateResource(id:string,changes:ResourceChanges,expectedRevision:number):Promise<Resource>;
+    updateResource(id:string,changes:ResourceChanges&Pick<Partial<Resource>,"text"|"drive">,expectedRevision:number):Promise<Resource>;
+    refreshResourceOriginal(id:string,original:ResourceFile,file:Blob|undefined,expectedRevision:number,drive?:ResourceDrive):Promise<Resource>;
+    loadCollectDriveSettings():Promise<CollectDriveSettings|null>;
+    saveCollectDriveSettings(settings:CollectDriveSettings|null):Promise<void>;
+    evictResourceFile(id:string):Promise<void>;
     loadCollectDraft():Promise<CollectDraft>;
     saveCollectDraft(draft:CollectDraft,file?:Blob|null):Promise<void>;
     getCollectDraftFile():Promise<Blob|null>;
     getResourceFile(id:string):Promise<Blob|null>;
     cacheResourceFile(id:string,file:Blob):Promise<void>;
-    duplicateResources(input:{url?:string|null;image?:ResourceImage|null},excludeId?:string):Promise<Resource[]>;
+    duplicateResources(input:{url?:string|null;image?:ResourceImage|null;original?:ResourceFile|null},excludeId?:string):Promise<Resource[]>;
     startResourceMetadata(id:string,expectedRevision:number):Promise<ResourceMetadataJob>;
     finishResourceMetadata(id:string,token:string,result:{title:string;description:string}|null):Promise<Resource|null>;
     getResourceMetadataJob(id:string):Promise<ResourceMetadataJob|null>;
-    exportCollectBackup(ids?:string[]):Promise<CollectBackup>;
+    exportCollectBackup(ids?:string[],options?:{mode?:"originals"|"references"}):Promise<CollectBackup>;
     importCollectBackup(input:unknown):Promise<{resources:number;spaces:number}>;
     createSpace(name: string): Promise<Space>;
     exportBackup(): Promise<Backup>;
@@ -104,7 +110,7 @@ const DEFAULT_SPACES = [["daily", "日常", "#729379"], ["creative", "創作", "
 const ATLAS_REQUEST_SHARING_KEY = "atlas-request-sharing";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const copy = <T>(value: T): T => structuredClone(value);
-const sameResourceImage=(a:ResourceImage|null,b:ResourceImage|null)=>a===null||b===null?a===b:
+const sameResourceImage=(a:ResourceFile|null,b:ResourceFile|null)=>a===null||b===null?a===b:
     a.sha256===b.sha256&&a.mimeType===b.mimeType&&a.size===b.size&&a.filename===b.filename;
 function request<T>(req: IDBRequest<T>): Promise<T> {
     return new Promise((resolve, reject) => {
@@ -558,15 +564,16 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         },
         async saveCollectDraft(input,file){
             const draft=parseCollectDraft(input);
-            if(file){const image=await prepareResourceImage(file,draft.image?.filename);if(!draft.image||image.sha256!==draft.image.sha256||image.mimeType!==draft.image.mimeType||image.size!==draft.image.size)throw new Error("下書きの原本が一致しません。");}
+            const original=resourceOriginal(draft);
+            if(file){const actual=draft.resourceType==="image"?await prepareResourceImage(file,original?.filename):await prepareResourceFile(file,original?.filename);if(!original||!sameResourceImage(actual,original))throw new Error("下書きの原本が一致しません。");}
             const tx=transaction(["drafts","resourceFiles","resources"]);
             await atomic(tx,async()=>{
                 draft.spaceIds=await lifecycle.filterSpaceIds(tx,draft.spaceIds);if(draft.editingId)await lifecycle.assertEditable(tx,"resource",draft.editingId);
-                if(draft.image){
-                    if(file)tx.objectStore("resourceFiles").put({id:draft.image.sha256,blob:file});
-                    else if(!await request(tx.objectStore("resourceFiles").get(draft.image.sha256))){
+                if(original){
+                    if(file)tx.objectStore("resourceFiles").put({id:original.sha256,blob:file});
+                    else if(!await request(tx.objectStore("resourceFiles").get(original.sha256))){
                         const existing=draft.editingId?await request(tx.objectStore("resources").get(draft.editingId)) as Resource|undefined:undefined;
-                        if(!existing||!sameResourceImage(existing.image,draft.image))throw new Error("下書きの画像をもう一度選んでください。");
+                        if(!existing||!sameResourceImage(resourceOriginal(existing),original))throw new Error("下書きのファイルをもう一度選んでください。");
                     }
                 }
                 tx.objectStore("drafts").put({id:"collect-composer",...draft});
@@ -574,34 +581,37 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         },
         async getCollectDraftFile(){
             const tx=transaction(["drafts","resourceFiles","resources"],"readonly");
-            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));if(!draft?.image)return null;if(draft.editingId){const target=await request(tx.objectStore("resources").get(draft.editingId));if(!target||trashIsExpired(target)||await lifecycle.notice(tx,"resource",draft.editingId))return null;}const stored=await request(tx.objectStore("resourceFiles").get(draft.image.sha256));return stored?.blob??null;});
+            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));const original=draft&&resourceOriginal(draft);if(!original)return null;if(draft.editingId){const target=await request(tx.objectStore("resources").get(draft.editingId));if(!target||trashIsExpired(target)||await lifecycle.notice(tx,"resource",draft.editingId))return null;}const stored=await request(tx.objectStore("resourceFiles").get(original.sha256));return stored?.blob??null;});
         },
         async saveResource(input,expectedRevision){
-            let original:ResourceImage|null=null;
-            if(input.file){original=await prepareResourceImage(input.file,input.image?.filename);if(input.image&&(original.sha256!==input.image.sha256||original.size!==input.image.size||original.mimeType!==input.image.mimeType))throw new Error("画像の原本が一致しません。");}
-            const id=input.id??crypto.randomUUID(),tx=transaction();
+            let prepared:ResourceFile|null=null;const supplied=resourceOriginal(input);
+            if(input.file){prepared=input.resourceType==="image"?await prepareResourceImage(input.file,supplied?.filename):await prepareResourceFile(input.file,supplied?.filename);if(supplied&&!sameResourceImage(prepared,supplied))throw new Error("ファイルの原本が一致しません。");}
+            if(ownerId&&!input.drive&&((prepared??supplied)?.size??0)>20*1024*1024)throw new Error("暗号化クラウド保存の原本は20MBまでです。大きなファイルはDrive保存を選んでください。");
+            if(input.newId!==undefined&&(!uuidPattern.test(input.newId)||input.id!==undefined))throw new Error("新しい資料のIDを確認してください。");
+            const id=input.id??input.newId??crypto.randomUUID(),tx=transaction();
             const saved=await atomic(tx,async()=>{
                 const previous=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
                 await lifecycle.assertEditable(tx,"resource",id,previous);
                 if((input.id&&!previous)||(previous&&expectedRevision!==previous.localRevision))throw new ConflictError();
-                const image=original??(input.image?parseResourceImage(input.image):null);
-                if(previous&&(previous.resourceType!==input.resourceType||!sameResourceImage(previous.image,image)))throw new Error("画像の原本を変更するときは、新しい資料として追加してください。");
-                const now=new Date().toISOString(),url=resourceUrl(input.url,input.resourceType==="image");
+                const original=prepared??supplied,image=input.resourceType==="image"&&original?parseResourceImage(original):null;
+                if(previous&&(previous.resourceType!==input.resourceType||!sameResourceImage(resourceOriginal(previous),original)))throw new Error("ファイルの原本を変更するときは、新しい資料として追加してください。");
+                const now=new Date().toISOString(),url=resourceUrl(input.url,input.resourceType!=="link");
                 const resource=parseResource({
                     id,kind:"resource",originApp:"collect",ownerId,resourceType:input.resourceType,url,sourceUrl:resourceUrl(input.sourceUrl||url,true),
                     title:input.title.trim(),memo:input.memo,spaceIds:await lifecycle.filterSpaceIds(tx,input.spaceIds),inbox:input.inbox,pinned:input.pinned??previous?.pinned??false,image,
                     metadata:previous&&previous.url!==url?emptyResourceMetadata():input.metadata??previous?.metadata??emptyResourceMetadata(),
                     createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:input.deletedAt===undefined?previous?.deletedAt??null:input.deletedAt,
                     localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null,
+                    ...(input.resourceType==="file"||input.original!==undefined?{original}:{}),...(input.text!==undefined?{text:input.text}:{}),...(input.drive!==undefined?{drive:input.drive}:{}),
                 });
                 const spaces=await request(tx.objectStore("spaces").getAllKeys());if(resource.spaceIds.some(spaceId=>!spaces.includes(spaceId)))throw new Error("スペースが見つかりません。");
-                if(image){
-                    if(input.file)tx.objectStore("resourceFiles").put({id:image.sha256,blob:input.file});
-                    else if(!previous&&!await request(tx.objectStore("resourceFiles").get(image.sha256)))throw new Error("画像の原本を選んでください。");
+                if(original){
+                    if(input.file)tx.objectStore("resourceFiles").put({id:original.sha256,blob:input.file});
+                    else if(!previous&&!input.drive&&!await request(tx.objectStore("resourceFiles").get(original.sha256)))throw new Error("ファイルの原本を選んでください。");
                 }
                 if(previous?.url!==resource.url||resource.deletedAt)tx.objectStore("resourceJobs").delete(id);
                 tx.objectStore("resources").put(resource);await queue(tx,resource);
-                if(!input.id)tx.objectStore("drafts").delete("collect-composer");
+                if(!input.id&&!input.preserveDraft)tx.objectStore("drafts").delete("collect-composer");
                 return resource;
             });emit();return saved;
         },
@@ -609,21 +619,55 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             const resource=(await readAll<Resource>("resources")).find(value=>value.id===id);if(!resource)throw new ConflictError();
             return repo.saveResource({...resource,...changes,id,url:changes.url===undefined?resource.url??"":changes.url??"",sourceUrl:changes.sourceUrl===undefined?resource.sourceUrl??"":changes.sourceUrl??""},expectedRevision);
         },
+        async refreshResourceOriginal(id,input,file,expectedRevision,drive){
+            const original=parseResourceFile(input),checkedDrive=drive?parseResourceDrive(drive):undefined;
+            if(file){const actual=await prepareResourceFile(file,original.filename);if(!sameResourceImage(actual,original))throw new Error("取得したDrive原本が一致しません。");}
+            const tx=transaction();const result=await atomic(tx,async()=>{
+                const previous=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
+                if(!previous||previous.localRevision!==expectedRevision)throw new ConflictError();
+                await lifecycle.assertEditable(tx,"resource",id,previous);
+                if(!previous.drive||checkedDrive&&(previous.drive.fileId!==checkedDrive.fileId||previous.drive.accountId!==checkedDrive.accountId))throw new Error("Drive原本の参照先が変わりました。");
+                const before=resourceOriginal(previous);
+                if(!file&&before?.sha256!==original.sha256)throw new Error("変更した原本を取得してから更新してください。");
+                const isImage=previous.resourceType==="image"&&["image/png","image/jpeg","image/gif","image/webp"].includes(original.mimeType)&&original.size<=20*1024*1024;
+                if(isImage&&file)await prepareResourceImage(file,original.filename);
+                const next=parseResource({...previous,...(previous.resourceType==="image"?{resourceType:isImage?"image":"file",image:isImage?parseResourceImage(original):null,original:isImage?undefined:original}:{original}),...(checkedDrive?{drive:checkedDrive}:{}),localRevision:previous.localRevision+1,updatedAt:new Date().toISOString()});
+                tx.objectStore("resources").put(next);if(file)tx.objectStore("resourceFiles").put({id:original.sha256,blob:file});await queue(tx,next);return next;
+            });emit();return result;
+        },
+        async loadCollectDriveSettings(){
+            const tx=transaction(["meta"],"readonly");return atomic(tx,async()=>{const row=await request(tx.objectStore("meta").get("collect-drive-settings"));return row?.value??null;});
+        },
+        async saveCollectDriveSettings(settings){
+            if(settings&&(![settings.folderId,settings.accountId].every(value=>typeof value==="string"&&/^[A-Za-z0-9_-]{1,100}$/.test(value))||typeof settings.folderName!=="string"||settings.folderName.length>255||!["vault","drive"].includes(settings.target)))throw new Error("Driveの保存先を確認してください。");
+            const tx=transaction(["meta"]);await atomic(tx,async()=>{if(settings)tx.objectStore("meta").put({id:"collect-drive-settings",value:copy(settings)});else tx.objectStore("meta").delete("collect-drive-settings");});emit();
+        },
+        async evictResourceFile(id){
+            const tx=transaction();await atomic(tx,async()=>{
+                const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined,original=resource&&resourceOriginal(resource);
+                if(!resource||!original||resource.drive?.status!=="ready")throw new Error("原本をDriveへ保存してから端末キャッシュを整理してください。");
+                const hash=original.sha256;
+                for(const draft of await request(tx.objectStore("drafts").getAll()) as any[])if((draft.original??draft.image)?.sha256===hash)throw new Error("下書きで使っている原本は端末に保持します。");
+                for(const other of await request(tx.objectStore("resources").getAll()) as Resource[])if(resourceOriginal(other)?.sha256===hash&&other.drive?.status!=="ready")throw new Error("ほかの記録で使っている原本は端末に保持します。");
+                for(const conflict of await request(tx.objectStore("conflicts").getAll()) as SyncConflict[])for(const version of [conflict.local,conflict.remote])if("kind" in version&&version.kind==="resource"&&resourceOriginal(version)?.sha256===hash)throw new Error("競合中の原本は端末に保持します。");
+                tx.objectStore("resourceFiles").delete(hash);
+            });emit();
+        },
         async getResourceFile(id){
             const tx=transaction(["resources","resourceFiles"],"readonly");
-            return atomic(tx,async()=>{const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!resource?.image||trashIsExpired(resource)||await lifecycle.notice(tx,"resource",id))return null;const stored=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));return stored?.blob??null;});
+            return atomic(tx,async()=>{const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;const original=resource&&resourceOriginal(resource);if(!resource||!original||trashIsExpired(resource)||await lifecycle.notice(tx,"resource",id))return null;const stored=await request(tx.objectStore("resourceFiles").get(original.sha256));return stored?.blob??null;});
         },
         async cacheResourceFile(id,file){
-            const resource=(await readAll<Resource>("resources")).find(value=>value.id===id);if(!resource?.image)throw new Error("画像資料が見つかりません。");
-            const image=await prepareResourceImage(file,resource.image.filename);
-            if(image.sha256!==resource.image.sha256||image.size!==resource.image.size||image.mimeType!==resource.image.mimeType)throw new Error("取得した原本が一致しません。");
+            const resource=(await readAll<Resource>("resources")).find(value=>value.id===id),original=resource&&resourceOriginal(resource);if(!resource||!original)throw new Error("ファイル資料が見つかりません。");
+            const image=resource.resourceType==="image"?await prepareResourceImage(file,original.filename):await prepareResourceFile(file,original.filename);
+            if(!sameResourceImage(image,original))throw new Error("取得した原本が一致しません。");
             const tx=transaction(["resources","resourceFiles"]);
-            await atomic(tx,async()=>{const latest=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!latest?.image||latest.image.sha256!==image.sha256)throw new Error("画像資料が更新されました。");tx.objectStore("resourceFiles").put({id:image.sha256,blob:file});});emit();
+            await atomic(tx,async()=>{const latest=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!latest||!sameResourceImage(resourceOriginal(latest),image)||trashIsExpired(latest)||await lifecycle.notice(tx,"resource",id))throw new Error("ファイル資料が更新されました。");tx.objectStore("resourceFiles").put({id:image.sha256,blob:file});});emit();
         },
         async duplicateResources(input,excludeId){
             const url=input.url?canonicalResourceUrl(input.url):null;
             return (await readAll<Resource>("resources")).filter(resource=>!resource.deletedAt&&resource.id!==excludeId&&
-                ((!!url&&!!resource.url&&canonicalResourceUrl(resource.url)===url)||(!!input.image&&resource.image?.sha256===input.image.sha256)));
+                ((!!url&&!!resource.url&&canonicalResourceUrl(resource.url)===url)||(!!(input.original??input.image)&&resourceOriginal(resource)?.sha256===(input.original??input.image)!.sha256)));
         },
         async startResourceMetadata(id,expectedRevision){
             const tx=transaction();
@@ -651,7 +695,8 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         async getResourceMetadataJob(id){
             const tx=transaction(["resourceJobs"],"readonly");return atomic(tx,async()=>await request(tx.objectStore("resourceJobs").get(id)) as ResourceMetadataJob??null);
         },
-        async exportCollectBackup(ids){
+        async exportCollectBackup(ids,options={}){
+            const mode=options.mode??"originals";
             const tx=transaction(["resources","spaces","resourceFiles","conflicts"],"readonly");
             const stored=await atomic(tx,async()=>{
                 const resources=await request(tx.objectStore("resources").getAll()) as Resource[];
@@ -659,16 +704,18 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                 const selected=resources.filter(resource=>!ids||ids.includes(resource.id));
                 for(const conflict of conflicts)if("kind" in conflict.local&&conflict.local.kind==="resource"&&(!ids||ids.includes(conflict.entityId)))selected.push({...conflict.local,id:crypto.randomUUID()});
                 const spaces=await request(tx.objectStore("spaces").getAll()) as Space[];
-                const files: {image:ResourceImage;blob:Blob}[]=[];const seen=new Set<string>();let total=0;
-                for(const resource of selected)if(resource.image&&!seen.has(resource.image.sha256)){
-                    const file=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));
-                    if(!file?.blob)throw new Error("原本の画像を取得してからバックアップしてください。");
-                    total+=resource.image.size;if(total>MAX_COLLECT_BACKUP_BYTES)throw new Error("画像の合計が32MBを超えています。資料ごとに分けて書き出してください。");
-                    seen.add(resource.image.sha256);files.push({image:resource.image,blob:file.blob});
+                const files: {image:ResourceFile;blob:Blob}[]=[];const seen=new Set<string>();let total=0;
+                for(const resource of selected){const original=resourceOriginal(resource);if(mode==="originals"&&original&&!seen.has(original.sha256)){
+                    const file=await request(tx.objectStore("resourceFiles").get(original.sha256));
+                    if(!file?.blob)throw new Error("原本のファイルを取得してからバックアップしてください。");
+                    total+=original.size;if(total>MAX_COLLECT_BACKUP_BYTES)throw new Error("原本の合計が32MBを超えています。資料ごとに分けて書き出してください。");
+                    seen.add(original.sha256);files.push({image:original,blob:file.blob});
+                }
                 }
                 return {resources:selected,spaces,files};
             });
-            const backup:CollectBackup={format:"personal-tools.collect",version:1,exportedAt:new Date().toISOString(),
+            const modern=mode==="references"||stored.resources.some(resource=>resource.resourceType==="file"||resource.resourceType==="text"||!!resource.drive||!!resource.original);
+            const backup:CollectBackup={format:"personal-tools.collect",version:modern?2:1,...(modern?{mode}:{}),exportedAt:new Date().toISOString(),
                 resources:stored.resources.map(resource=>({...resource,ownerId:null,serverRevision:null})),
                 spaces:stored.spaces.map(space=>({id:space.id,name:space.name,color:space.color,createdAt:space.createdAt})),
                 files:await Promise.all(stored.files.map(async file=>({...file.image,data:await blobToBase64(file.blob)})))};
@@ -676,9 +723,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             return backup;
         },
         async importCollectBackup(input){
-            const data=parseCollectBackup(input),files=await Promise.all(data.files.map(async file=>{
-                const blob=base64ToBlob(file.data,file.mimeType),image=await prepareResourceImage(blob,file.filename);
-                if(image.sha256!==file.sha256||image.size!==file.size||image.mimeType!==file.mimeType)throw new Error("バックアップの原本画像が一致しません。");
+            const data=parseCollectBackup(input);
+            if(ownerId&&data.resources.some(resource=>!resource.drive&&(resourceOriginal(resource)?.size??0)>20*1024*1024))throw new Error("20MBを超える原本はDrive保存先を設定してから取り込んでください。");
+            const files=await Promise.all(data.files.map(async file=>{
+                const blob=base64ToBlob(file.data,file.mimeType),image=data.version===1||data.resources.some(resource=>resource.resourceType==="image"&&resource.image?.sha256===file.sha256)?await prepareResourceImage(blob,file.filename):await prepareResourceFile(blob,file.filename);
+                if(image.sha256!==file.sha256||image.size!==file.size||image.mimeType!==file.mimeType)throw new Error("バックアップの原本ファイルが一致しません。");
                 return {image,blob};
             }));
             const tx=transaction();

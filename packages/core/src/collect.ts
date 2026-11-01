@@ -3,21 +3,26 @@ import type {Space} from "./index.ts";
 
 export type ResourceMime = "image/png" | "image/jpeg" | "image/gif" | "image/webp";
 export type ResourceImage = {sha256:string;mimeType:ResourceMime;size:number;filename:string};
+export type ResourceFile = {sha256:string;mimeType:string;size:number;filename:string};
+export type ResourceDrive = {fileId:string;folderId?:string;name:string;mimeType:string;size:number;version:string;modifiedTime:string|null;status:"pending"|"ready"|"trashed"|"unavailable";checkedAt:string;accountId:string;marker?:string};
 export type ResourceMetadata = {status:"none"|"pending"|"ready"|"failed";title:string;description:string;fetchedAt:string|null};
 export type Resource = {
-  id:string;kind:"resource";originApp:"collect";ownerId:string|null;resourceType:"link"|"image";
+  id:string;kind:"resource";originApp:"collect";ownerId:string|null;resourceType:"link"|"image"|"text"|"file";
   url:string|null;sourceUrl:string|null;title:string;memo:string;spaceIds:string[];inbox:boolean;pinned:boolean;
   image:ResourceImage|null;metadata:ResourceMetadata;createdAt:string;updatedAt:string;deletedAt:string|null;
   localRevision:number;serverRevision:number|null;
+  original?:ResourceFile|null;text?:string;drive?:ResourceDrive|null;
 };
 export type CollectDraft = {
-  resourceType:"link"|"image";url:string;sourceUrl:string;title:string;memo:string;spaceIds:string[];inbox:boolean;
+  resourceType:Resource["resourceType"];url:string;sourceUrl:string;title:string;memo:string;spaceIds:string[];inbox:boolean;
   image:ResourceImage|null;editingId?:string;expectedRevision?:number;
+  original?:ResourceFile|null;text?:string;drive?:ResourceDrive|null;
 };
 export type ResourceMetadataJob = {id:string;token:string;resourceId:string;url:string;createdAt:string};
-export type CollectBackupFile = ResourceImage & {data:string};
-export type CollectBackup = {format:"personal-tools.collect";version:1;exportedAt:string;resources:Resource[];spaces:Space[];files:CollectBackupFile[]};
+export type CollectBackupFile = ResourceFile & {data:string};
+export type CollectBackup = {format:"personal-tools.collect";version:1|2;mode?:"originals"|"references";exportedAt:string;resources:Resource[];spaces:Space[];files:CollectBackupFile[]};
 export const MAX_RESOURCE_FILE_BYTES = 20*1024*1024;
+export const MAX_RESOURCE_ORIGINAL_BYTES = 32*1024*1024;
 export const MAX_COLLECT_BACKUP_BYTES = 32*1024*1024;
 export const MAX_COLLECT_BACKUP_JSON_BYTES = 64*1024*1024;
 export const emptyResourceMetadata = ():ResourceMetadata=>({status:"none",title:"",description:"",fetchedAt:null});
@@ -50,6 +55,21 @@ export function parseResourceImage(value:unknown):ResourceImage {
   if(!filename.trim())throw new Error("ファイル名を確認してください。");
   return {sha256:value.sha256,mimeType:value.mimeType as ResourceMime,size:Number(value.size),filename};
 }
+export function parseResourceFile(value:unknown):ResourceFile {
+  if(!object(value)||typeof value.sha256!=="string"||!/^[0-9a-f]{64}$/.test(value.sha256)||!Number.isSafeInteger(value.size)||Number(value.size)<0||Number(value.size)>5*1024**4)
+    throw new Error("ファイルの原本情報を確認してください。");
+  const filename=text(value.filename,255,"ファイル名"),mimeType=text(value.mimeType,255,"ファイルの種類");
+  if(!filename.trim()||!mimeType||!/^[\w!#$&^.+-]+\/[\w!#$&^.+-]+$/.test(mimeType))throw new Error("ファイルの種類と名前を確認してください。");
+  return {sha256:value.sha256,mimeType,size:Number(value.size),filename};
+}
+export function resourceOriginal(value:Pick<Resource,"image"|"original">|Pick<CollectDraft,"image"|"original">):ResourceFile|null{return value.original??value.image;}
+export function parseResourceDrive(value:unknown):ResourceDrive {
+  if(!object(value)||!id(value.fileId)||!id(value.accountId)||value.status==="pending"&&!id(value.marker)||!date(value.checkedAt)||!(value.modifiedTime===null||date(value.modifiedTime))||!["pending","ready","trashed","unavailable"].includes(String(value.status))||!Number.isSafeInteger(value.size)||Number(value.size)<0||Number(value.size)>5*1024**4)
+    throw new Error("Driveの原本情報を確認してください。");
+  const result:ResourceDrive={fileId:value.fileId,accountId:value.accountId,name:text(value.name,255,"Driveファイル名"),mimeType:text(value.mimeType,255,"Driveファイルの種類"),size:Number(value.size),version:text(value.version,100,"Driveの版"),modifiedTime:value.modifiedTime as string|null,status:value.status as ResourceDrive["status"],checkedAt:value.checkedAt};
+  for(const field of ["folderId","marker"] as const)if(value[field]!==undefined){if(!id(value[field]))throw new Error("Driveの参照情報を確認してください。");result[field]=value[field];}
+  return result;
+}
 export function parseResourceSpaces(value:unknown):string[] {
   if(!Array.isArray(value)||!Array.from(value).every(id))throw new Error("スペースを確認してください。");
   const result=[...new Set(value as string[])];if(result.length>1000)throw new Error("スペースは1,000個まで設定できます。");return result;
@@ -61,20 +81,25 @@ export function parseResourceMetadata(value:unknown):ResourceMetadata {
 }
 export function parseResource(value:unknown):Resource {
   if(!object(value)||!uuid(value.id)||value.kind!=="resource"||value.originApp!=="collect"||
-    !["link","image"].includes(String(value.resourceType))||!(value.ownerId===null||uuid(value.ownerId))||
+    !["link","image","text","file"].includes(String(value.resourceType))||!(value.ownerId===null||uuid(value.ownerId))||
     typeof value.inbox!=="boolean"||typeof value.pinned!=="boolean"||!date(value.createdAt)||!date(value.updatedAt)||
     !(value.deletedAt===null||date(value.deletedAt))||!Number.isSafeInteger(value.localRevision)||Number(value.localRevision)<1||
     !(value.serverRevision===null||(Number.isSafeInteger(value.serverRevision)&&Number(value.serverRevision)>0)))
     throw new Error("収集した資料のデータを確認してください。");
   const resource:Resource={
     id:value.id,kind:"resource",originApp:"collect",ownerId:value.ownerId as string|null,resourceType:value.resourceType as Resource["resourceType"],
-    url:resourceUrl(value.url,value.resourceType==="image"),sourceUrl:resourceUrl(value.sourceUrl,true),
+    url:resourceUrl(value.url,value.resourceType!=="link"),sourceUrl:resourceUrl(value.sourceUrl,true),
     title:text(value.title,300,"タイトル"),memo:text(value.memo,100000,"メモ"),spaceIds:parseResourceSpaces(value.spaceIds),
     inbox:value.inbox,pinned:value.pinned,image:value.image===null?null:parseResourceImage(value.image),
     metadata:parseResourceMetadata(value.metadata),createdAt:value.createdAt,updatedAt:value.updatedAt,deletedAt:value.deletedAt as string|null,
     localRevision:Number(value.localRevision),serverRevision:value.serverRevision as number|null,
   };
+  if(value.original!==undefined)resource.original=value.original===null?null:parseResourceFile(value.original);
+  if(value.text!==undefined)resource.text=text(value.text,100000,"文章");
+  if(value.drive!==undefined)resource.drive=value.drive===null?null:parseResourceDrive(value.drive);
   if((resource.resourceType==="image")!==(resource.image!==null))throw new Error("資料の種類と原本を確認してください。");
+  if(resource.resourceType==="file"&&!resource.original||resource.original&&resource.image)throw new Error("ファイルの種類と原本を確認してください。");
+  if(resource.resourceType==="text"&&!resource.text?.trim())throw new Error("文章を入力してください。");
   assertResourceSyncBudget(resource);return resource;
 }
 export function assertResourceSyncBudget(resource:Resource):void {
@@ -84,18 +109,23 @@ export function assertResourceSyncBudget(resource:Resource):void {
     throw new Error("資料のデータが大きすぎます。メモを分けてください。");
 }
 export function parseCollectDraft(value:unknown):CollectDraft {
-  if(!object(value)||!["link","image"].includes(String(value.resourceType))||typeof value.inbox!=="boolean")throw new Error("下書きを確認してください。");
+  if(!object(value)||!["link","image","text","file"].includes(String(value.resourceType))||typeof value.inbox!=="boolean")throw new Error("下書きを確認してください。");
   const draft:CollectDraft={resourceType:value.resourceType as CollectDraft["resourceType"],url:text(value.url,8192,"URL"),sourceUrl:text(value.sourceUrl,8192,"出典URL"),
     title:text(value.title,300,"タイトル"),memo:text(value.memo,100000,"メモ"),spaceIds:parseResourceSpaces(value.spaceIds),inbox:value.inbox,
     image:value.image===null?null:parseResourceImage(value.image)};
+  if(value.original!==undefined)draft.original=value.original===null?null:parseResourceFile(value.original);
+  if(value.text!==undefined)draft.text=text(value.text,100000,"文章");
+  if(value.drive!==undefined)draft.drive=value.drive===null?null:parseResourceDrive(value.drive);
   if(value.editingId!==undefined){if(!uuid(value.editingId))throw new Error("編集先を確認してください。");draft.editingId=value.editingId;}
   if(value.expectedRevision!==undefined){if(!Number.isSafeInteger(value.expectedRevision)||Number(value.expectedRevision)<1)throw new Error("編集番号を確認してください。");draft.expectedRevision=Number(value.expectedRevision);}
   return draft;
 }
 export function parseCollectBackup(value:unknown):CollectBackup {
-  if(!object(value)||value.format!=="personal-tools.collect"||value.version!==1||!date(value.exportedAt)||
+  if(!object(value)||value.format!=="personal-tools.collect"||(value.version!==1&&value.version!==2)||!date(value.exportedAt)||
     !Array.isArray(value.resources)||value.resources.length>10000||!Array.isArray(value.spaces)||value.spaces.length>10000||!Array.isArray(value.files)||value.files.length>10000)
     throw new Error("Collectのバックアップ形式を確認してください。");
+  if(value.version===2&&!["originals","references"].includes(String(value.mode)))throw new Error("バックアップの原本範囲を確認してください。");
+  const mode=value.version===2?value.mode:"originals";
   if(new TextEncoder().encode(JSON.stringify(value)).byteLength>MAX_COLLECT_BACKUP_JSON_BYTES)
     throw new Error("バックアップが64MBを超えています。分けて読み込んでください。");
   const spaceIds=new Set<string>();
@@ -113,7 +143,7 @@ export function parseCollectBackup(value:unknown):CollectBackup {
   });
   const fileIds=new Set<string>();let total=0;
   const files=value.files.map((input:unknown)=>{
-    const image=parseResourceImage(input);
+    const image=value.version===1?parseResourceImage(input):parseResourceFile(input);
     if(!object(input)||typeof input.data!=="string"||fileIds.has(image.sha256)||!/^[A-Za-z0-9+/]*={0,2}$/.test(input.data)||
       input.data.length!==4*Math.ceil(image.size/3))throw new Error("画像のバックアップを確認してください。");
     const decodedSize=input.data.length/4*3-(input.data.endsWith("==")?2:input.data.endsWith("=")?1:0);
@@ -122,6 +152,9 @@ export function parseCollectBackup(value:unknown):CollectBackup {
     fileIds.add(image.sha256);return {...image,data:input.data};
   });
   const fileMap=new Map(files.map(file=>[file.sha256,file]));
-  for(const resource of resources)if(resource.image){const file=fileMap.get(resource.image.sha256);if(!file||file.size!==resource.image.size||file.mimeType!==resource.image.mimeType)throw new Error("原本の画像が不足しています。");}
-  return {format:"personal-tools.collect",version:1,exportedAt:value.exportedAt,resources,spaces,files};
+  // Version 2 shares raw bytes by hash; each resource keeps its own MIME type.
+  // Import verifies the hash and validates every image using that resource's type.
+  for(const resource of resources){const original=resourceOriginal(resource);if(original&&mode!=="references"){const file=fileMap.get(original.sha256);if(!file||file.size!==original.size||value.version===1&&file.mimeType!==original.mimeType)throw new Error("原本のファイルが不足しています。");}}
+  if(mode==="references"&&files.length)throw new Error("参照一覧には原本を含められません。");
+  return {format:"personal-tools.collect",version:value.version as 1|2,...(value.version===2?{mode:value.mode as "originals"|"references"}:{}),exportedAt:value.exportedAt,resources,spaces,files};
 }

@@ -1,5 +1,5 @@
 import {normalizeText, noteTitle, type Note, type Sketch, type ItemRelation, type RelationType} from "./index.ts";
-import type {Resource} from "./collect.ts";
+import {resourceOriginal,type Resource} from "./collect.ts";
 
 export type AtlasItem = Note | Sketch | Resource;
 type AtlasVersion = {id:string;ownerId:string|null;createdAt:string;updatedAt:string;deletedAt:string|null;localRevision:number;serverRevision:number|null};
@@ -19,8 +19,8 @@ export function parseProjectFields(value:unknown):Pick<AtlasProject,"name"|"desc
     !(v.dueDate===null||typeof v.dueDate==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v.dueDate)&&Number.isFinite(Date.parse(v.dueDate))&&new Date(v.dueDate).toISOString().slice(0,10)===v.dueDate)||!Array.isArray(v.itemIds)||v.itemIds.length>1000||!v.itemIds.every(id))throw new Error("プロジェクトの名前・状態・期日・所属を確認してください。");
   return {name:v.name.trim(),description:v.description,status:v.status,dueDate:v.dueDate,itemIds:[...new Set(v.itemIds)]};
 }
-export function atlasTitle(item:AtlasItem){return item.kind==="note"?noteTitle(item.body):item.title||(item.kind==="resource"?(item.image?.filename||item.url):"無題のスケッチ")||"無題の資料";}
-export function atlasText(item:AtlasItem){return item.kind==="note"?item.body:item.kind==="resource"?[item.title,item.memo,item.url,item.sourceUrl,item.metadata.title,item.metadata.description,item.image?.filename].filter(Boolean).join("\n"):item.title;}
+export function atlasTitle(item:AtlasItem){return item.kind==="note"?noteTitle(item.body):item.title||(item.kind==="resource"?(resourceOriginal(item)?.filename||item.url||item.text?.split("\n")[0]):"無題のスケッチ")||"無題の資料";}
+export function atlasText(item:AtlasItem){return item.kind==="note"?item.body:item.kind==="resource"?[item.title,item.memo,item.text,item.url,item.sourceUrl,item.metadata.title,item.metadata.description,resourceOriginal(item)?.filename,item.drive?.name].filter(Boolean).join("\n"):item.title;}
 export function originalHref(item:AtlasItem){return `/${item.originApp}/?item=${encodeURIComponent(item.id)}`;}
 export type AtlasFilter={query?:string;kind?:string;spaceId?:string;tag?:string;projectId?:string;pinned?:boolean};
 export function searchAtlas(items:AtlasItem[],labels:ItemLabels[],projects:AtlasProject[],filter:AtlasFilter,ownerId:string|null):AtlasItem[]{

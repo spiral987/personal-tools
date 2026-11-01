@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.next-f-verification/
 out/
 .env*
 !.env.example

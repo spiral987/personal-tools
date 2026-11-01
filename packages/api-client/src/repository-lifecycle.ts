@@ -1,6 +1,7 @@
 import {trashIsExpired,validatePurgeNotice,type PurgeNotice,type SyncRecord,type Space,type AtlasProject,type AtlasItem,type ItemRelation,type SyncConflict} from "@personal-tools/core";
 type Context={ownerId:string|null;transaction:()=>IDBTransaction;queue:(tx:IDBTransaction,record:SyncRecord)=>Promise<void>;emit:()=>void};
 const stores={note:"notes",space:"spaces",sketch:"sketches",resource:"resources",relation:"relations",project:"projects",labels:"labels"};
+const originalHash=(value:any):string|undefined=>value?.original?.sha256??value?.image?.sha256;
 const key=(entity:string,id:string)=>`purged:${entity}:${id}`;
 const get=<T=any>(request:IDBRequest<T>)=>new Promise<T>((resolve,reject)=>{request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
 async function atomic<T>(tx:IDBTransaction,work:()=>Promise<T>):Promise<T>{const done=new Promise<void>((resolve,reject)=>{tx.oncomplete=()=>resolve();tx.onabort=tx.onerror=()=>reject(tx.error??new Error("保存できませんでした。"));});void done.catch(()=>{});try{const result=await work();await done;return result;}catch(error){try{tx.abort();}catch{}await done.catch(()=>{});throw error;}}
@@ -26,12 +27,12 @@ export function createRepositoryLifecycle(context:Context){
    const p=validatePurgeNotice(value,ownerId);if(seen.has(key(p.entity,p.id)))continue;seen.add(key(p.entity,p.id));const old=await notice(tx,p.entity,p.id);if(old&&!old.temporary&&(p.temporary||old.serverRevision>p.serverRevision))continue;
    const retainedKey=`expired-files:${p.entity}:${p.id}`,itemHashes=new Set<string>((await get(tx.objectStore("meta").get(retainedKey)))?.value??[]);
    tx.objectStore("meta").put({id:key(p.entity,p.id),value:p});
-   const record=await get(tx.objectStore(stores[p.entity]).get(p.id));if(record?.image)itemHashes.add(record.image.sha256);
-   tx.objectStore(stores[p.entity]).delete(p.id);tx.objectStore("outbox").delete(p.id);tx.objectStore("resourceJobs").delete(p.id);const deferred=await get(tx.objectStore("meta").get(`deferred:${p.entity}:${p.id}`));if(deferred?.value?.image)itemHashes.add(deferred.value.image.sha256);tx.objectStore("meta").delete(`deferred:${p.entity}:${p.id}`);
-   for(const op of await get<any[]>(tx.objectStore("syncOutbox").getAll()))if(op.entityId===p.id&&op.kind===`put_${p.entity}`){if(op.payload?.image)itemHashes.add(op.payload.image.sha256);tx.objectStore("syncOutbox").delete(op.id);}
-   for(const conflict of await get<SyncConflict[]>(tx.objectStore("conflicts").getAll()))if(conflict.entity===p.entity&&conflict.entityId===p.id){if("image" in conflict.local&&conflict.local.image)itemHashes.add(conflict.local.image.sha256);tx.objectStore("conflicts").delete(conflict.id);}
+   const record=await get(tx.objectStore(stores[p.entity]).get(p.id));if(originalHash(record))itemHashes.add(originalHash(record)!);
+   tx.objectStore(stores[p.entity]).delete(p.id);tx.objectStore("outbox").delete(p.id);tx.objectStore("resourceJobs").delete(p.id);const deferred=await get(tx.objectStore("meta").get(`deferred:${p.entity}:${p.id}`));if(originalHash(deferred?.value))itemHashes.add(originalHash(deferred.value)!);tx.objectStore("meta").delete(`deferred:${p.entity}:${p.id}`);
+   for(const op of await get<any[]>(tx.objectStore("syncOutbox").getAll()))if(op.entityId===p.id&&op.kind===`put_${p.entity}`){if(originalHash(op.payload))itemHashes.add(originalHash(op.payload)!);tx.objectStore("syncOutbox").delete(op.id);}
+   for(const conflict of await get<SyncConflict[]>(tx.objectStore("conflicts").getAll()))if(conflict.entity===p.entity&&conflict.entityId===p.id){if(originalHash(conflict.local))itemHashes.add(originalHash(conflict.local)!);tx.objectStore("conflicts").delete(conflict.id);}
    for(const draft of await get<any[]>(tx.objectStore("drafts").getAll())){
-    if(draft.editingId===p.id||draft.value?.noteId===p.id){if(draft.image)itemHashes.add(draft.image.sha256);tx.objectStore("drafts").delete(draft.id);}
+    if(draft.editingId===p.id||draft.value?.noteId===p.id){if(originalHash(draft))itemHashes.add(originalHash(draft)!);tx.objectStore("drafts").delete(draft.id);}
     else if(draft.sourceNoteId===p.id)tx.objectStore("drafts").put({...draft,sourceNoteId:undefined});
    }
    if(p.temporary&&itemHashes.size)tx.objectStore("meta").put({id:retainedKey,value:[...itemHashes]});else tx.objectStore("meta").delete(retainedKey);
@@ -49,8 +50,8 @@ export function createRepositoryLifecycle(context:Context){
   }}
   for(const draft of await get<any[]>(tx.objectStore("drafts").getAll())){const next={...draft};if(Array.isArray(next.spaceIds))next.spaceIds=next.spaceIds.filter((id:string)=>!spaces.has(id));if(next.value?.spaceIds)next.value={...next.value,spaceIds:next.value.spaceIds.filter((id:string)=>!spaces.has(id))};if(JSON.stringify(next)!==JSON.stringify(draft))tx.objectStore("drafts").put(next);}
   // Local originals are shared by SHA-256: retain a Blob while any resource or draft uses it.
-  const used=new Set<string>();for(const resource of await get<any[]>(tx.objectStore("resources").getAll()))if(resource.image)used.add(resource.image.sha256);for(const draft of await get<any[]>(tx.objectStore("drafts").getAll()))if(draft.image)used.add(draft.image.sha256);
-  for(const conflict of await get<SyncConflict[]>(tx.objectStore("conflicts").getAll()))for(const version of [conflict.local,conflict.remote])if("image" in version&&version.image)used.add(version.image.sha256);
+  const used=new Set<string>();for(const resource of await get<any[]>(tx.objectStore("resources").getAll()))if(originalHash(resource))used.add(originalHash(resource)!);for(const draft of await get<any[]>(tx.objectStore("drafts").getAll()))if(originalHash(draft))used.add(originalHash(draft)!);
+  for(const conflict of await get<SyncConflict[]>(tx.objectStore("conflicts").getAll()))for(const version of [conflict.local,conflict.remote])if(originalHash(version))used.add(originalHash(version)!);
   // An offline cache is not authoritative: retain encrypted bytes until the server confirms deletion.
   for(const row of await get<any[]>(tx.objectStore("meta").getAll()))if(row.id.startsWith("expired-files:"))for(const hash of row.value)used.add(hash);
   for(const hash of candidates)if(!used.has(hash))tx.objectStore("resourceFiles").delete(hash);

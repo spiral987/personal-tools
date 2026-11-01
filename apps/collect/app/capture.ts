@@ -1,30 +1,31 @@
-import type {CollectDraft,Resource} from "@personal-tools/core";
+import {resourceOriginal,type CollectDraft,type Resource} from "@personal-tools/core";
 export const blankCapture=():CollectDraft=>({resourceType:"link",url:"",sourceUrl:"",title:"",memo:"",spaceIds:[],inbox:true,image:null});
 export function imageCaptureFields(draft:CollectDraft):Pick<CollectDraft,"resourceType"|"url"|"sourceUrl">{
   if(draft.url.trim()&&draft.sourceUrl.trim()&&draft.url.trim()!==draft.sourceUrl.trim())throw new Error("URLと出典URLが異なります。両方を残すには、リンクを保存してから新しい収集に画像を追加してください。");
   return {resourceType:"image",url:"",sourceUrl:draft.sourceUrl||draft.url};
 }
-export const draftFor=(resource:Resource):CollectDraft=>({resourceType:resource.resourceType,url:resource.url??"",sourceUrl:resource.sourceUrl??"",title:resource.title,memo:resource.memo,spaceIds:[...resource.spaceIds],inbox:resource.inbox,image:resource.image,editingId:resource.id,expectedRevision:resource.localRevision});
-export function captureFingerprint(draft:CollectDraft):string{return JSON.stringify({resourceType:draft.resourceType,url:draft.url.trim(),sourceUrl:draft.sourceUrl.trim(),title:draft.title.trim(),memo:draft.memo,spaceIds:[...draft.spaceIds].sort(),inbox:draft.inbox,image:draft.image?{sha256:draft.image.sha256,mimeType:draft.image.mimeType,size:draft.image.size,filename:draft.image.filename}:null});}
+export const draftFor=(resource:Resource):CollectDraft=>({resourceType:resource.resourceType,url:resource.url??"",sourceUrl:resource.sourceUrl??"",title:resource.title,memo:resource.memo,spaceIds:[...resource.spaceIds],inbox:resource.inbox,image:resource.image,editingId:resource.id,expectedRevision:resource.localRevision,...(resource.original!==undefined?{original:resource.original}:{}),...(resource.text!==undefined?{text:resource.text}:{}),...(resource.drive!==undefined?{drive:resource.drive}:{})});
+export function captureFingerprint(draft:CollectDraft):string{const original=resourceOriginal(draft);return JSON.stringify({resourceType:draft.resourceType,url:draft.url.trim(),sourceUrl:draft.sourceUrl.trim(),title:draft.title.trim(),memo:draft.memo,spaceIds:[...draft.spaceIds].sort(),inbox:draft.inbox,text:draft.text??"",original:original?{sha256:original.sha256,mimeType:original.mimeType,size:original.size,filename:original.filename}:null});}
 export function sameImageContent(a:CollectDraft["image"],b:CollectDraft["image"]):boolean{return !!a&&!!b&&a.sha256===b.sha256&&a.size===b.size&&a.mimeType===b.mimeType;}
 /** A recovered original belongs to its draft, not an unrelated item in the URL. */
 export function initialCapture(recovered:CollectDraft,resources:Resource[],requestedId:string|null){
   const saved=resources.find(resource=>resource.id===recovered.editingId),requested=resources.find(resource=>resource.id===requestedId);
   const restored=hasCapture(recovered)&&(!saved||captureFingerprint(recovered)!==captureFingerprint(draftFor(saved)));
   const draft=restored?recovered:requested?draftFor(requested):recovered;
-  return {draft,saved:restored?saved:requested??saved,restored,restoreFile:sameImageContent(recovered.image,draft.image)};
+  const a=resourceOriginal(recovered),b=resourceOriginal(draft);
+  return {draft,saved:restored?saved:requested??saved,restored,restoreFile:!!a&&!!b&&a.sha256===b.sha256&&a.size===b.size&&a.mimeType===b.mimeType};
 }
 /** Metadata and sync acknowledgements may advance a revision without changing the person's content. */
 export function rebaseMetadataDraft(draft:CollectDraft,baseline:Resource,latest:Resource):CollectDraft|null{
   if(draft.editingId!==baseline.id||latest.id!==baseline.id||draft.expectedRevision!==baseline.localRevision||latest.localRevision<baseline.localRevision)return null;
   const content=(resource:Resource)=>JSON.stringify({capture:captureFingerprint(draftFor(resource)),ownerId:resource.ownerId,createdAt:resource.createdAt,deletedAt:resource.deletedAt,pinned:resource.pinned});
-  return content(baseline)===content(latest)?{...draft,expectedRevision:latest.localRevision}:null;
+  return content(baseline)===content(latest)?{...draft,expectedRevision:latest.localRevision,...(latest.drive!==undefined?{drive:latest.drive}:{})}:null;
 }
-export function hasCapture(draft:CollectDraft):boolean{return !!(draft.url.trim()||draft.sourceUrl.trim()||draft.title.trim()||draft.memo.trim()||draft.image||draft.spaceIds.length);}
-export function displayTitle(resource:Resource):string{return resource.title||resource.metadata.title||(resource.image?.filename??hostname(resource.url??resource.sourceUrl??""))||"無題の収集";}
+export function hasCapture(draft:CollectDraft):boolean{return !!(draft.url.trim()||draft.sourceUrl.trim()||draft.title.trim()||draft.memo.trim()||draft.text?.trim()||resourceOriginal(draft)||draft.spaceIds.length);}
+export function displayTitle(resource:Resource):string{return resource.title||resource.metadata.title||resourceOriginal(resource)?.filename||(resource.resourceType==="text"?resource.text?.trim().split("\n")[0]?.slice(0,80):"")||(resource.url?hostname(resource.url):"")||"無題の収集";}
 export function hostname(value:string):string{try{return new URL(value).hostname.replace(/^www\./u,"");}catch{return "出典なし";}}
 export function safeLink(value:string|null):string|undefined{if(!value)return;try{const url=new URL(value);if(["https:","http:"].includes(url.protocol)&&!url.username&&!url.password)return url.href;}catch{}}
-export function matchesResource(resource:Resource,query:string):boolean{const normalize=(value:string)=>value.normalize("NFKC").toLocaleLowerCase("ja");const text=normalize([resource.title,resource.memo,resource.url,resource.sourceUrl,resource.metadata.title,resource.metadata.description,resource.image?.filename].filter(Boolean).join(" "));return normalize(query).trim().split(/\s+/u).filter(Boolean).every(word=>text.includes(word));}
+export function matchesResource(resource:Resource,query:string):boolean{const normalize=(value:string)=>value.normalize("NFKC").toLocaleLowerCase("ja");const text=normalize([resource.title,resource.memo,resource.text,resource.url,resource.sourceUrl,resource.metadata.title,resource.metadata.description,resourceOriginal(resource)?.filename,resource.drive?.name].filter(Boolean).join(" "));return normalize(query).trim().split(/\s+/u).filter(Boolean).every(word=>text.includes(word));}
 export type ShareCapture={title:string;memo:string;url:string};
 /** GET shares are proposals only: preserve the existing draft until the person chooses. */
 export function readShareCapture(search:string):ShareCapture|null{

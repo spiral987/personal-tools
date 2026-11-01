@@ -1,11 +1,11 @@
-import {purgeDeadline,type SyncRecord} from "@personal-tools/core";
+import {purgeDeadline,resourceOriginal,type SyncRecord} from "@personal-tools/core";
 import {assertVault,decryptVault,requireVault,vaultBlobPath,vaultCommitment,type CipherBox} from "./vault.ts";
 import type {VaultCloudClient} from "./vault-cloud.ts";
 
 export type RetentionMetadata={version:1;purgeAt:string|null;spaceDeleted:boolean;relatedIds:string[];filePaths:string[]};
 export async function retentionMetadata(record:SyncRecord,owner:string):Promise<RetentionMetadata>{
  const filePaths:string[]=[];
- if("kind" in record&&record.kind==="resource"&&record.image)filePaths.push(await vaultBlobPath(owner,record.id,record.image.sha256));
+ if("kind" in record&&record.kind==="resource"&&!record.drive){const original=resourceOriginal(record);if(original)filePaths.push(await vaultBlobPath(owner,record.id,original.sha256));}
  if("kind" in record&&record.kind==="sketch"&&record.serverRevision)filePaths.push(await vaultBlobPath(owner,record.id,`preview:${record.serverRevision}`));
  return {version:1,purgeAt:purgeDeadline(record),spaceDeleted:!("kind" in record)&&!!record.deletedAt,relatedIds:"kind" in record&&record.kind==="relation"?[record.fromItemId,record.toItemId]:[],filePaths};
 }

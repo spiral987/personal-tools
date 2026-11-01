@@ -24,6 +24,9 @@ export function getPublicSupabaseConfig():PublicSupabaseConfig|null {
 }
 export function callbackLocation(origin:string):string {return new URL(AUTH_CALLBACK,origin).toString();}
 export type AuthCallbackOutcome="success"|"not_configured"|"link_failed";
+export function authCallbackErrorMessage(failure:string){
+  return failure==="not_configured"?"クラウド接続の設定がまだありません。端末内モードを利用できます。":"ログインを完了できませんでした。Googleログインをやり直すか、メールから新しいリンクを送ってください。";
+}
 export function createAuthCallbackResponse(outcome:AuthCallbackOutcome):Response {
   if(!["success","not_configured","link_failed"].includes(outcome))throw new Error("Invalid auth callback outcome");
   const query=new URLSearchParams(outcome==="success"?{auth_success:"1"}:{auth_error:outcome});

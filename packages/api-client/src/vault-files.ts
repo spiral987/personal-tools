@@ -1,7 +1,7 @@
 import {assertVault,decryptVault,encryptVault,requireVault,vaultBlobPath,type CipherBox} from "./vault.ts";
-import {prepareResourceImage,type ResourceOriginalScope} from "./resource-files.ts";
+import {prepareResourceImage,prepareResourceFile,type ResourceOriginalScope} from "./resource-files.ts";
 import type {SketchPreviewClient} from "./sketch-preview.ts";
-import type {Resource,Sketch} from "@personal-tools/core";
+import {resourceOriginal,type Resource,type Sketch} from "@personal-tools/core";
 const BUCKET="personal-tools-vault";
 function scopeCheck(scope?:ResourceOriginalScope){if(scope?.signal?.aborted||scope?.isCurrent?.()===false)throw new Error("画像の処理を中断しました。");}
 export async function uploadVaultBlob(client:SketchPreviewClient,owner:string,item:string,identity:string,blob:Blob,scope?:ResourceOriginalScope){
@@ -18,9 +18,9 @@ export async function downloadVaultBlob(client:SketchPreviewClient,path:string,s
  if(result.error||!result.data||result.data.size>40000000)throw new Error("暗号化した画像を取得できません。");const value=await decryptVault<{blob:Blob}>(JSON.parse(await result.data.text()) as CipherBox,`file:${path}`,vault);scopeCheck(scope);if(!(value.blob instanceof Blob))throw new Error("画像の形式を確認できません。");return value.blob;
 }
 export async function uploadEncryptedResourceOriginal(client:SketchPreviewClient,owner:string,resource:Resource,blob:Blob,scope?:ResourceOriginalScope){
- if(resource.ownerId!==owner||!resource.image)throw new Error("画像の所有者を確認できません。");const image=await prepareResourceImage(blob,resource.image.filename);if(image.sha256!==resource.image.sha256||image.size!==resource.image.size||image.mimeType!==resource.image.mimeType)throw new Error("画像の原本を確認できません。");return uploadVaultBlob(client,owner,resource.id,resource.image.sha256,blob,scope);
+ const original=resourceOriginal(resource);if(resource.ownerId!==owner||!original||resource.drive)throw new Error("ファイルの所有者と保存先を確認できません。");if(original.size>20*1024*1024)throw new Error("暗号化クラウド保存の原本は20MBまでです。Drive保存を選んでください。");const image=resource.resourceType==="image"?await prepareResourceImage(blob,original.filename):await prepareResourceFile(blob,original.filename);if(image.sha256!==original.sha256||image.size!==original.size||image.mimeType!==original.mimeType)throw new Error("ファイルの原本を確認できません。");return uploadVaultBlob(client,owner,resource.id,original.sha256,blob,scope);
 }
 export async function downloadEncryptedResourceOriginal(client:SketchPreviewClient,owner:string,resource:Resource,scope?:ResourceOriginalScope){
- if(resource.ownerId!==owner||!resource.image)throw new Error("画像の所有者を確認できません。");const blob=await downloadVaultBlob(client,await vaultBlobPath(owner,resource.id,resource.image.sha256),scope),image=await prepareResourceImage(blob,resource.image.filename);if(image.sha256!==resource.image.sha256||image.size!==resource.image.size||image.mimeType!==resource.image.mimeType)throw new Error("画像の原本を検証できません。");return blob;
+ const original=resourceOriginal(resource);if(resource.ownerId!==owner||!original||resource.drive)throw new Error("ファイルの所有者と保存先を確認できません。");const blob=await downloadVaultBlob(client,await vaultBlobPath(owner,resource.id,original.sha256),scope),image=resource.resourceType==="image"?await prepareResourceImage(blob,original.filename):await prepareResourceFile(blob,original.filename);if(image.sha256!==original.sha256||image.size!==original.size||image.mimeType!==original.mimeType)throw new Error("ファイルの原本を検証できません。");return blob;
 }
 export async function uploadEncryptedSketchPreview(client:SketchPreviewClient,owner:string,sketch:Sketch,blob:Blob){if(sketch.ownerId!==owner||!sketch.serverRevision||blob.type!=="image/png"||blob.size>2097152)throw new Error("プレビューを確認できません。");return uploadVaultBlob(client,owner,sketch.id,`preview:${sketch.serverRevision}`,blob);}

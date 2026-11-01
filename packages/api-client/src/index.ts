@@ -5,4 +5,5 @@ export * from "./resource-files.ts";
 export * from "./vault.ts";
 export * from "./vault-device.ts";
 export * from "./vault-files.ts";
+export * from "./drive.ts";
 export type { SyncOperation, SyncConflict, SyncChange, SyncPushResult, SyncPullResult, SyncStatus } from "@personal-tools/core";

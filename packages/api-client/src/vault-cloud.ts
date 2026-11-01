@@ -1,3 +1,4 @@
+import {resourceOriginal} from "@personal-tools/core";
 import type {AccountRecallRepository} from "./repository.ts";
 import {createEncryptedSyncTransport,createSupabaseSyncTransport,createSyncEngine} from "./sync.ts";
 import {assertVault,decryptVault,encryptVault,requireVault,type VaultDescriptor,type CipherBox} from "./vault.ts";
@@ -31,13 +32,13 @@ export async function prepareCloudVault(client:VaultCloudClient,repo:AccountReca
  await repo.prepareEncryptedSync([...records.values()]);check();
  // Originals, including trashed resources, must survive before removing any legacy object.
  const snapshot=await repo.snapshot();
- for(const resource of [...records.values()].filter((r):r is Resource=>"kind" in r&&r.kind==="resource"&&!!r.image)){
+ for(const resource of [...records.values()].filter((r):r is Resource=>"kind" in r&&r.kind==="resource"&&!!resourceOriginal(r)&&!r.drive)){
   check();let blob:Blob;try{blob=await downloadEncryptedResourceOriginal(client,owner,resource,{isCurrent});}catch{
    blob=await repo.getResourceFile(resource.id)??await downloadResourceOriginal(client,owner,resource,{isCurrent});check();await uploadEncryptedResourceOriginal(client,owner,resource,blob,{isCurrent});
   }check();await repo.cacheResourceFile(resource.id,blob);
  }
  // Also cover originals created offline on this device before migration.
- for(const r of snapshot.resources){if(!r.image)continue;const blob=await repo.getResourceFile(r.id);if(blob){check();await uploadEncryptedResourceOriginal(client,owner,r,blob,{isCurrent});}}
+ for(const r of snapshot.resources){if(!resourceOriginal(r)||r.drive)continue;const blob=await repo.getResourceFile(r.id);if(blob){check();await uploadEncryptedResourceOriginal(client,owner,r,blob,{isCurrent});}}
  const engine=createSyncEngine(repo,createEncryptedSyncTransport(client,owner,{legacy:true}));try{const state=await engine.run();check();if(state.phase==="error"||state.pending)throw new Error("暗号化同期の完了待ちです。元のデータは保持されています。");}finally{engine.stop();}
  // List and delete through Storage API, never SQL, only after verified encrypted copies.
  const bucket=client.storage.from("personal-tools-private");

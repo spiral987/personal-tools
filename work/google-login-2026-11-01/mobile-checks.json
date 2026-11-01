@@ -1,0 +1,30 @@
+[
+  {
+    "tool": "atlas",
+    "googleButtonBottom": 377.15625,
+    "horizontalOverflow": false,
+    "title": "Atlas — 記録をつなぎ、見つける。",
+    "viewportHeight": 844
+  },
+  {
+    "tool": "recall",
+    "googleButtonBottom": 377.15625,
+    "horizontalOverflow": false,
+    "title": "Recall",
+    "viewportHeight": 844
+  },
+  {
+    "tool": "collect",
+    "googleButtonBottom": 377.15625,
+    "horizontalOverflow": false,
+    "title": "Collect",
+    "viewportHeight": 844
+  },
+  {
+    "tool": "sketchbook",
+    "googleButtonBottom": 377.15625,
+    "horizontalOverflow": false,
+    "title": "Sketchbook",
+    "viewportHeight": 844
+  }
+]

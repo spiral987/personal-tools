@@ -1,7 +1,14 @@
-import {MAX_RESOURCE_FILE_BYTES,parseResourceImage,type Resource,type ResourceImage,type ResourceMime} from "@personal-tools/core";
+import {MAX_RESOURCE_FILE_BYTES,MAX_RESOURCE_ORIGINAL_BYTES,parseResourceImage,parseResourceFile,type Resource,type ResourceFile,type ResourceImage,type ResourceMime} from "@personal-tools/core";
 import type {SketchPreviewClient} from "./sketch-preview.ts";
 export type ResourceOriginalClient=SketchPreviewClient;
 export type ResourceOriginalScope={isCurrent?:()=>boolean;signal?:AbortSignal};
+/** Arbitrary originals remain bytes: only trusted image formats are decoded by the image preview path. */
+export async function prepareResourceFile(blob:Blob,filename="original.bin"):Promise<ResourceFile>{
+  if(!(blob instanceof Blob)||blob.size>MAX_RESOURCE_ORIGINAL_BYTES)throw new Error("ファイルは32MB以下で選んでください。");
+  const mimeType=blob.type||"application/octet-stream";
+  const sha256=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",await blob.arrayBuffer())),byte=>byte.toString(16).padStart(2,"0")).join("");
+  return parseResourceFile({sha256,mimeType,size:blob.size,filename});
+}
 function assertCurrent(scope?:ResourceOriginalScope){
   if(scope?.signal?.aborted||scope?.isCurrent?.()===false)throw new DOMException("画像の処理を中断しました。","AbortError");
 }
@@ -108,6 +115,6 @@ export async function blobToBase64(blob:Blob):Promise<string>{
   for(let offset=0;offset<bytes.length;offset+=32768)binary+=String.fromCharCode(...bytes.subarray(offset,offset+32768));
   return btoa(binary);
 }
-export function base64ToBlob(data:string,mime:ResourceMime):Blob {
+export function base64ToBlob(data:string,mime:string):Blob {
   const binary=atob(data),bytes=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);return new Blob([bytes],{type:mime});
 }
