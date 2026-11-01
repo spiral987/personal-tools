@@ -1,1 +1,1 @@
-{"name":"@personal-tools/api-client","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@personal-tools/core":"workspace:*"}}
+{"name":"@personal-tools/api-client","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@personal-tools/core":"workspace:*","hash-wasm":"4.12.0"}}

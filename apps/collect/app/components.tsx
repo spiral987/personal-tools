@@ -1,5 +1,6 @@
 "use client";
-import {useEffect,useId,useRef,type ReactNode} from "react";
+import type {ReactNode} from "react";
+export {Modal} from "@personal-tools/ui";
 export type IconName="inbox"|"grid"|"image"|"link"|"plus"|"arrow"|"external"|"trash"|"restore"|"close"|"download"|"upload"|"search"|"check"|"settings"|"star"|"file"|"retry";
 export function Icon({name,size=18}:{name:IconName;size?:number}){
   const shapes:Record<IconName,ReactNode>={
@@ -13,10 +14,5 @@ export function Icon({name,size=18}:{name:IconName;size?:number}){
     settings:<><circle cx="12" cy="12" r="3"/><path d="m9 3-1 3-3 1-2 5 2 5 3 1 1 3h6l1-3 3-1 2-5-2-5-3-1-1-3Z"/></>,star:<path d="m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1Z"/>,file:<><path d="M5 2h9l5 5v15H5Z"/><path d="M14 2v6h5M8 12h8M8 16h6"/></>,retry:<><path d="M21 4v6h-6M3 20v-6h6"/><path d="M4 9a8 8 0 0 1 13-5l4 6M3 14l4 6a8 8 0 0 0 13-5"/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{shapes[name]}</svg>;
-}
-export function Modal({title,children,onClose}:{title:string;children:ReactNode;onClose:()=>void}){
-  const dialog=useRef<HTMLDialogElement>(null),titleId=useId(),latest=useRef(onClose);latest.current=onClose;
-  useEffect(()=>{dialog.current?.showModal();return()=>dialog.current?.close();},[]);
-  return <dialog ref={dialog} className="modal" aria-labelledby={titleId} onCancel={event=>{event.preventDefault();latest.current();}}><div className="modal-heading"><h2 id={titleId}>{title}</h2><button className="icon-button" aria-label="閉じる" onClick={onClose}><Icon name="close"/></button></div>{children}</dialog>;
 }
 export function EmptyCollection(){return <svg className="empty-art" width="116" height="96" viewBox="0 0 116 96" fill="none" aria-hidden="true"><rect x="22" y="12" width="46" height="61" rx="4" transform="rotate(-12 22 12)" fill="#e5e2d9" stroke="#b2aa9c"/><rect x="47" y="20" width="46" height="61" rx="4" transform="rotate(9 47 20)" fill="#faf8f3" stroke="#b2aa9c"/><path d="m55 62 12-15 9 10 7-6M57 70h23" stroke="#a49a87" strokeWidth="1.5"/><circle cx="77" cy="38" r="4" stroke="#a49a87"/><path d="M22 81h16M97 12v10M92 17h10" stroke="#b2aa9c" strokeWidth="1.5"/></svg>;}

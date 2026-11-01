@@ -1,0 +1,16 @@
+{
+  "teamId": "team_poDUNnJCPceytXN1Ptbtzr14",
+  "teamSlug": "spiral987-c31cbce1",
+  "framework": "nextjs",
+  "nodeVersion": "22.x",
+  "installCommand": "corepack pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build",
+  "sourceFilesOutsideRootDirectory": true,
+  "enableExternalRewriteCaching": false,
+  "projects": [
+    {"name":"personal-tools-atlas","rootDirectory":"apps/atlas"},
+    {"name":"personal-tools-collect","rootDirectory":"apps/collect"},
+    {"name":"personal-tools-sketchbook","rootDirectory":"apps/sketchbook"},
+    {"name":"personal-tools","rootDirectory":"apps/recall","entry":true}
+  ]
+}

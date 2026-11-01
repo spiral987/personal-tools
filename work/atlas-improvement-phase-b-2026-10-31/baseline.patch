@@ -1,0 +1,1683 @@
+diff --git a/README.md b/README.md
+index c9bc71d..0de2760 100644
+--- a/README.md
++++ b/README.md
+@@ -1,14 +1,18 @@
+ # Personal Tools — Recall / Sketchbook / Collect / Atlas
+ 
++**現在の版は暗号化金庫です。** 初回画面で専用パスフレーズと復旧鍵を設定し、端末でだけ復号します。保存・同期・バックアップは暗号文を使います。既存データは初回設定後に移行します。外部AI・URL自動取得・GET共有ターゲットは停止しています。使い方・移行・保護範囲は [暗号化金庫](docs/encrypted-vault.md) を確認してください。以下のPhase 2〜5の説明は従来機能の記録を含み、暗号化金庫の説明を優先します。
++
+ 日常の思考、描いたアイデア、外から集めた資料を、それぞれに合う小さなツールで残し、Atlasでつなぐためのモノレポです。
+ 
+-**Recall、Sketchbookに加え、Phase 4のCollectでURLと画像の原本を収集できます。** Next.js 16.4.3 / React 19.3.1 / TypeScript 5.9.3。接続設定なしでも端末内版を使えます。Supabaseを設定すると、メールログインと複数端末同期が利用できます。Atlasは設計段階です。
++**Phase 5のAtlasで、Recall・Sketchbook・Collectの記録を検索し、関係・タグ・プロジェクトにまとめられます。** Next.js 16.4.3 / React 19.3.1 / TypeScript 5.9.3。接続設定なしでも端末内版を使えます。Supabaseを設定すると、メールログインと複数端末同期が利用できます。画像のcaption／OCRと意味検索は任意設定です。
+ 
+ Supabaseの作成・接続は [Phase 2 セットアップ](docs/phase2-setup.md) を参照してください。公開URLとpublishable keyを `apps/recall/.env.local` に設定します。秘密鍵は使いません。
+ 
+ Sketchbookの使い方と2アプリの起動は [Phase 3 セットアップ](docs/phase3-setup.md)、受け入れ条件は [Phase 3 計画](docs/phase3-plan.md) を参照してください。
+ 
+-Collectの使い方と現在の3アプリの起動は [Phase 4 セットアップ](docs/phase4-setup.md)、実施した検証は [Phase 4 検証記録](docs/phase4-verification.md) を参照してください。
++Collectの使い方とPhase 4の起動は [Phase 4 セットアップ](docs/phase4-setup.md)、実施した検証は [Phase 4 検証記録](docs/phase4-verification.md) を参照してください。
++
++Atlasと4アプリの起動・AI設定は [Phase 5 セットアップ](docs/phase5-setup.md)、確認済みの範囲は [Phase 5 検証記録](docs/phase5-verification.md) を参照してください。
+ 
+ ## 起動
+ 
+@@ -20,12 +24,14 @@ pnpm build
+ pnpm start
+ ```
+ 
+-ブラウザで **http://127.0.0.1:3100/recall/**、**http://127.0.0.1:3100/sketchbook/**、**http://127.0.0.1:3100/collect/** を開いてください。`pnpm dev` / `pnpm start` は3アプリと専用の入口を起動し、3100番からすべて開けます（本体はRecall3102番・Sketchbook3101番・Collect3103番）。開発中は `pnpm dev`。本番サーバーと開発サーバーは同時に同じポートで起動しないでください。
++ブラウザで **http://127.0.0.1:3100/recall/**、**http://127.0.0.1:3100/sketchbook/**、**http://127.0.0.1:3100/collect/**、**http://127.0.0.1:3100/atlas/** を開いてください。`pnpm dev` / `pnpm start` は4アプリと専用の入口を起動し、3100番からすべて開けます（本体はRecall3102番・Sketchbook3101番・Collect3103番・Atlas3104番）。開発中は `pnpm dev`。本番サーバーと開発サーバーは同時に同じポートで起動しないでください。
+ 
+ PWAのオフライン用キャッシュは本番モードでのみ登録します。HTTPSまたはlocalhost/127.0.0.1で一度オンライン起動し、「保存とバックアップ」で準備完了を確認してください。スマートフォンからPCの127.0.0.1には接続できません。実機での導入には次段階のHTTPSデプロイが必要です。
+ 
+ ## Recallの機能
+ 
++- 「Atlas要望」だけをCodex向けに書き出し。共有元はIDで固定し、本文全体が共有対象になることを表示します。解錠後に専用JSONを手動で出力します。[使い方と共有範囲](docs/atlas-requests.md)。
++
+ - 入力中の下書きを端末に自動保存し、再読み込みで復元。
+ - 「メモを残す」または Ctrl / ⌘ + Enter で保存。保存完了はIndexedDBのtransaction確定後に表示。
+ - 日付別の振り返り、全文の日本語部分一致検索（空白区切りのAND、全角英数字の正規化）。
+@@ -52,6 +58,10 @@ URL、PNG／JPEG／GIF／WebP画像の原本、出典URL、自分のメモを収
+ 
+ 初回アップデートでは全アプリの古いタブをすべて閉じてから開き直してください。保存データの削除は不要です。
+ 
++## Atlasの機能
++
++種類・スペース・手動タグ・プロジェクトを横断する日本語検索、5種類の関係と逆向き表示、原本への移動、プロジェクトの状態・期日・所属、整理情報のJSON書き出しとクラウド同期。AIを設定すると、選んだ記録だけをOpenAIへ送信してcaption／OCR・タグ候補・text embeddingを作り、意味検索を使えます。初期状態は無効です。検索品質の本人評価と実APIでの解析は未実施です。
++
+ ## 構成
+ 
+ ```text
+@@ -59,7 +69,7 @@ apps/
+   recall/         動作するNext.js PWA
+   sketchbook/     動作する描画PWA
+   collect/        動作する収集PWA・安全なページ情報取得
+-  atlas/          設計のみ
++  atlas/          動作する横断検索・関連・プロジェクトPWA
+ packages/
+   core/           Note・Sketch・Resource・Space・Relationの型とバックアップ検証
+   api-client/     IndexedDB・ユーザー別キャッシュ・同期engine
+@@ -72,6 +82,7 @@ docs/
+   phase2-setup.md  Supabase作成・メール認証・2端末同期の手順
+   phase3-setup.md  Sketchbook・着想元・2アプリ起動の手順
+   phase4-setup.md  Collect・原本・3アプリ起動の手順
++  phase5-setup.md  Atlas・AI設定・4アプリ起動と評価の手順
+ supabase/
+   migrations/     共通テーブル・RLS・同期RPC・private Storage
+ ```
+@@ -86,4 +97,4 @@ pnpm build
+ 
+ ブラウザの保存領域はoriginごとに異なります。`localhost` と `127.0.0.1` を切り替えると別のノートになります。開発モードでは本番用service workerが残ることがあるため、通常の開発は別のポートを使うか、ブラウザでservice workerを解除してください。
+ 
+-下書きは保存先ごと・アプリごとに1つです。保存済みの編集にはrevisionによる上書き防止があります。検証の詳細と未確認項目は [Phase 4 検証記録](docs/phase4-verification.md) に記録しています。
++下書きは保存先ごと・アプリごとに1つです。保存済みの編集にはrevisionによる上書き防止があります。検証の詳細と未確認項目は [Phase 5 検証記録](docs/phase5-verification.md) に記録しています。
+diff --git a/apps/atlas/README.md b/apps/atlas/README.md
+index 3d02dd9..8435423 100644
+--- a/apps/atlas/README.md
++++ b/apps/atlas/README.md
+@@ -1,2 +1,4 @@
+ # Atlas
+-実装待ち。横断一覧・検索・関連付け・プロジェクトから開始。詳細は ../../docs/design.md。
++Recall・Sketchbook・Collectの横断検索、方向付き関連、手動タグ、プロジェクトを扱うNext.js PWAです。任意のcaption／OCR／embeddingと、永続jobを処理するワーカーを用意しています。
++
++共通入口は `http://127.0.0.1:3100/atlas/`。起動・AIの設定は[Phase 5 セットアップ](../../docs/phase5-setup.md)、確認済みの範囲は[検証記録](../../docs/phase5-verification.md)を参照してください。
+diff --git a/apps/collect/app/api/metadata/route.ts b/apps/collect/app/api/metadata/route.ts
+index 60b2b35..17b5aa3 100644
+--- a/apps/collect/app/api/metadata/route.ts
++++ b/apps/collect/app/api/metadata/route.ts
+@@ -1,7 +1,3 @@
+-import { createMetadataPostHandler } from "../../../lib/server/metadata-route.ts";
+-
+-export const runtime = "nodejs";
+-export const dynamic = "force-dynamic";
+-// The URL is submitted in a bounded POST body; it never becomes a logged route query.
+-// Next Route Handlers: https://nextjs.org/docs/app/api-reference/file-conventions/route
+-export const POST = createMetadataPostHandler();
++export const runtime="nodejs";
++export const dynamic="force-dynamic";
++export function POST(){return Response.json({error:"暗号化金庫ではURL情報の自動取得を停止しています。タイトルは手入力できます。"},{status:410,headers:{"Cache-Control":"no-store","Referrer-Policy":"no-referrer"}});}
+\ No newline at end of file
+diff --git a/apps/collect/app/capture.ts b/apps/collect/app/capture.ts
+index 73b13d6..eb5d13e 100644
+--- a/apps/collect/app/capture.ts
++++ b/apps/collect/app/capture.ts
+@@ -1,5 +1,9 @@
+ import type {CollectDraft,Resource} from "@personal-tools/core";
+ export const blankCapture=():CollectDraft=>({resourceType:"link",url:"",sourceUrl:"",title:"",memo:"",spaceIds:[],inbox:true,image:null});
++export function imageCaptureFields(draft:CollectDraft):Pick<CollectDraft,"resourceType"|"url"|"sourceUrl">{
++  if(draft.url.trim()&&draft.sourceUrl.trim()&&draft.url.trim()!==draft.sourceUrl.trim())throw new Error("URLと出典URLが異なります。両方を残すには、リンクを保存してから新しい収集に画像を追加してください。");
++  return {resourceType:"image",url:"",sourceUrl:draft.sourceUrl||draft.url};
++}
+ export const draftFor=(resource:Resource):CollectDraft=>({resourceType:resource.resourceType,url:resource.url??"",sourceUrl:resource.sourceUrl??"",title:resource.title,memo:resource.memo,spaceIds:[...resource.spaceIds],inbox:resource.inbox,image:resource.image,editingId:resource.id,expectedRevision:resource.localRevision});
+ export function captureFingerprint(draft:CollectDraft):string{return JSON.stringify({resourceType:draft.resourceType,url:draft.url.trim(),sourceUrl:draft.sourceUrl.trim(),title:draft.title.trim(),memo:draft.memo,spaceIds:[...draft.spaceIds].sort(),inbox:draft.inbox,image:draft.image?{sha256:draft.image.sha256,mimeType:draft.image.mimeType,size:draft.image.size,filename:draft.image.filename}:null});}
+ export function sameImageContent(a:CollectDraft["image"],b:CollectDraft["image"]):boolean{return !!a&&!!b&&a.sha256===b.sha256&&a.size===b.size&&a.mimeType===b.mimeType;}
+diff --git a/apps/collect/app/layout.tsx b/apps/collect/app/layout.tsx
+index 1d78f51..fb674cf 100644
+--- a/apps/collect/app/layout.tsx
++++ b/apps/collect/app/layout.tsx
+@@ -1,5 +1,6 @@
++import {VaultGate} from "@personal-tools/auth/vault";
+ import type {Metadata,Viewport} from "next";
+ import "./globals.css";
+-export const metadata:Metadata={title:"Collect — 気になるものを集める。",description:"URLや画像を、出典と自分のメモと一緒に残す。",manifest:"/collect/manifest.webmanifest",icons:{icon:"/collect/icon.svg",apple:"/collect/icon-192.png"},appleWebApp:{capable:true,statusBarStyle:"default",title:"Collect"}};
++export const metadata:Metadata={title:"Collect",description:"URL・画像・出典・メモを保存",manifest:"/collect/manifest.webmanifest",icons:{icon:"/collect/icon.svg",apple:"/collect/icon-192.png"},appleWebApp:{capable:true,statusBarStyle:"default",title:"Collect"}};
+ export const viewport:Viewport={width:"device-width",initialScale:1,themeColor:"#f6f4ef"};
+-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="ja"><body>{children}</body></html>;}
++export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="ja"><body><VaultGate>{children}</VaultGate></body></html>;}
+diff --git a/apps/collect/app/manifest.ts b/apps/collect/app/manifest.ts
+index 7f602d9..3ff89ea 100644
+--- a/apps/collect/app/manifest.ts
++++ b/apps/collect/app/manifest.ts
+@@ -1,10 +1,9 @@
+ import type {MetadataRoute} from "next";
+-/** Installed browsers that support Web Share Target can fill a draft; nothing is saved automatically.
+- * https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Manifest/Reference/share_target */
++// GET share targets put private text in server requests and browser history.
++// The encrypted build accepts pasted URLs and files inside the unlocked vault.
+ export default function manifest():MetadataRoute.Manifest{return {
+-  id:"/collect/",name:"Collect — 気になるものを集める",short_name:"Collect",
+-  description:"URLや画像を、出典と自分のメモと一緒に残す。",start_url:"/collect/",scope:"/collect/",
++  id:"/collect/",name:"Collect",short_name:"Collect",
++  description:"URL・画像・出典・メモを保存",start_url:"/collect/",scope:"/collect/",
+   display:"standalone",background_color:"#f6f4ef",theme_color:"#f6f4ef",lang:"ja",
+-  share_target:{action:"/collect/",method:"GET",params:{title:"title",text:"text",url:"url"}},
+   icons:[{src:"/collect/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/collect/icon-512.png",sizes:"512x512",type:"image/png"}],
+ };}
+diff --git a/apps/collect/app/page.tsx b/apps/collect/app/page.tsx
+index dd33139..5a556d3 100644
+--- a/apps/collect/app/page.tsx
++++ b/apps/collect/app/page.tsx
+@@ -1,14 +1,16 @@
+ "use client";
+-import {useEffect,useRef,useState,type DragEvent,type MouseEvent} from "react";
++import {encryptBackup,decryptBackup,beforeVaultLock,consumeLegacyVaultShare} from "@personal-tools/api-client";
++import {useEffect,useRef,useState,type ClipboardEvent,type DragEvent,type MouseEvent} from "react";
+ import type {CollectDraft,Resource,ResourceMetadataJob,SyncRecord} from "@personal-tools/core";
+-import {ConflictError,prepareResourceImage,uploadResourceOriginal,downloadResourceOriginal,type RecallRepository} from "@personal-tools/api-client";
++import {ConflictError,prepareResourceImage,uploadEncryptedResourceOriginal as uploadResourceOriginal,downloadEncryptedResourceOriginal as downloadResourceOriginal,type RecallRepository} from "@personal-tools/api-client";
+ import {getBrowserAuthClient} from "@personal-tools/auth/browser";
+ import {usePersonalToolsCloud,type CloudSnapshot} from "@personal-tools/auth/react";
+-import {blankCapture,captureFingerprint,draftFor,displayTitle,hostname,initialCapture,matchesResource,mergeShareCapture,prettyBytes,readShareCapture,rebaseMetadataDraft,safeLink,withoutShareParams,type ShareCapture} from "./capture";
++import {blankCapture,captureFingerprint,draftFor,displayTitle,hostname,imageCaptureFields,initialCapture,matchesResource,mergeShareCapture,prettyBytes,readShareCapture,rebaseMetadataDraft,safeLink,withoutShareParams,type ShareCapture} from "./capture";
+ import {saveCaptureResource} from "./draft-save";
++import {clipboardImage} from "./clipboard";
+ import {EmptyCollection,Icon,Modal,type IconName} from "./components";
+ 
+-const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[],resources:[]};
++const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[],resources:[],projects:[],labels:[]};
+ type View="inbox"|"all"|"image"|"link"|"trash";
+ type FileState={url?:string;status:"local"|"loading"|"remote"|"pending"|"uploaded"|"error"};
+ const day=(value:string)=>new Intl.DateTimeFormat("ja-JP",{month:"short",day:"numeric"}).format(new Date(value));
+@@ -61,7 +63,7 @@ export default function Collect(){
+       const requestedId=new URL(window.location.href).searchParams.get("item"),initial=initialCapture(recovered,snapshot.resources,requestedId),next=initial.draft;
+       installDraft(next,initial.saved);
+       if(initial.restored)setNotice("収集の下書きを復元しました");
+-      setIncomingShare(readShareCapture(window.location.search));
++      setIncomingShare(readShareCapture(consumeLegacyVaultShare()??window.location.search));
+       void repo.getCollectDraftFile().then(blob=>{
+         if(at!==epoch.current||repository.current!==repo)return;
+         if(initial.restoreFile&&blob)setBlob(blob);setReady(true);setDraftSaved(true);
+@@ -83,6 +85,7 @@ export default function Collect(){
+   const status=!ready?"読み込み中…":cloud.identity.mode==="device"?"端末内モード":cloud.syncStatus.phase==="syncing"?"記録を同期中…":cloud.syncStatus.phase==="error"?"同期を確認してください":cloud.conflicts.length?"競合の確認が必要":cloud.syncStatus.pending?`記録の同期待ち ${cloud.syncStatus.pending}件`:pendingFiles?`記録同期済み · 画像${pendingFiles}件待ち`:failedFiles?"記録同期済み · 画像の再送が必要":"記録は同期済み";
+ 
+   function mutate(change:Partial<CollectDraft>){revision.current++;setDraftSaved(false);const next={...draftRef.current,...change};draftRef.current=next;setDraft(next);}
++  useEffect(()=>beforeVaultLock(()=>queueDraft(structuredClone(draftRef.current),draftBlobRef.current)),[]);
+   function queueDraft(next:CollectDraft,blob=draftBlobRef.current){
+     const guard=context();if(!guard.repo)return Promise.resolve();
+     draftQueue.current=draftQueue.current.catch(()=>{}).then(async()=>{
+@@ -167,30 +170,22 @@ export default function Collect(){
+     }})();
+   },[data.resources,cloud.identity,cloud.pendingItemIds,cloud.conflicts,ready,fileRetry]);
+ 
+-  async function metadata(resource:Resource){
+-    const guard=context();if(!guard.repo||resource.resourceType!=="link"||!resource.url||resource.deletedAt||metadataRequests.current.has(resource.id))return;
+-    const controller=new AbortController();metadataRequests.current.set(resource.id,controller);metadataAttempted.current.add(resource.id);
+-    let job:ResourceMetadataJob|null=null;const timer=setTimeout(()=>controller.abort(),12000);
+-    try{
+-      job=await guard.repo.startResourceMetadata(resource.id,resource.localRevision);if(!guard.current())return;
+-      const response=await fetch("/collect/api/metadata/",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:job.url}),signal:controller.signal,cache:"no-store",credentials:"same-origin"});
+-      if(!guard.current())return;if(!response.ok)throw new Error("Metadata unavailable");
+-      const result=await response.json() as {title?:unknown;description?:unknown};if(!guard.current())return;
+-      if(typeof result.title!=="string"||typeof result.description!=="string"||result.title.length>300||result.description.length>2000)throw new Error("Invalid metadata");
+-      await guard.repo.finishResourceMetadata(resource.id,job.token,{title:result.title,description:result.description});
+-    }catch{if(guard.current()&&job)await guard.repo!.finishResourceMetadata(resource.id,job.token,null).catch(()=>{});}
+-    finally{clearTimeout(timer);if(metadataRequests.current.get(resource.id)===controller)metadataRequests.current.delete(resource.id);}
+-  }
+-  useEffect(()=>{
+-    if(!ready||offline)return;for(const resource of data.resources)if(resource.metadata.status==="pending"&&!resource.deletedAt&&!metadataAttempted.current.has(resource.id))void metadata(resource);
+-  },[data.resources,ready,offline]);
+-
+   async function chooseFile(file:File|undefined){
+     if(!file||locked||draft.editingId)return;const guard=context(),attempt=++selection.current;setSelecting(true);setError("");
+-    try{const image=await prepareResourceImage(file,file.name);if(!guard.current()||attempt!==selection.current)return;setBlob(file);mutate({resourceType:"image",url:"",image});}
++    try{const image=await prepareResourceImage(file,file.name);if(!guard.current()||attempt!==selection.current)return;const fields=imageCaptureFields(draftRef.current);setBlob(file);mutate({...fields,image});}
+     catch(value){if(guard.current()&&attempt===selection.current)failure(value);}
+     finally{if(guard.current()&&attempt===selection.current){setSelecting(false);if(fileInput.current)fileInput.current.value="";}}
+   }
++  function pasteImage(event:ClipboardEvent<HTMLElement>){
++    let file:File|null;
++    try{file=clipboardImage(event.clipboardData);}catch(value){event.preventDefault();failure(value);return;}
++    if(!file)return;
++    event.preventDefault();
++    if(locked||deleted)return;
++    if(draftRef.current.editingId){setNotice("画像を追加するには「新しい収集」を開いてください。編集中の内容は残しています。");return;}
++    if(draftRef.current.image){setNotice("画像が選択されています。別の画像を貼り付けるには、先に「画像を外す」を押してください。");return;}
++    void chooseFile(file);
++  }
+   function drop(event:DragEvent<HTMLElement>){event.preventDefault();setDragging(false);if(!locked)void chooseFile(event.dataTransfer.files[0]);}
+   async function save(asCopy=false):Promise<boolean>{
+     const guard=context();if(!guard.repo||locked||deleted&&!asCopy)return false;
+@@ -210,7 +205,7 @@ export default function Collect(){
+       if(!guard.current())return false;
+       const url=new URL(window.location.href);if(sourceId&&!asCopy)url.searchParams.set("item",saved.id);else url.searchParams.delete("item");window.history.replaceState(null,"",url.pathname+url.search);
+       setNotice(asCopy?"手元の内容を別の収集として保存しました":sourceId?"変更を保存しました":"収集箱に保存しました");
+-      if(saved.resourceType==="link"&&saved.metadata.status==="none")void metadata(saved);
++
+       return true;
+     }catch(value){if(guard.current()){failure(value);if(value instanceof ConflictError)setSaveConflict(true);}return false;}
+     finally{if(guard.current())setSaving(false);}
+@@ -235,11 +230,11 @@ export default function Collect(){
+     if([...unique.values()].reduce((total,resource)=>total+resource.image!.size,0)>32*1024*1024)throw new Error("画像の合計が32MBを超えています。各カードの書き出しボタンで、資料ごとに分けて保存してください。");
+     for(const resource of unique.values()){await original(resource);if(!guard.current())return;}
+     const result=await guard.repo.exportCollectBackup(ids);if(!guard.current())return;
+-    download(new Blob([JSON.stringify(result,null,2)],{type:"application/json"}),`collect-${ids?.length===1?ids[0]+"-":""}${new Date().toISOString().slice(0,10)}.json`);setNotice("画像の原本を含むバックアップを書き出しました");
++    download(new Blob([await encryptBackup(result)],{type:"application/json"}),`collect-${ids?.length===1?ids[0]+"-":""}${new Date().toISOString().slice(0,10)}.json`);setNotice("画像の原本を含むバックアップを書き出しました");
+   });}
+   async function importBackup(file:File|undefined){if(!file)return;await perform(async guard=>{
+-    if(!guard.repo)return;if(file.size>64*1024*1024)throw new Error("64MB以下のCollectバックアップを選んでください。");
+-    const text=await file.text();if(!guard.current())return;const result=await guard.repo.importCollectBackup(JSON.parse(text));if(guard.current())setNotice(`${result.resources}件を追加しました。元の収集は残っています`);
++    if(!guard.repo)return;if(file.size>100*1024*1024)throw new Error("100MB以下のCollectバックアップを選んでください。");
++    const text=await file.text();if(!guard.current())return;const result=await guard.repo.importCollectBackup(await decryptBackup(JSON.parse(text)));if(guard.current())setNotice(`${result.resources}件を追加しました。元の収集は残っています`);
+   });if(backupInput.current)backupInput.current.value="";}
+   async function importLocal(){await perform(async guard=>{const result=await cloud.importDevice();if(guard.current()&&result)setNotice(`${result.resources}件をアカウントに追加しました`);});}
+   async function acceptShare(){const shared=incomingShare;if(!shared)return;await perform(async guard=>{
+@@ -257,46 +252,46 @@ export default function Collect(){
+   return <div className="app-shell">
+     <aside className="sidebar">
+       <a className="brand" href="/collect/" onClick={event=>{event.preventDefault();newCapture();}}><img src="/collect/icon.svg" alt="" width="36" height="36"/><span>COLLECT</span></a>
+-      <p className="brand-caption">気になるものを、少しずつ。</p>
++      <p className="brand-caption">URLと画像を保存</p>
+       <button className="new-capture" onClick={newCapture} disabled={locked}><Icon name="plus" size={17}/>新しい収集</button>
+       <nav className="nav" aria-label="収集の一覧">{([["inbox","収集箱","inbox"],["all","すべての収集","grid"],["image","画像","image"],["link","リンク","link"]] as [View,string,IconName][]).map(([key,name,icon])=><button key={key} className={view===key&&!spaceFilter?"active":""} onClick={()=>{setView(key);setSpaceFilter("");}}><Icon name={icon} size={16}/><span>{name}</span><span>{data.resources.filter(resource=>!resource.deletedAt&&(key!=="inbox"||resource.inbox)&&(key!=="image"&&key!=="link"||resource.resourceType===key)).length}</span></button>)}</nav>
+       <div className="sidebar-label"><span>スペース</span><button className="icon-button" aria-label="スペースを追加" onClick={()=>setSettings(true)}><Icon name="plus" size={13}/></button></div>
+       <nav className="space-nav" aria-label="スペース">{data.spaces.map(space=><button key={space.id} className={spaceFilter===space.id?"active":""} onClick={()=>{setSpaceFilter(space.id);setView("all");}}><i className="space-dot" style={{background:space.color}}/><span>{space.name}</span><span>{data.resources.filter(resource=>!resource.deletedAt&&resource.spaceIds.includes(space.id)).length}</span></button>)}</nav>
+-      <div className="sidebar-bottom"><nav className="nav"><button className={view==="trash"?"active":""} onClick={()=>{setView("trash");setSpaceFilter("");}}><Icon name="trash" size={16}/><span>ごみ箱</span><span>{data.resources.filter(resource=>resource.deletedAt).length}</span></button></nav><div className="tool-links"><a href="/recall/" onClick={event=>appLink(event,"/recall/")}>◌ Recall <Icon name="arrow" size={12}/></a><a href="/sketchbook/" onClick={event=>appLink(event,"/sketchbook/")}>▱ Sketchbook <Icon name="arrow" size={12}/></a></div><button className="settings-link" onClick={()=>setSettings(true)}><Icon name="settings" size={15}/>保存とアカウント</button></div>
++      <div className="sidebar-bottom"><nav className="nav"><button className={view==="trash"?"active":""} onClick={()=>{setView("trash");setSpaceFilter("");}}><Icon name="trash" size={16}/><span>ごみ箱</span><span>{data.resources.filter(resource=>resource.deletedAt).length}</span></button></nav><div className="tool-links"><a href="/atlas/" onClick={event=>appLink(event,"/atlas/")}>⌘ Atlas <Icon name="arrow" size={12}/></a><a href="/recall/" onClick={event=>appLink(event,"/recall/")}>◌ Recall <Icon name="arrow" size={12}/></a><a href="/sketchbook/" onClick={event=>appLink(event,"/sketchbook/")}>▱ Sketchbook <Icon name="arrow" size={12}/></a></div><button className="settings-link" onClick={()=>setSettings(true)}><Icon name="settings" size={15}/>保存とアカウント</button></div>
+     </aside>
+     <main className="main-pane">
+       <header className="topbar"><div className="breadcrumb"><span>Personal tools</span><i>/</i><strong>Collect</strong></div><span className="mobile-brand"><img src="/collect/icon.svg" alt="" width="27" height="27"/>COLLECT</span><button className={`status ${failedFiles||cloud.syncStatus.phase==="error"?"warning":""}`} onClick={()=>setSettings(true)}><span className="status-dot"/>{status}</button></header>
+       <div className="workspace">
+-        <div className="page-heading"><div><p className="eyebrow">A COLLECTION OF LITTLE DISCOVERIES</p><h1>心にとまったものを。</h1></div><p className="heading-note">あとで、なにかに<br/>つながるかもしれないから。</p></div>
++        <div className="page-heading"><div><p className="eyebrow">COLLECT</p><h1>資料を追加</h1></div></div>
+         {error&&<div className="error" role="alert"><span>{error}</span><button className="icon-button" aria-label="エラー表示を閉じる" onClick={()=>setError("")}><Icon name="close" size={15}/></button></div>}
+         {incomingShare&&<section className="share-note" aria-label="共有された内容"><h3>共有された内容があります</h3><p>{incomingShare.title||incomingShare.url||incomingShare.memo}</p><p className="small-note">いまの入力を残して下書きに追加します。保存するまで収集や外部ページの取得は行いません。</p><div className="notice-buttons"><button className="button primary" disabled={locked} onClick={()=>void acceptShare()}>下書きに追加</button><button className="button" onClick={dismissShare}>今回は閉じる</button></div></section>}
+         {(stale||saveConflict)&&dirty&&<div className="warning-note"><p>別の画面でこの収集が更新されました。手元の入力は残っています。</p><div className="notice-buttons"><button className="button primary" disabled={locked} onClick={()=>void save(true)}>別の収集として保存</button><button className="button" disabled={locked} onClick={()=>selected&&showResource(selected)}>最新の保存内容を開く</button></div></div>}
+-        <section className="composer" aria-label={selected?"収集を編集":"新しい収集"} ref={captureArea}>
+-          <div className="composer-head"><div className="capture-tabs" aria-label="収集するもの"><button className={draft.resourceType==="link"?"active":""} disabled={locked||!!draft.editingId||!!draft.image} onClick={()=>mutate({resourceType:"link",image:null})}><Icon name="link" size={15}/>リンク</button><button className={draft.resourceType==="image"?"active":""} disabled={locked||!!draft.editingId} onClick={()=>mutate({resourceType:"image",sourceUrl:draft.sourceUrl||draft.url,url:""})}><Icon name="image" size={15}/>画像</button></div><span className="draft-state">{deleted?"ごみ箱の収集":!ready?"読み込み中…":selecting?"画像を確認中…":saving?"保存中…":dirty?draftSaved?"下書きを端末に保存済み":"下書きを保存中…":selected?"保存済み":"まだ整理しなくて、大丈夫。"}</span></div>
++        <section className="composer" aria-label={selected?"収集を編集":"新しい収集"} ref={captureArea} onPaste={pasteImage}>
++          <div className="composer-head"><div className="capture-tabs" aria-label="収集するもの"><button className={draft.resourceType==="link"?"active":""} disabled={locked||!!draft.editingId||!!draft.image} onClick={()=>mutate({resourceType:"link",image:null})}><Icon name="link" size={15}/>リンク</button><button className={draft.resourceType==="image"?"active":""} disabled={locked||!!draft.editingId} onClick={()=>{try{mutate(imageCaptureFields(draftRef.current));}catch(value){failure(value);}}}><Icon name="image" size={15}/>画像</button></div><span className="draft-state">{deleted?"ごみ箱の収集":!ready?"読み込み中…":selecting?"画像を確認中…":saving?"保存中…":dirty?draftSaved?"下書きを端末に保存済み":"下書きを保存中…":selected?"保存済み":"新しい収集"}</span></div>
+           <div className="capture-content">
+-            {draft.resourceType==="link"?<label className="url-row"><Icon name="link" size={18}/><span className="sr-only">収集するURL</span><input ref={urlInput} type="url" inputMode="url" aria-label="収集するURL" placeholder="気になるページのURLを貼り付ける" value={draft.url} maxLength={8192} disabled={locked||deleted} onChange={event=>mutate({url:event.target.value})}/></label>:draft.image?<div className="chosen-file">{preview?<img className="draft-preview" src={preview} alt="選択した画像のプレビュー"/>:<div className="file-placeholder"><Icon name="image" size={26}/></div>}<div className="file-info"><strong>{draft.image.filename}</strong><small>{prettyBytes(draft.image.size)} · 原本を保存します</small>{!draft.editingId?<button className="text-button" disabled={locked} onClick={()=>{setBlob(null);mutate({image:null});}}>画像を外す</button>:<span className="small-note">画像の入れ替えは、新しい収集として。</span>}</div></div>:<button className={`file-drop ${dragging?"is-dragging":""}`} disabled={locked||deleted} onClick={()=>fileInput.current?.click()} onDragOver={event=>{event.preventDefault();if(!locked)setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={drop}><Icon name="image" size={28}/><span><strong>画像を選ぶ、またはここにドロップ</strong><small>PNG / JPEG / GIF / WebP · 20MBまで</small></span></button>}
+-            <input className="title-input" aria-label="収集のタイトル" placeholder={selected?.metadata.title||"タイトルを添える（あとからでも）"} value={draft.title} maxLength={300} disabled={locked||deleted} onChange={event=>mutate({title:event.target.value})}/>
+-            <textarea className="memo-input" aria-label="自分のメモ" placeholder="どこが気になった？ ひとこと残しておこう。" rows={2} maxLength={100000} disabled={locked||deleted} value={draft.memo} onChange={event=>mutate({memo:event.target.value})} onKeyDown={event=>{if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!event.nativeEvent.isComposing){event.preventDefault();void save();}}}/>
++            {draft.resourceType==="link"?<label className="url-row"><Icon name="link" size={18}/><span className="sr-only">収集するURL</span><input ref={urlInput} type="url" inputMode="url" aria-label="収集するURL" placeholder="保存するURL" value={draft.url} maxLength={8192} disabled={locked||deleted} onChange={event=>mutate({url:event.target.value})}/></label>:draft.image?<div className="chosen-file">{preview?<img className="draft-preview" src={preview} alt="選択した画像のプレビュー"/>:<div className="file-placeholder"><Icon name="image" size={26}/></div>}<div className="file-info"><strong>{draft.image.filename}</strong><small>{prettyBytes(draft.image.size)} · 原本を保存します</small>{!draft.editingId?<button className="text-button" disabled={locked} onClick={()=>{setBlob(null);mutate({image:null});}}>画像を外す</button>:<span className="small-note">画像を入れ替える場合は、新しい収集を作成してください。</span>}</div></div>:<button className={`file-drop ${dragging?"is-dragging":""}`} disabled={locked||deleted} onClick={()=>fileInput.current?.click()} onDragOver={event=>{event.preventDefault();if(!locked)setDragging(true);}} onDragLeave={()=>setDragging(false)} onDrop={drop}><Icon name="image" size={28}/><span><strong>画像を選ぶ、またはここにドロップ</strong><small>PNG / JPEG / GIF / WebP · 20MBまで · Ctrl / ⌘ + Vで貼り付け</small></span></button>}
++            <input className="title-input" aria-label="収集のタイトル" placeholder={selected?.metadata.title||"タイトル（任意）"} value={draft.title} maxLength={300} disabled={locked||deleted} onChange={event=>mutate({title:event.target.value})}/>
++            <textarea className="memo-input" aria-label="自分のメモ" placeholder="メモ（任意）" rows={2} maxLength={100000} disabled={locked||deleted} value={draft.memo} onChange={event=>mutate({memo:event.target.value})} onKeyDown={event=>{if((event.ctrlKey||event.metaKey)&&event.key==="Enter"&&!event.nativeEvent.isComposing){event.preventDefault();void save();}}}/>
+             <label className="source-field"><span>出典</span><input type="url" aria-label="出典URL" placeholder={draft.resourceType==="image"?"画像の出典URL（任意）":"元のURLと異なるときに入力（任意）"} maxLength={8192} disabled={locked||deleted} value={draft.sourceUrl} onChange={event=>mutate({sourceUrl:event.target.value})}/></label>
+           </div>
+           {selected&&<div className="edit-options"><label><input type="checkbox" checked={draft.inbox} disabled={locked||deleted} onChange={event=>mutate({inbox:event.target.checked})}/>収集箱に置く</label>{safeLink(selected.sourceUrl??selected.url)&&<a className="source-link" href={safeLink(selected.sourceUrl??selected.url)} target="_blank" rel="noopener noreferrer"><span>{hostname(selected.sourceUrl??selected.url??"")}</span><Icon name="external" size={12}/></a>}</div>}
+           <div className="capture-footer"><div className="space-chips" aria-label="収集のスペース">{data.spaces.map(space=><button key={space.id} className={`chip ${draft.spaceIds.includes(space.id)?"selected":""}`} disabled={locked||deleted} aria-pressed={draft.spaceIds.includes(space.id)} onClick={()=>mutate({spaceIds:draft.spaceIds.includes(space.id)?draft.spaceIds.filter(id=>id!==space.id):[...draft.spaceIds,space.id]})}><i className="space-dot" style={{background:space.color}}/>{space.name}</button>)}</div><div className="capture-actions">{selected&&<button className="button" disabled={locked||dirty} onClick={()=>void perform(()=>update(selected,{deletedAt:deleted?null:new Date().toISOString()}))}><Icon name={deleted?"restore":"trash"} size={14}/>{deleted?"戻す":"ごみ箱"}</button>}<span className="hint">Ctrl / ⌘ + Enter</span>{!deleted&&<button className="button primary" disabled={locked||(!draft.url.trim()&&draft.resourceType==="link")||(!draft.image&&draft.resourceType==="image")||!!selected&&!dirty} onClick={()=>void save()}><Icon name={selected?"check":"plus"} size={15}/>{saving?"保存中…":selected?"変更を保存":"収集箱に残す"}</button>}</div></div>
+-          {selected?.resourceType==="link"&&!deleted&&<div className="metadata-panel"><div className="metadata-heading"><span>{selected.metadata.status==="pending"?"ページの情報を取得しています…":selected.metadata.status==="failed"?"ページの情報を取得できませんでした。URLとメモは保存されています。":selected.metadata.status==="ready"?"ページから取得した情報":"ページのタイトルや説明を取得できます。"}</span><button className="text-button" disabled={locked||selected.metadata.status==="pending"&&metadataRequests.current.has(selected.id)} onClick={()=>void metadata(selected)}><Icon name="retry" size={12}/>{selected.metadata.status==="failed"?"再試行":"取得する"}</button></div>{selected.metadata.status==="ready"&&<><strong>{selected.metadata.title}</strong>{selected.metadata.description&&<p>{selected.metadata.description}</p>}{selected.metadata.title&&selected.metadata.title!==draft.title&&<button className="text-button" disabled={locked} onClick={()=>mutate({title:selected.metadata.title})}>このタイトルを使う <Icon name="arrow" size={12}/></button>}</>}</div>}
++          {selected?.resourceType==="link"&&!deleted&&<div className="metadata-panel"><div className="metadata-heading"><span>{selected.metadata.status==="pending"?"ページの情報を取得しています…":selected.metadata.status==="failed"?"ページの情報を取得できませんでした。URLとメモは保存されています。":selected.metadata.status==="ready"?"ページから取得した情報":"タイトルや説明は手入力できます。"}</span><span className="small-note">URL情報の自動取得は停止中です。</span></div>{selected.metadata.status==="ready"&&<><strong>{selected.metadata.title}</strong>{selected.metadata.description&&<p>{selected.metadata.description}</p>}{selected.metadata.title&&selected.metadata.title!==draft.title&&<button className="text-button" disabled={locked} onClick={()=>mutate({title:selected.metadata.title})}>このタイトルを使う <Icon name="arrow" size={12}/></button>}</>}</div>}
+         </section>
+         <div className="composer-note"><span>{draft.image?"選んだ画像を原本のまま保存します。":"ページの情報を取得できなくても、URLとメモは残ります。"}</span><span>AI解析はまだ行いません。</span></div>
+         {duplicates.length>0&&<div className="duplicate-note" role="status">似た収集が{duplicates.length}件あります。別のメモとして残すこともできます。{duplicates.slice(0,3).map(resource=><button className="text-button" key={resource.id} onClick={()=>showResource(resource)}>{displayTitle(resource)} <Icon name="arrow" size={10}/></button>)}</div>}
+-        <div className="collection-toolbar"><div className="collection-title"><h2>{label}</h2><span className="count">{shown.length}</span></div><div className="toolbar-right"><select className="mobile-filter" aria-label="収集の表示範囲" value={spaceFilter?`space:${spaceFilter}`:view} onChange={event=>{const value=event.target.value;if(value.startsWith("space:")){setSpaceFilter(value.slice(6));setView("all");}else{setView(value as View);setSpaceFilter("");}}}><option value="inbox">収集箱</option><option value="all">すべての収集</option><option value="image">画像</option><option value="link">リンク</option>{data.spaces.map(space=><option key={space.id} value={`space:${space.id}`}>{space.name}</option>)}<option value="trash">ごみ箱</option></select><label className="search"><Icon name="search" size={15}/><span className="sr-only">収集を検索</span><input type="search" aria-label="収集を検索" value={query} onChange={event=>setQuery(event.target.value)} placeholder="思い出す言葉で探す"/></label></div></div>
++        <div className="collection-toolbar"><div className="collection-title"><h2>{label}</h2><span className="count">{shown.length}</span></div><div className="toolbar-right"><select className="mobile-filter" aria-label="収集の表示範囲" value={spaceFilter?`space:${spaceFilter}`:view} onChange={event=>{const value=event.target.value;if(value.startsWith("space:")){setSpaceFilter(value.slice(6));setView("all");}else{setView(value as View);setSpaceFilter("");}}}><option value="inbox">収集箱</option><option value="all">すべての収集</option><option value="image">画像</option><option value="link">リンク</option>{data.spaces.map(space=><option key={space.id} value={`space:${space.id}`}>{space.name}</option>)}<option value="trash">ごみ箱</option></select><label className="search"><Icon name="search" size={15}/><span className="sr-only">収集を検索</span><input type="search" aria-label="収集を検索" value={query} onChange={event=>setQuery(event.target.value)} placeholder="タイトル・メモを検索"/></label></div></div>
+         {view==="trash"&&<p className="small-note">ごみ箱から元に戻せます。原本の画像は自動で削除しません。</p>}
+         {shown.length?<div className="resource-grid">{shown.slice(0,120).map(resource=>{
+           const state=files[fileKey(resource)],link=safeLink(resource.sourceUrl??resource.url),title=displayTitle(resource);
+           return <article key={resource.id} className={`resource-card ${draft.editingId===resource.id?"selected":""}`}>
+-            <button className="card-open" aria-label={`開く: ${title}`} onClick={()=>showResource(resource)}><div className={`card-preview ${resource.image?state?.url?"":"placeholder":"link-preview"}`}>{resource.image?(state?.url?<img src={state.url} alt={resource.title||resource.image.filename} loading="lazy"/>:<><Icon name="image" size={28}/><span>{state?.status==="loading"?"画像を読み込み中…":"選択して原本を読み込む"}</span></>):<><span className="link-avatar">{hostname(resource.url??"").slice(0,1).toUpperCase()}</span><span className="site-name">{hostname(resource.url??"")}</span></>}<span className="type-mark"><Icon name={resource.image?"image":"link"} size={10}/>{resource.image?"IMAGE":"LINK"}</span></div><div className="card-content"><h3>{title}</h3>{resource.memo&&<p className="card-memo">{resource.memo}</p>}{resource.metadata.status==="pending"&&<span className="card-metadata">タイトルを取得中…</span>}{resource.metadata.status==="failed"&&<span className="card-metadata">URLとメモは保存済み</span>}</div></button>
++            <button className="card-open" aria-label={`開く: ${title}`} onClick={()=>showResource(resource)}><div className={`card-preview ${resource.image?state?.url?"":"placeholder":"link-preview"}`}>{resource.image?(state?.url?<img src={state.url} alt={resource.title||resource.image.filename} loading="lazy"/>:<><Icon name="image" size={28}/><span>{state?.status==="loading"?"画像を読み込み中…":"選択して原本を読み込む"}</span></>):<><span className="link-avatar">{hostname(resource.url??"").slice(0,1).toUpperCase()}</span><span className="site-name">{hostname(resource.url??"")}</span></>}<span className="type-mark"><Icon name={resource.image?"image":"link"} size={10}/>{resource.image?"IMAGE":"LINK"}</span></div><div className="card-content"><h3>{title}</h3>{resource.memo&&<p className="card-memo">{resource.memo}</p>}{resource.metadata.status==="pending"&&<span className="card-metadata">ページ情報の自動取得は停止中</span>}{resource.metadata.status==="failed"&&<span className="card-metadata">URLとメモは保存済み</span>}</div></button>
+             <div className="card-footer"><time dateTime={resource.createdAt}>{day(resource.createdAt)}</time><span className="spacer"/><span className="card-space-dots">{resource.spaceIds.slice(0,3).map(id=>{const space=data.spaces.find(item=>item.id===id);return space?<i className="space-dot" key={id} title={space.name} style={{background:space.color}}/>:null;})}</span>{link&&<a className="icon-button" href={link} target="_blank" rel="noopener noreferrer" aria-label={`出典を開く: ${title}`}><Icon name="external" size={13}/></a>}<button className="icon-button" aria-label={`書き出す: ${title}`} disabled={busy} onClick={()=>void backup([resource.id])}><Icon name="download" size={13}/></button>{resource.deletedAt?<button className="icon-button" aria-label={`戻す: ${title}`} disabled={busy} onClick={()=>void perform(()=>update(resource,{deletedAt:null}))}><Icon name="restore" size={14}/></button>:<button className="icon-button" aria-label={resource.inbox?`整理済みにする: ${title}`:`収集箱へ戻す: ${title}`} disabled={busy} onClick={()=>void perform(()=>update(resource,{inbox:!resource.inbox}))}><Icon name={resource.inbox?"check":"inbox"} size={14}/></button>}</div>
+             <div className={`card-transfer ${state?.status==="error"?"error-state":""}`}><span>{cloud.identity.mode==="device"?"端末に保存":cloud.pendingItemIds.includes(resource.id)||!resource.serverRevision?"記録の同期待ち":resource.image?state?.status==="uploaded"?"原本も同期済み":state?.status==="error"?"原本の送信・取得を確認してください":state?.status==="pending"?"原本の送信待ち":state?.status==="remote"?"画像はこの端末には未保存":"原本の同期を確認中":"記録は同期済み"}</span>{resource.image&&state?.status==="error"&&<button onClick={()=>retryOriginal(resource)}>再試行</button>}</div>
+           </article>;
+-        })}</div>:<div className="empty-state"><EmptyCollection/><h3>{query?"その言葉は、まだ見つかりませんでした。":view==="trash"?"ごみ箱は空です。":"小さな発見の、置き場所に。"}</h3><p>{query?"短い言葉や、別のスペースでも探してみてください。":view==="trash"?"大切な資料は、ゆっくり育てていきましょう。":"読み返したい記事、描いてみたい景色。\n気になるものを、ひとつ残してみませんか。"}</p></div>}
++        })}</div>:<div className="empty-state"><EmptyCollection/><h3>{query?"一致する資料がありません":view==="trash"?"ごみ箱は空です。":"資料がありません"}</h3><p>{query?"短い言葉や、別のスペースでも探してみてください。":view==="trash"?"ごみ箱に移した資料をここに表示します。":"URLまたは画像を追加してください。"}</p></div>}
+         {shown.length>120&&<p className="small-note">新しい120件を表示しています。言葉やスペースで絞り込んでください。</p>}
+-        <footer className="page-footer"><span>{offline?"オフライン · 端末への保存は続けられます":"集めた小さな発見が、いつかつながる。"}</span><button onClick={()=>setSettings(true)}>保存とバックアップ</button></footer>
++        <footer className="page-footer"><span>{offline?"オフライン · 端末への保存は続けられます":"URLと画像を保存"}</span><button onClick={()=>setSettings(true)}>保存とバックアップ</button></footer>
+       </div>
+     </main>
+     {notice&&<div className="toast" role="status"><Icon name="check" size={15}/>{notice}</div>}
+@@ -311,8 +306,8 @@ export default function Collect(){
+         </>}
+       </>:<form onSubmit={event=>{event.preventDefault();void cloud.signIn(email);}}><p className="muted">Recallと同じメールログインです。リンクをこのブラウザで開くとRecallに戻ります。そこからCollectを開いてください。</p><label className="field-label" htmlFor="collect-email">メールアドレス</label><input id="collect-email" type="email" autoComplete="email" className="text-input" required value={email} onChange={event=>setEmail(event.target.value)} disabled={cloud.authBusy}/><div className="modal-buttons"><button className="button primary" disabled={cloud.authBusy||!email.trim()}>{cloud.authBusy?"送信中…":"ログインメールを送る"}</button></div></form>}
+       {cloud.authMessage&&<p className="auth-message" role="status">{cloud.authMessage}</p>}
+-      <hr/><h3>スペース</h3><form onSubmit={event=>{event.preventDefault();void perform(async guard=>{if(!guard.repo)return;await guard.repo.createSpace(spaceName);if(guard.current()){setSpaceName("");setNotice("スペースを追加しました");}});}}><input className="text-input" aria-label="新しいスペース名" placeholder="例：いつか描きたい景色" value={spaceName} maxLength={40} onChange={event=>setSpaceName(event.target.value)} disabled={busy}/><div className="modal-buttons"><button className="button" disabled={busy||!spaceName.trim()}>追加</button></div></form>
+-      <hr/><h3>バックアップ</h3><p className="muted">この保存先の収集とスペース、画像の原本をJSONに含めます。下書きは含みません。元画像がない場合は取得してから書き出します。</p><div className="modal-buttons"><button className="button" disabled={!ready||busy} onClick={()=>void backup()}><Icon name="download" size={14}/>JSONを書き出す</button><button className="button" disabled={!ready||busy} onClick={()=>backupInput.current?.click()}><Icon name="upload" size={14}/>JSONを追加読み込み</button></div><p className="small-note">1回に含められる画像の合計は32MBです。大きい場合はカードの書き出しボタンで分けてください。読み込みは別のIDで追加するため、繰り返すと重複します。</p>
++      <hr/><h3>スペース</h3><form onSubmit={event=>{event.preventDefault();void perform(async guard=>{if(!guard.repo)return;await guard.repo.createSpace(spaceName);if(guard.current()){setSpaceName("");setNotice("スペースを追加しました");}});}}><input className="text-input" aria-label="新しいスペース名" placeholder="例：参考資料" value={spaceName} maxLength={40} onChange={event=>setSpaceName(event.target.value)} disabled={busy}/><div className="modal-buttons"><button className="button" disabled={busy||!spaceName.trim()}>追加</button></div></form>
++      <hr/><h3>バックアップ</h3><p className="muted">この保存先の収集とスペース、画像の原本をJSONに含めます。下書きは含みません。元画像がない場合は取得してから書き出します。</p><div className="modal-buttons"><button className="button" disabled={!ready||busy} onClick={()=>void backup()}><Icon name="download" size={14}/>暗号化バックアップを書き出す</button><button className="button" disabled={!ready||busy} onClick={()=>backupInput.current?.click()}><Icon name="upload" size={14}/>JSONを追加読み込み</button></div><p className="small-note">1回に含められる画像の合計は32MBです。大きい場合はカードの書き出しボタンで分けてください。読み込みは別のIDで追加するため、繰り返すと重複します。</p>
+       <hr/><h3>端末への保存</h3><p className="muted">{pwaState}</p><p className="small-note">ブラウザのデータを消すと、未同期の記録や画像も消えます。大切なものはバックアップを残してください。</p><button className="button" onClick={()=>void perform(async guard=>{const kept=await navigator.storage?.persist();if(guard.current())setNotice(kept?"保存領域の保持が許可されました。バックアップも続けてください":"保持を依頼しました。バックアップも続けてください");})}>保存領域の保護を依頼する</button>
+     </Modal>}
+     {pendingNavigation&&<Modal title="入力中の収集があります" onClose={()=>setPendingNavigation(null)}><p className="muted">いまの内容を保存してから移動できます。閉じると、入力を続けられます。</p><div className="modal-buttons"><button className="button primary" disabled={locked} onClick={async()=>{const work=pendingNavigation;if(await save()){setPendingNavigation(null);work();}}}>保存して移動</button><button className="button" disabled={locked} onClick={()=>{const work=pendingNavigation;setPendingNavigation(null);work();}}>入力を破棄して移動</button><button className="button" onClick={()=>setPendingNavigation(null)}>入力に戻る</button></div></Modal>}
+diff --git a/apps/collect/next.config.ts b/apps/collect/next.config.ts
+index 47a0d27..f8b0eef 100644
+--- a/apps/collect/next.config.ts
++++ b/apps/collect/next.config.ts
+@@ -5,7 +5,7 @@ const config:NextConfig={
+   // Share Target parameters can contain private text and source URLs.
+   logging:{incomingRequests:false},
+   async headers(){return [
+-    {source:"/:path*",headers:[{key:"Referrer-Policy",value:"no-referrer"}]},
++    {source:"/:path*",headers:[{key:"Referrer-Policy",value:"no-referrer"},{key:"X-Content-Type-Options",value:"nosniff"},{key:"X-Frame-Options",value:"DENY"},{key:"Content-Security-Policy",value:"frame-ancestors 'none'; object-src 'none'; base-uri 'self'"}]},
+     {source:"/",headers:[{key:"X-Collect-Public-Shell",value:"1"}]},
+   ];},
+ };
+diff --git a/apps/collect/public/sw.js b/apps/collect/public/sw.js
+index eb6ea73..7067edb 100644
+--- a/apps/collect/public/sw.js
++++ b/apps/collect/public/sw.js
+@@ -1,5 +1,5 @@
+ // Cache an anonymous public shell only. Originals, metadata API and sessions stay out.
+-const CACHE="collect-shell-v1",BASE="/collect",SHELL=`${BASE}/`;
++const CACHE="collect-vault-shell-v1",BASE="/collect",SHELL=`${BASE}/`;
+ self.addEventListener("install",event=>event.waitUntil((async()=>{
+   const cache=await caches.open(CACHE);
+   const response=await fetch(SHELL,{cache:"reload",credentials:"omit"});
+diff --git a/apps/recall/app/globals.css b/apps/recall/app/globals.css
+index e463ef2..ab84667 100644
+--- a/apps/recall/app/globals.css
++++ b/apps/recall/app/globals.css
+@@ -1,4 +1,5 @@
+ :root{--paper:#f7f6f2;--surface:#fffefa;--ink:#343735;--muted:#8a8d85;--line:#e8e7df;--accent:#7471a2;--accent-light:#eeedf5;--green:#779381;--font:Inter,"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Noto Sans JP",Meiryo,sans-serif}
++.sharing-warning{border:1px solid #d9d2b6;background:#f5f1e4;color:#716344;border-radius:7px;padding:12px 14px;font-size:12px;line-height:1.9;margin:16px 0;overflow-wrap:anywhere}.sharing-warning p{margin:0 0 7px}.sharing-warning .text-button{font-size:12px}.atlas-request-sharing .backup-actions>.button{white-space:normal;line-height:1.7}.atlas-request-sharing select{width:100%;margin-top:8px}
+ *{box-sizing:border-box}body{margin:0;font-family:var(--font);color:var(--ink);background:var(--paper);font-size:14px;-webkit-font-smoothing:antialiased}button,input,textarea,select{font:inherit}button,a,input,textarea,select{-webkit-tap-highlight-color:transparent}button{cursor:pointer}button{color:inherit}button:disabled{cursor:default;opacity:.45}button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}textarea:focus,input:focus,select:focus{outline:2px solid #b5b1d0;outline-offset:2px}a{color:inherit;text-decoration:none}button svg{flex-shrink:0}.app-shell{display:flex;min-height:100dvh}.sidebar{width:244px;position:fixed;inset:0 auto 0 0;background:#f0efe9;border-right:1px solid var(--line);padding:35px 22px 20px;display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:12px;font-size:29px;letter-spacing:-1.4px;font-weight:650;padding-left:12px}.brand-dot{color:var(--accent)}.brand-caption{padding-left:14px;color:var(--muted);font-size:11px;margin:13px 0 46px;letter-spacing:.12em}.main-nav{display:grid;gap:8px}.nav-item{border:0;background:none;border-radius:7px;width:100%;padding:12px;display:flex;align-items:center;gap:12px;text-align:left;font-size:12px;min-height:42px}.nav-item.active{background:#e5e3ed;color:#5f5b8f}.nav-item:hover{background:#e9e7e0}.nav-item.active:hover{background:#e1deeb}.nav-item>svg{color:#8c8d85}.nav-item.active>svg{color:var(--accent)}.count{margin-left:auto;font-size:11px;color:#96978d;font-variant-numeric:tabular-nums}.section-label{margin:33px 10px 11px;color:#9b9c92;font-size:10px;letter-spacing:.12em;display:flex;justify-content:space-between;align-items:center}.space-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}.spaces-nav .nav-item{padding-left:15px}.spaces-nav .space-dot{margin-right:6px}.sidebar-bottom{margin-top:auto;padding-top:50px}.sidebar-bottom>.nav-item{color:#96978d}.device-card{display:flex;gap:10px;align-items:center;border:0;border-top:1px solid #e0dfd7;margin-top:16px;background:none;width:100%;padding:22px 5px 0;text-align:left}.device-card>span:nth-child(2){flex:1}.device-avatar{background:#e2dfd4;color:#7a7767;border-radius:50%;display:grid;place-items:center;width:32px;height:32px;font-size:11px}.device-card strong{font-size:11px;font-weight:500;display:block}.device-card small{font-size:9px;color:#93958a;display:block;margin-top:4px}.device-card svg{color:#a1a296}.main-pane{margin-left:244px;flex:1;min-width:0}.topbar{height:79px;padding:0 46px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.breadcrumb{font-size:11px;color:#8b8c83}.breadcrumb span{padding:0 14px;color:#c7c8bd}.top-actions{display:flex;gap:17px;align-items:center}.local-status{display:flex;align-items:center;gap:6px;color:#919388;font-size:10px}.status-dot{display:inline-block;width:6px;height:6px;background:#83a18c;border-radius:50%;flex-shrink:0}.icon-button{border:0;display:inline-flex;align-items:center;justify-content:center;background:none;color:#92958b;padding:6px;border-radius:5px;min-width:28px;min-height:28px}.icon-button:hover{background:#eae9e3;color:var(--ink)}.mobile-brand{display:none}.content{max-width:1084px;padding:58px 62px 24px;margin:auto}.intro{display:flex;align-items:center;justify-content:space-between;padding-right:24px}.eyebrow{font-size:9px;font-weight:500;letter-spacing:.2em;color:#9c9d91;margin:0 0 19px}h1{font-size:29px;font-weight:500;letter-spacing:.065em;margin:0;line-height:1.6}.intro-copy{font-size:12px;color:#92958a;letter-spacing:.045em;line-height:1.9;margin:10px 0 0}.intro-mark{font-family:Georgia,serif;font-size:93px;line-height:1;color:#c2bcd5;font-weight:400;transform:rotate(-8deg)}.mobile-break{display:none}.composer{margin-top:38px;background:var(--surface);border:1px solid #deddd3;border-radius:11px;box-shadow:0 3px 10px #33331d03;overflow:hidden}.composer textarea{display:block;width:100%;resize:vertical;min-height:114px;max-height:50vh;padding:25px 26px 15px;border:0;background:none;color:#4d504b;font-size:14px;line-height:1.85}.composer textarea:focus{outline:none;box-shadow:inset 0 0 0 2px #c4bfdc;border-radius:10px 10px 0 0}.composer textarea::placeholder{color:#b0b1a8;font-size:13px}.composer-footer{padding:12px 20px 17px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.space-chips{display:flex;flex-wrap:wrap;gap:5px}.chip{border:1px solid transparent;border-radius:5px;background:#f2f1eb;color:#95978c;display:inline-flex;align-items:center;gap:6px;padding:6px 9px;font-size:10px}.chip.selected{background:#efedf7;border-color:#bbb5d4;color:#635e8f}.chip.selected .space-dot{box-shadow:0 0 0 2px #fff}.save-action{display:flex;align-items:center;gap:12px;flex-shrink:0}.keyboard-hint{color:#b4b5aa;font-size:9px}.button{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 15px;border:1px solid var(--line);border-radius:6px;background:#fbfaf6;font-size:11px;line-height:1.5}.button:hover:not(:disabled){background:#eeeae2}.button.primary{background:var(--accent);border-color:var(--accent);color:white}.button.primary:hover:not(:disabled){background:#65618f}.capture-caption{margin-top:11px;padding:0 3px;font-size:9px;color:#a2a498;display:flex;justify-content:space-between}.list-toolbar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:45px 0 22px}.list-toolbar h2{font-size:14px;font-weight:500;margin:0;display:flex;align-items:center;gap:10px;white-space:nowrap}.list-toolbar h2>span{color:#a2a399;font-size:10px;background:#eeede6;border-radius:5px;padding:3px 6px}.search{display:flex;align-items:center;gap:9px;border-bottom:1px solid #ddded4;padding:8px 2px;color:#a0a293;width:230px}.search input{background:none;border:0;min-width:0;width:100%;font-size:10px;color:var(--ink)}.search input::placeholder{color:#a5a698}.search input:focus{outline:none}.search:focus-within{border-color:var(--accent)}.search .icon-button{padding:0;min-width:16px;min-height:16px}.day-heading{display:flex;align-items:center;gap:10px;margin:26px 0 13px}.day-heading h3{font-size:11px;font-weight:500;margin:0}.day-heading span{font-size:9px;color:#aaa99d}.day-heading>div{height:1px;background:var(--line);flex:1;margin-left:4px}.note-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;align-items:start}.note-card{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px 16px;transition:border-color .15s}.note-card:hover{border-color:#cfccbd}.note-card.is-pinned{border-color:#d9d3e5}.note-top{display:flex;align-items:center;justify-content:space-between;gap:6px}.note-top time{font-size:9px;font-variant-numeric:tabular-nums;color:#a6a799}.note-actions{display:flex;gap:0}.note-actions .icon-button{color:#c1c0b4}.note-actions .icon-button:hover{color:#7a786c}.star-button.starred{color:#ab96b4}.star-button.starred svg{fill:#eee6ef}.note-body{font-size:12px;line-height:2;letter-spacing:.025em;margin:13px 0 23px;white-space:pre-wrap;overflow-wrap:anywhere}.note-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;min-height:13px}.note-spaces{display:flex;flex-wrap:wrap;gap:6px 10px}.note-spaces>span{color:#98998e;font-size:9px;display:flex;align-items:center;gap:5px}.note-spaces i{width:5px;height:5px;border-radius:50%}.saved-label{font-size:8px;color:#b4b6a9;white-space:nowrap;display:flex;align-items:center;gap:3px}.empty{padding:49px 0 56px;text-align:center}.empty-symbol{font-size:47px;color:#c0bad2;line-height:1}.empty h3{font-size:13px;font-weight:500;margin:19px 0 12px;letter-spacing:.04em}.empty p{font-size:10px;color:#a1a294;line-height:2}.text-button{display:inline-flex;align-items:center;gap:8px;border:0;background:none;color:var(--accent);padding:10px;font-size:10px}.page-footer{border-top:1px solid var(--line);margin-top:40px;padding-top:20px;display:flex;align-items:center;justify-content:space-between;font-size:9px;color:#aaa99d;letter-spacing:.04em}.page-footer button{color:#96998b;border:0;background:none;font-size:9px;padding:4px}.error{background:#f7e9e4;color:#9a5843;border:1px solid #e9cec3;padding:12px 15px;border-radius:6px;font-size:12px;line-height:1.7;display:flex;justify-content:space-between;gap:10px}.toast{position:fixed;bottom:30px;left:calc(50% + 122px);transform:translateX(-50%);padding:14px 23px;background:#454c44;color:#fff;border-radius:9px;box-shadow:0 8px 24px #242a2422;font-size:11px;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 30px);z-index:30;line-height:1.7}.modal-backdrop{position:fixed;inset:0;background:#22251e44;backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:20;padding:20px}.modal{width:560px;max-height:90dvh;overflow:auto;background:var(--paper);border:1px solid #deddd4;border-radius:14px;padding:26px;box-shadow:0 20px 80px #22252120}.modal-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:15px}.modal h2{font-size:17px;font-weight:500;margin:0}.modal h3{font-size:13px;font-weight:500;margin:20px 0 10px}.edit-textarea,.text-input{width:100%;background:var(--surface);border:1px solid #dcdad0;border-radius:7px;padding:14px;font-size:13px;line-height:1.8;color:var(--ink)}.edit-textarea{margin-bottom:14px;resize:vertical;min-height:150px;max-height:50vh}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.muted{font-size:12px;color:#8c9082;line-height:1.9}.field-label{display:block;font-size:11px;margin:24px 0 8px}.storage-note{display:flex;align-items:center;gap:8px;font-size:12px;line-height:1.8}.backup-actions{display:flex;flex-direction:column;gap:9px;margin:23px 0 16px}.backup-actions>.button{padding:13px}.small-note{font-size:10px;color:#a0a292;line-height:1.9}.modal hr{border:0;border-top:1px solid var(--line);margin:24px 0}.restore-button{border:0;background:none;color:var(--accent);display:flex;align-items:center;gap:5px;font-size:10px;padding:5px}.switcher-wrap{position:relative}.switcher{position:absolute;z-index:5;right:0;top:40px;width:254px;background:var(--surface);padding:20px;border:1px solid var(--line);border-radius:10px;box-shadow:0 9px 30px #33332212}.switcher>strong{font-size:11px;font-weight:500;color:#969787}.switcher>div{display:flex;justify-content:space-between;gap:12px;padding-top:18px;font-size:12px}.switcher small{display:block;color:#9d9f92;font-size:9px;margin-top:5px}.switcher em{font-style:normal;font-size:9px;color:#aaa99c;padding-top:3px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.mobile-nav{display:none}
+ @media(min-width:1550px){.content{padding-top:70px}.note-grid{gap:18px}.note-card{padding:17px 22px}.composer textarea{min-height:130px}}
+ @media(max-width:1120px){.sidebar{width:210px;padding:30px 16px 18px}.main-pane{margin-left:210px}.topbar{padding:0 30px}.content{padding:42px 34px 24px}.keyboard-hint{display:none}.intro-mark{font-size:76px}.toast{left:calc(50% + 105px)}}
+diff --git a/apps/recall/app/layout.tsx b/apps/recall/app/layout.tsx
+index a743f7a..fc9e908 100644
+--- a/apps/recall/app/layout.tsx
++++ b/apps/recall/app/layout.tsx
+@@ -1,5 +1,6 @@
++import {VaultGate} from "@personal-tools/auth/vault";
+ import type { Metadata, Viewport } from "next";
+ import "./globals.css";
+-export const metadata:Metadata={title:"Recall — ふと浮かんだことを。",description:"日々の思考を、すぐに残して、また出会う。",appleWebApp:{capable:true,title:"Recall",statusBarStyle:"default"},icons:{icon:"/recall/icon.svg",apple:"/recall/icon-192.png"}};
++export const metadata:Metadata={title:"Recall",description:"メモの作成・検索・整理",appleWebApp:{capable:true,title:"Recall",statusBarStyle:"default"},icons:{icon:"/recall/icon.svg",apple:"/recall/icon-192.png"}};
+ export const viewport:Viewport={width:"device-width",initialScale:1,themeColor:"#f7f6f2"};
+-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>) { return <html lang="ja"><body>{children}</body></html>; }
++export default function RootLayout({children}:Readonly<{children:React.ReactNode}>) { return <html lang="ja"><body><VaultGate>{children}</VaultGate></body></html>; }
+diff --git a/apps/recall/app/manifest.ts b/apps/recall/app/manifest.ts
+index c9b19d1..14159cc 100644
+--- a/apps/recall/app/manifest.ts
++++ b/apps/recall/app/manifest.ts
+@@ -1,4 +1,4 @@
+ import type { MetadataRoute } from "next";
+ export default function manifest():MetadataRoute.Manifest {
+-  return {id:"/recall/",name:"Recall — 日々の思考メモ",short_name:"Recall",description:"ふと浮かんだことを、すぐに残す。",start_url:"/recall/",scope:"/recall/",display:"standalone",background_color:"#f7f6f2",theme_color:"#f7f6f2",lang:"ja",icons:[{src:"/recall/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/recall/icon-512.png",sizes:"512x512",type:"image/png"}]};
++  return {id:"/recall/",name:"Recall",short_name:"Recall",description:"メモの作成・検索・整理",start_url:"/recall/",scope:"/recall/",display:"standalone",background_color:"#f7f6f2",theme_color:"#f7f6f2",lang:"ja",icons:[{src:"/recall/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/recall/icon-512.png",sizes:"512x512",type:"image/png"}]};
+ }
+diff --git a/apps/recall/app/page.tsx b/apps/recall/app/page.tsx
+index b3d5888..9e0538b 100644
+--- a/apps/recall/app/page.tsx
++++ b/apps/recall/app/page.tsx
+@@ -1,4 +1,5 @@
+ "use client";
++import {encryptBackup,decryptBackup,beforeVaultLock} from "@personal-tools/api-client";
+ 
+ import {useCallback,useEffect,useRef,useState} from "react";
+ import {matchesQuery,noteTitle,type Note,type Space,type Sketch,type ItemRelation} from "@personal-tools/core";
+@@ -6,6 +7,7 @@ import {type RecallRepository} from "@personal-tools/api-client";
+ import {Button,RecallMark} from "@personal-tools/ui";
+ import {useRecallCloud} from "./use-recall-cloud";
+ import {CloudSettings} from "./cloud-settings";
++import {AtlasRequestsSettings,useAtlasRequestSharing} from "./atlas-requests-sharing";
+ 
+ type IconName="search"|"plus"|"star"|"clock"|"arrow"|"more"|"edit"|"trash"|"close"|"download"|"upload"|"check"|"restore"|"grid";
+ function Icon({name,size=18}:{name:IconName;size?:number}) {
+@@ -46,6 +48,8 @@ export default function Recall() {
+     ready:(repository,data,draft)=>{repo.current=repository;setNotes(data.notes);setSpaces(data.spaces);setSketches(data.sketches);setRelations(data.relations);setBody(draft.body);setDraftSpaces(draft.spaceIds);setReady(true);if(draft.body)setDraftStatus("下書きを復元しました");},
+     snapshot:data=>{setNotes(data.notes);setSpaces(data.spaces);setSketches(data.sketches);setRelations(data.relations);},failure:fail,
+   });
++  const requestSharing=useAtlasRequestSharing(ready?repo.current:null);
++  const requestSpaceId=requestSharing.sharing?.spaceId;
+   useEffect(()=>{
+     if(!ready)return;
+     const item=new URL(window.location.href).searchParams.get("item");
+@@ -65,11 +69,16 @@ export default function Recall() {
+     return()=>{active=false;window.removeEventListener("online",connection);window.removeEventListener("offline",connection);};
+   },[]);
+   useEffect(()=>{if(!notice)return;const timer=setTimeout(()=>setNotice(""),6500);return()=>clearTimeout(timer);},[notice]);
++  const [editRestored,setEditRestored]=useState(false);
++  const lockDraft=useRef({body,draftSpaces,editing,editBody,editSpaces});lockDraft.current={body,draftSpaces,editing,editBody,editSpaces};
++  useEffect(()=>{if(!ready){setEditRestored(false);return;}const current=repo.current;void current?.loadRecallEditDraft().then(d=>{if(repo.current!==current)return;if(d){const note=notes.find(n=>n.id===d.noteId);if(note){setEditing({...note,localRevision:d.revision});setEditBody(d.body);setEditSpaces(d.spaceIds);}}setEditRestored(true);}).catch(fail);},[ready]);
++  useEffect(()=>{if(!ready||!editRestored)return;void repo.current?.saveRecallEditDraft(editing?{noteId:editing.id,body:editBody,spaceIds:editSpaces,revision:editing.localRevision}:null).catch(fail);},[ready,editRestored,editing,editBody,editSpaces]);
++  useEffect(()=>beforeVaultLock(async()=>{const r=repo.current;if(!r)return;const d=lockDraft.current;await r.saveDraft(d.body,d.draftSpaces);await r.saveRecallEditDraft(d.editing?{noteId:d.editing.id,body:d.editBody,spaceIds:d.editSpaces,revision:d.editing.localRevision}:null);}),[]);
+   const modalOpen=!!editing||spaceDialog||settings;
+   useEffect(()=>{
+     if(!modalOpen)return;
+     const previous=document.activeElement as HTMLElement|null;
+-    const field=modalRef.current?.querySelector<HTMLElement>("textarea,input")??modalRef.current?.querySelector<HTMLElement>("button");
++    const field=(!settings?modalRef.current?.querySelector<HTMLElement>("textarea,input"):null)??modalRef.current?.querySelector<HTMLElement>("button");
+     field?.focus();
+     return()=>previous?.focus();
+   },[modalOpen]);
+@@ -99,12 +108,12 @@ export default function Recall() {
+   }
+   async function exportData() {
+     const current=repo.current;
+-    try {if(!current)return;const backup=await current.exportBackup();if(repo.current!==current)return;const url=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:"application/json"}));const link=document.createElement("a");link.href=url;link.download=`recall-${new Date().toISOString().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice("バックアップを書き出しました");}catch(e){if(repo.current===current)fail(e);}
++    try {if(!current)return;const backup=await current.exportBackup();if(repo.current!==current)return;const url=URL.createObjectURL(new Blob([await encryptBackup(backup)],{type:"application/json"}));const link=document.createElement("a");link.href=url;link.download=`recall-${new Date().toISOString().slice(0,10)}.json`;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setNotice("バックアップを書き出しました");}catch(e){if(repo.current===current)fail(e);}
+   }
+   async function importData(file:File|undefined) {
+-    const current=repo.current;if(!file||!current)return;if(file.size>25*1024*1024){setError("25MB以下のバックアップを選んでください。");return;}
++    const current=repo.current;if(!file||!current)return;if(file.size>100*1024*1024){setError("100MB以下のバックアップを選んでください。");return;}
+     setSaving(true);setError("");
+-    try {const contents=await file.text();if(repo.current!==current)return;const count=await current.importBackup(JSON.parse(contents));if(repo.current!==current)return;await refresh();if(repo.current!==current)return;announce();setNotice(`${count.notes}件のメモを追加しました（既存のメモは保持されます）`);}catch(e){if(repo.current===current)fail(e);}finally{if(repo.current===current){setSaving(false);if(fileInput.current)fileInput.current.value="";}}
++    try {const contents=await file.text();if(repo.current!==current)return;const count=await current.importBackup(await decryptBackup(JSON.parse(contents)));if(repo.current!==current)return;await refresh();if(repo.current!==current)return;announce();setNotice(`${count.notes}件のメモを追加しました（既存のメモは保持されます）`);}catch(e){if(repo.current===current)fail(e);}finally{if(repo.current===current){setSaving(false);if(fileInput.current)fileInput.current.value="";}}
+   }
+   const live=notes.filter(n=>!n.deletedAt), trash=notes.filter(n=>n.deletedAt);
+   const selectedSpace=spaces.find(s=>s.id===view);
+@@ -128,34 +137,34 @@ export default function Recall() {
+     </aside>
+     <div className="main-pane" inert={modalOpen}>
+       <header className="topbar"><span className="breadcrumb">自分のノート <span>/</span> Recall</span><span className="mobile-brand"><RecallMark/>Recall</span>
+-        <div className="top-actions"><button className={`local-status sync-status-button ${cloud.syncStatus.phase==="error"?"has-error":""}`} onClick={()=>setSettings(true)} aria-label={`保存状態: ${syncLabel}`}><span className="status-dot"/>{syncLabel}</button><div className="switcher-wrap"><button className="icon-button" aria-label="ツール一覧" aria-expanded={switcher} onClick={()=>setSwitcher(!switcher)}><Icon name="grid"/></button>{switcher&&<div className="switcher"><strong>あなたのツール</strong>{[["Recall","思考を残す","使用中"],["Sketchbook","描いて残す","開く"],["Collect","資料を集める","開く"],["Atlas","つながりを見つける","設計中"]].map(([name,description,state])=>(name==="Sketchbook"||name==="Collect")?<a key={name} href={name==="Collect"?"/collect/":"/sketchbook/"}><span>{name}<small>{description}</small></span><em>{state}</em></a>:<div key={name}><span>{name}<small>{description}</small></span><em>{state}</em></div>)}</div>}</div><button className="icon-button" aria-label="保存とバックアップ" onClick={()=>setSettings(true)}><Icon name="more"/></button></div>
++        <div className="top-actions"><button className={`local-status sync-status-button ${cloud.syncStatus.phase==="error"?"has-error":""}`} onClick={()=>setSettings(true)} aria-label={`保存状態: ${syncLabel}`}><span className="status-dot"/>{syncLabel}</button><div className="switcher-wrap"><button className="icon-button" aria-label="ツール一覧" aria-expanded={switcher} onClick={()=>setSwitcher(!switcher)}><Icon name="grid"/></button>{switcher&&<div className="switcher"><strong>あなたのツール</strong>{[["Recall","思考を残す","使用中"],["Sketchbook","描いて残す","開く"],["Collect","資料を集める","開く"],["Atlas","つながりを見つける","開く"]].map(([name,description,state])=>(name==="Sketchbook"||name==="Collect"||name==="Atlas")?<a key={name} href={name==="Atlas"?"/atlas/":name==="Collect"?"/collect/":"/sketchbook/"}><span>{name}<small>{description}</small></span><em>{state}</em></a>:<div key={name}><span>{name}<small>{description}</small></span><em>{state}</em></div>)}</div>}</div><button className="icon-button" aria-label="保存とバックアップ" onClick={()=>setSettings(true)}><Icon name="more"/></button></div>
+       </header>
+       <main className="content">
+-        <div className="intro"><div><p className="eyebrow">A LITTLE ROOM FOR YOUR THOUGHTS</p><h1>RECALL</h1>
++        <div className="intro"><div><p className="eyebrow">MEMO</p><h1>メモを書く</h1>
+         </div><span className="intro-mark" aria-hidden="true">✳</span></div>
+         <section className="composer" aria-label="新しいメモ">
+-          <label className="sr-only" htmlFor="new-note">いま、何を考えていますか？</label>
+-          <textarea id="new-note" ref={composer} value={body} onChange={e=>persistDraft(e.target.value,draftSpaces)} onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter"&&!e.nativeEvent.isComposing){e.preventDefault();void save();}}} disabled={!ready||saving} maxLength={100000} placeholder={ready?"いま、何を考えていますか？":"ノートを開いています…"} rows={3}/>
++          <label className="sr-only" htmlFor="new-note">メモの本文</label>
++          <textarea id="new-note" ref={composer} value={body} onChange={e=>persistDraft(e.target.value,draftSpaces)} onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter"&&!e.nativeEvent.isComposing){e.preventDefault();void save();}}} disabled={!ready||saving} maxLength={100000} placeholder={ready?"メモの本文":"ノートを開いています…"} rows={3}/>
+           <div className="composer-footer"><div className="space-chips" aria-label="メモのスペース">{spaces.map(space=><button key={space.id} className={`chip ${draftSpaces.includes(space.id)?"selected":""}`} aria-pressed={draftSpaces.includes(space.id)} disabled={!ready||saving} onClick={()=>persistDraft(body,draftSpaces.includes(space.id)?draftSpaces.filter(id=>id!==space.id):[...draftSpaces,space.id])}><span className="space-dot" style={{background:space.color}}/>{space.name}</button>)}</div><div className="save-action"><span className="keyboard-hint">Ctrl / ⌘ + Enter</span><Button className="primary" onClick={()=>void save()} disabled={!ready||!body.trim()||saving}>{saving?"保存中…":"メモを残す"}<Icon name="arrow" size={16}/></Button></div></div>
+         </section>
+-        <div className="capture-caption"><span>{draftStatus||"スペースはあとからでも。まずは、思いつくままに。"}</span><span>{body.length?`${body.length.toLocaleString()}文字`:""}</span></div>
++        {requestSpaceId&&(view===requestSpaceId||draftSpaces.includes(requestSpaceId))&&<div className="sharing-warning" role="note"><p>Codex向けの共有元です。「Atlas要望」を選んで保存したメモは、本文全体が書き出し対象になります。</p><button className="text-button" onClick={()=>setSettings(true)}>Codex向けの書き出しを開く</button></div>}
+         <div className="mobile-nav"><select aria-label="メモの表示範囲" value={view} onChange={e=>setView(e.target.value)}><option value="all">すべてのメモ</option><option value="pinned">大切にしたメモ</option>{spaces.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}<option value="trash">ごみ箱</option></select><button className="icon-button" aria-label="スペースを追加" onClick={()=>setSpaceDialog(true)}><Icon name="plus"/></button></div>
+-        <div className="list-toolbar"><h2>{title}<span>{filtered.length}</span></h2><label className="search"><Icon name="search" size={17}/><input aria-label="メモを検索" placeholder="思い出す言葉で検索" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button className="icon-button" aria-label="検索をクリア" onClick={()=>setQuery("")}><Icon name="close" size={14}/></button>}</label></div>
++        <div className="list-toolbar"><h2>{title}<span>{filtered.length}</span></h2><label className="search"><Icon name="search" size={17}/><input aria-label="メモを検索" placeholder="本文を検索" value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button className="icon-button" aria-label="検索をクリア" onClick={()=>setQuery("")}><Icon name="close" size={14}/></button>}</label></div>
+         {error&&<div className="error" role="alert"><span>{error}</span><button className="icon-button" aria-label="エラーを閉じる" onClick={()=>setError("")}><Icon name="close" size={16}/></button></div>}
+         {cloud.authMessage&&<p className="auth-message" role="status">{cloud.authMessage}</p>}
+         {view==="trash"&&<p className="muted">ごみ箱のメモはここから戻せます。この初版では自動削除しません。</p>}
+-        {filtered.length===0?<div className="empty"><span className="empty-symbol" aria-hidden="true">⌁</span><h3>{query?"まだ、その言葉は見つかりませんでした。":view==="trash"?"ごみ箱は空です。":view==="pinned"?"また読みたいメモに、星を。":"最初のひとことから。"}</h3><p>{query?"別の言葉や、短い言葉で探してみてください。":view==="trash"?"残したメモをゆっくり育てていきましょう。":view==="pinned"?"メモの星を押すと、ここに集まります。":"気になること、忘れたくないこと。まとまっていなくても大丈夫。"}</p>{!query&&view==="all"&&<button className="text-button" onClick={()=>composer.current?.focus()}>いまの思考を残す <Icon name="arrow" size={15}/></button>}</div>:
+-          <div className="timeline">{Array.from(grouped.entries()).map(([key,group])=><section className="day-group" key={key}><div className="day-heading"><h3>{dayLabel(group[0].createdAt)}</h3><span>{new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(group[0].createdAt))}</span><div/></div><div className="note-grid">{group.map(note=><article key={note.id} className={`note-card ${note.pinned?"is-pinned":""}`}><div className="note-top"><time dateTime={note.createdAt}>{timeLabel(note.createdAt)}</time><div className="note-actions">{!note.deletedAt&&<><button className={`icon-button star-button ${note.pinned?"starred":""}`} aria-label={note.pinned?"大切にしたメモから外す":"大切にしたメモに追加"} aria-pressed={note.pinned} disabled={saving} onClick={()=>void update(note,{pinned:!note.pinned})}><Icon name="star" size={16}/></button><button className="icon-button" aria-label={`編集: ${noteTitle(note.body)}`} onClick={()=>{setEditing(note);setEditBody(note.body);setEditSpaces(note.spaceIds);}}><Icon name="edit" size={16}/></button><button className="icon-button" aria-label={`ごみ箱へ: ${noteTitle(note.body)}`} disabled={saving} onClick={async()=>{if(await update(note,{deletedAt:new Date().toISOString()}))setNotice("ごみ箱に移しました。「ごみ箱」から戻せます");}}><Icon name="trash" size={16}/></button></>}{note.deletedAt&&<button className="restore-button" disabled={saving} onClick={async()=>{if(await update(note,{deletedAt:null}))setNotice("メモを元に戻しました");}}><Icon name="restore" size={16}/>戻す</button>}</div></div><p className="note-body">{note.body}</p>{!note.deletedAt&&<div className="note-connections"><a href={`/sketchbook/?from=${encodeURIComponent(note.id)}`}><Icon name="edit" size={14}/>このメモから描く</a>{relations.filter(relation=>!relation.deletedAt&&relation.type==="inspired_by"&&relation.toItemId===note.id).map(relation=>sketches.find(sketch=>sketch.id===relation.fromItemId&&!sketch.deletedAt)).filter((sketch):sketch is Sketch=>!!sketch).map(sketch=><a key={sketch.id} href={`/sketchbook/?item=${encodeURIComponent(sketch.id)}`}>↗ {sketch.title||"無題のスケッチ"}</a>)}</div>}<div className="note-footer"><div className="note-spaces">{note.spaceIds.map(id=>spaces.find(s=>s.id===id)).filter((s):s is Space=>!!s).map(space=><span key={space.id}><i style={{background:space.color}}/>{space.name}</span>)}</div><span className="saved-label"><Icon name="check" size={12}/>{cloud.identity.mode==="device"?"端末に保存":cloud.conflicts.some(c=>c.entityId===note.id)?"確認が必要":cloud.pendingItemIds.includes(note.id)||note.serverRevision===null?"同期待ち":"クラウドに保存"}</span></div></article>)}</div></section>)}</div>}
+-        <footer className="page-footer"><span>小さな思考が、いつかつながる。</span><button onClick={()=>setSettings(true)}>保存とバックアップ</button></footer>
++        {filtered.length===0?<div className="empty"><span className="empty-symbol" aria-hidden="true">⌁</span><h3>{query?"一致するメモがありません":view==="trash"?"ごみ箱は空です。":view==="pinned"?"ブックマークがありません":"メモがありません"}</h3><p>{query?"別の言葉や、短い言葉で探してみてください。":view==="trash"?"ごみ箱に移したメモをここに表示します。":view==="pinned"?"メモの星を押すと、ここに表示します。":"上の入力欄からメモを保存できます。"}</p>{!query&&view==="all"&&<button className="text-button" onClick={()=>composer.current?.focus()}>メモを書く <Icon name="arrow" size={15}/></button>}</div>:
++          <div className="timeline">{Array.from(grouped.entries()).map(([key,group])=><section className="day-group" key={key}><div className="day-heading"><h3>{dayLabel(group[0].createdAt)}</h3><span>{new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(group[0].createdAt))}</span><div/></div><div className="note-grid">{group.map(note=><article key={note.id} className={`note-card ${note.pinned?"is-pinned":""}`}><div className="note-top"><time dateTime={note.createdAt}>{timeLabel(note.createdAt)}</time><div className="note-actions">{!note.deletedAt&&<><button className={`icon-button star-button ${note.pinned?"starred":""}`} aria-label={note.pinned?"大切にしたメモから外す":"大切にしたメモに追加"} aria-pressed={note.pinned} disabled={saving} onClick={()=>void update(note,{pinned:!note.pinned})}><Icon name="star" size={16}/></button><button className="icon-button" aria-label={`編集: ${noteTitle(note.body)}`} onClick={()=>{setEditing(note);setEditBody(note.body);setEditSpaces(note.spaceIds);}}><Icon name="edit" size={16}/></button><button className="icon-button" aria-label={`ごみ箱へ: ${noteTitle(note.body)}`} disabled={saving} onClick={async()=>{if(await update(note,{deletedAt:new Date().toISOString()}))setNotice("ごみ箱に移しました。「ごみ箱」から戻せます");}}><Icon name="trash" size={16}/></button></>}{note.deletedAt&&<button className="restore-button" disabled={saving} onClick={async()=>{if(await update(note,{deletedAt:null}))setNotice("メモを元に戻しました");}}><Icon name="restore" size={16}/>戻す</button>}</div></div><p className="note-body">{note.body}</p>{!note.deletedAt&&<div className="note-connections">{relations.filter(relation=>!relation.deletedAt&&relation.type==="inspired_by"&&relation.toItemId===note.id).map(relation=>sketches.find(sketch=>sketch.id===relation.fromItemId&&!sketch.deletedAt)).filter((sketch):sketch is Sketch=>!!sketch).map(sketch=><a key={sketch.id} href={`/sketchbook/?item=${encodeURIComponent(sketch.id)}`}>↗ {sketch.title||"無題のスケッチ"}</a>)}</div>}<div className="note-footer"><div className="note-spaces">{note.spaceIds.map(id=>spaces.find(s=>s.id===id)).filter((s):s is Space=>!!s).map(space=><span key={space.id}><i style={{background:space.color}}/>{space.name}</span>)}</div><span className="saved-label"><Icon name="check" size={12}/>{cloud.identity.mode==="device"?"端末に保存":cloud.conflicts.some(c=>c.entityId===note.id)?"確認が必要":cloud.pendingItemIds.includes(note.id)||note.serverRevision===null?"同期待ち":"クラウドに保存"}</span></div></article>)}</div></section>)}</div>}
++        <footer className="page-footer"><button onClick={()=>setSettings(true)}>保存とバックアップ</button></footer>
+       </main>
+     </div>
+     {notice&&<div className="toast" role="status"><Icon name="check" size={17}/>{notice}</div>}
+     {modalOpen&&<div className="modal-backdrop" onClick={e=>{if(e.target===e.currentTarget&&!saving){setEditing(null);setSpaceDialog(false);setSettings(false);}}}><section ref={modalRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title" onKeyDown={e=>{
+-      if(e.key!=="Tab")return;const nodes=e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled)');const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
++      if(e.key!=="Tab")return;const nodes=e.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled)');const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+     }}><div className="modal-heading"><h2 id="dialog-title">{editing?"メモをひらく":spaceDialog?"新しいスペース":"保存とバックアップ"}</h2><button className="icon-button" aria-label="閉じる" disabled={saving} onClick={()=>{setEditing(null);setSpaceDialog(false);setSettings(false);}}><Icon name="close"/></button></div>
+-      {editing&&<form onSubmit={async e=>{e.preventDefault();if(await update(editing,{body:editBody,spaceIds:editSpaces})){setEditing(null);setNotice("メモを更新しました");}}}><textarea aria-label="メモを編集" autoFocus className="edit-textarea" rows={9} value={editBody} maxLength={100000} disabled={saving} onChange={e=>setEditBody(e.target.value)}/><div className="space-chips">{spaces.map(s=><button key={s.id} type="button" className={`chip ${editSpaces.includes(s.id)?"selected":""}`} aria-pressed={editSpaces.includes(s.id)} disabled={saving} onClick={()=>setEditSpaces(editSpaces.includes(s.id)?editSpaces.filter(id=>id!==s.id):[...editSpaces,s.id])}><span className="space-dot" style={{background:s.color}}/>{s.name}</button>)}</div><div className="modal-actions"><Button type="button" onClick={()=>setEditing(null)} disabled={saving}>閉じる</Button><Button type="submit" className="primary" disabled={!editBody.trim()||saving}>変更を保存</Button></div></form>}
+-      {spaceDialog&&<form onSubmit={addSpace}><p className="muted">思考を置く場所を、好きな名前で。1つのメモを複数のスペースに置けます。</p><label className="field-label" htmlFor="space-name">スペース名</label><input id="space-name" className="text-input" autoFocus value={spaceName} maxLength={40} onChange={e=>setSpaceName(e.target.value)} placeholder="例：旅のこと" disabled={saving}/><div className="modal-actions"><Button className="primary" disabled={!spaceName.trim()||saving}>スペースを作る</Button></div></form>}
+-      {settings&&<><p className="storage-note"><span className="status-dot"/>{cloud.identity.mode==="account"?"アカウントのメモを、まずこの端末に保存します。":"このブラウザの、この端末に保存しています。"}</p><CloudSettings cloud={cloud} onNotice={setNotice} onError={fail}/><hr/><h3>バックアップ</h3><p className="muted">ブラウザのデータを消す前や、端末を変える前にバックアップを書き出してください。クラウド同期が未完了の変更も、保存済みのメモなら書き出せます。</p><div className="backup-actions"><Button onClick={()=>void exportData()} disabled={!ready||saving}><Icon name="download"/>バックアップを書き出す</Button><Button onClick={()=>fileInput.current?.click()} disabled={!ready||saving}><Icon name="upload"/>バックアップを読み込む</Button></div><p className="small-note">読み込みは追加方式です。同じファイルを再び読むとメモも再び追加されます。書き出しには保存済みメモ・ごみ箱・スペースが含まれ、入力中の下書きは含みません。</p><hr/><h3>ホーム画面で、すぐに。</h3><p className="muted">スマートフォンではブラウザのメニューから「ホーム画面に追加」。iPhoneではSafariの共有メニューから追加できます。</p><p className="small-note">{offlineReady?"オフライン用の画面を準備できました。":"オフラインでの再起動は、本番用サーバーで一度開き、画面の準備が完了すると利用できます。"} {offline?"現在はオフラインです。":""}</p><Button onClick={async()=>{try{const kept=await navigator.storage?.persist();setNotice(kept?"端末内データの保持が許可されました（バックアップも続けてください）":"保持をリクエストしました。バックアップも続けてください");}catch(e){fail(e);}}}>端末内データの保持をリクエスト</Button></>}
++      {editing&&<form onSubmit={async e=>{e.preventDefault();if(await update(editing,{body:editBody,spaceIds:editSpaces})){setEditing(null);setNotice("メモを更新しました");}}}>{requestSpaceId&&editSpaces.includes(requestSpaceId)&&<p className="sharing-warning">このメモはCodex向けの書き出し対象です。ほかのスペースにも置いていても、保存済みの本文全体が対象になります。</p>}<textarea aria-label="メモを編集" autoFocus className="edit-textarea" rows={9} value={editBody} maxLength={100000} disabled={saving} onChange={e=>setEditBody(e.target.value)}/><div className="space-chips">{spaces.map(s=><button key={s.id} type="button" className={`chip ${editSpaces.includes(s.id)?"selected":""}`} aria-pressed={editSpaces.includes(s.id)} disabled={saving} onClick={()=>setEditSpaces(editSpaces.includes(s.id)?editSpaces.filter(id=>id!==s.id):[...editSpaces,s.id])}><span className="space-dot" style={{background:s.color}}/>{s.name}</button>)}</div><div className="modal-actions"><Button type="button" onClick={()=>setEditing(null)} disabled={saving}>閉じる</Button><Button type="submit" className="primary" disabled={!editBody.trim()||saving}>変更を保存</Button></div></form>}
++      {spaceDialog&&<form onSubmit={addSpace}><p className="muted">1つのメモを複数のスペースに置けます。</p><label className="field-label" htmlFor="space-name">スペース名</label><input id="space-name" className="text-input" autoFocus value={spaceName} maxLength={40} onChange={e=>setSpaceName(e.target.value)} placeholder="例：旅のこと" disabled={saving}/><div className="modal-actions"><Button className="primary" disabled={!spaceName.trim()||saving}>スペースを作る</Button></div></form>}
++      {settings&&<><p className="storage-note"><span className="status-dot"/>{cloud.identity.mode==="account"?"アカウントのメモを、まずこの端末に保存します。":"このブラウザの、この端末に保存しています。"}</p><AtlasRequestsSettings repository={ready?repo.current:null} spaces={spaces} notes={notes} state={requestSharing} onPrepared={spaceId=>{setView(spaceId);setSettings(false);void refresh().catch(fail);announce();}} onNotice={setNotice}/><hr/><CloudSettings cloud={cloud} onNotice={setNotice} onError={fail}/><hr/><h3>バックアップ</h3><p className="muted">ブラウザのデータを消す前や、端末を変える前にバックアップを書き出してください。クラウド同期が未完了の変更も、保存済みのメモなら書き出せます。</p><div className="backup-actions"><Button onClick={()=>void exportData()} disabled={!ready||saving}><Icon name="download"/>バックアップを書き出す</Button><Button onClick={()=>fileInput.current?.click()} disabled={!ready||saving}><Icon name="upload"/>バックアップを読み込む</Button></div><p className="small-note">読み込みは追加方式です。同じファイルを再び読むとメモも再び追加されます。書き出しには保存済みメモ・ごみ箱・スペースが含まれ、入力中の下書きは含みません。</p><hr/><h3>ホーム画面に追加</h3><p className="muted">スマートフォンではブラウザのメニューから「ホーム画面に追加」。iPhoneではSafariの共有メニューから追加できます。</p><p className="small-note">{offlineReady?"オフライン用の画面を準備できました。":"オフラインでの再起動は、本番用サーバーで一度開き、画面の準備が完了すると利用できます。"} {offline?"現在はオフラインです。":""}</p><Button onClick={async()=>{try{const kept=await navigator.storage?.persist();setNotice(kept?"端末内データの保持が許可されました（バックアップも続けてください）":"保持をリクエストしました。バックアップも続けてください");}catch(e){fail(e);}}}>端末内データの保持をリクエスト</Button></>}
+       {error&&<p className="error" role="alert">{error}</p>}
+     </section></div>}
+     <input type="file" hidden accept="application/json,.json" ref={fileInput} onChange={e=>void importData(e.target.files?.[0])}/>
+diff --git a/apps/recall/next.config.ts b/apps/recall/next.config.ts
+index f7f6f4f..7229f87 100644
+--- a/apps/recall/next.config.ts
++++ b/apps/recall/next.config.ts
+@@ -1,13 +1,13 @@
+ import type {NextConfig} from "next";
+-import {sketchbookRewrites,collectRewrites} from "../../scripts/zones.mjs";
++import {sketchbookRewrites,collectRewrites,atlasRewrites} from "../../scripts/zones.mjs";
+ const config:NextConfig={
+   basePath:"/recall",trailingSlash:true,
+   transpilePackages:["@personal-tools/core","@personal-tools/api-client","@personal-tools/auth","@personal-tools/ui"],
+   logging:{incomingRequests:{ignore:[/\/auth\/callback(?:\/|\?|$)/]}},
+-  async headers(){return [{source:"/",headers:[{key:"X-Recall-Public-Shell",value:"1"}]}];},
++  async headers(){return [{source:"/:path*",headers:[{key:"Referrer-Policy",value:"no-referrer"},{key:"X-Content-Type-Options",value:"nosniff"},{key:"X-Frame-Options",value:"DENY"},{key:"Content-Security-Policy",value:"frame-ancestors 'none'; object-src 'none'; base-uri 'self'"}]},{source:"/",headers:[{key:"X-Recall-Public-Shell",value:"1"}]}];},
+   // Same-origin entry point preserves both page slashes and file asset paths.
+   // Each app keeps its own basePath, assets and SW scope.
+   // https://nextjs.org/docs/app/guides/multi-zones
+-  async rewrites(){return {beforeFiles:[...sketchbookRewrites(process.env.SKETCHBOOK_ORIGIN),...collectRewrites(process.env.COLLECT_ORIGIN)],afterFiles:[],fallback:[]};},
++  async rewrites(){return {beforeFiles:[...sketchbookRewrites(process.env.SKETCHBOOK_ORIGIN),...collectRewrites(process.env.COLLECT_ORIGIN),...atlasRewrites(process.env.ATLAS_ORIGIN)],afterFiles:[],fallback:[]};},
+ };
+ export default config;
+diff --git a/apps/recall/public/sw.js b/apps/recall/public/sw.js
+index 5444bcd..a3eb623 100644
+--- a/apps/recall/public/sw.js
++++ b/apps/recall/public/sw.js
+@@ -1,5 +1,5 @@
+ // v1 caches only the public shell and immutable scripts. Notes stay in IndexedDB.
+-const CACHE = "recall-shell-v6";
++const CACHE = "recall-vault-shell-v2";
+ const BASE = "/recall";
+ const SHELL = `${BASE}/`;
+ self.addEventListener("install", event => {
+@@ -17,7 +17,7 @@ self.addEventListener("install", event => {
+   // A new worker waits until all tabs of the previous version close.
+ });
+ self.addEventListener("activate", event => {
+-  event.waitUntil((async()=>{for(const key of await caches.keys()) if(key.startsWith("recall-shell-") && key!==CACHE) await caches.delete(key);await self.clients.claim();})());
++  event.waitUntil((async()=>{for(const key of await caches.keys()) if((key.startsWith("recall-shell-") || key.startsWith("recall-vault-shell-")) && key!==CACHE) await caches.delete(key);await self.clients.claim();})());
+ });
+ self.addEventListener("fetch", event => {
+   const url = new URL(event.request.url);
+diff --git a/apps/sketchbook/app/layout.tsx b/apps/sketchbook/app/layout.tsx
+index 92b3c2f..96fc02e 100644
+--- a/apps/sketchbook/app/layout.tsx
++++ b/apps/sketchbook/app/layout.tsx
+@@ -1,5 +1,6 @@
++import {VaultGate} from "@personal-tools/auth/vault";
+ import type {Metadata,Viewport} from "next";
+ import "./globals.css";
+-export const metadata:Metadata={title:"Sketchbook — かたちに残す。",description:"浮かんだ構図やアイデアを、すぐに描いて残す。",appleWebApp:{capable:true,title:"Sketchbook",statusBarStyle:"default"},icons:{icon:"/sketchbook/icon.svg",apple:"/sketchbook/icon-192.png"}};
++export const metadata:Metadata={title:"Sketchbook",description:"スケッチの作成・保存・編集",appleWebApp:{capable:true,title:"Sketchbook",statusBarStyle:"default"},icons:{icon:"/sketchbook/icon.svg",apple:"/sketchbook/icon-192.png"}};
+ export const viewport:Viewport={width:"device-width",initialScale:1,themeColor:"#f6f4ef"};
+-export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="ja"><body>{children}</body></html>;}
++export default function RootLayout({children}:Readonly<{children:React.ReactNode}>){return <html lang="ja"><body><VaultGate>{children}</VaultGate></body></html>;}
+diff --git a/apps/sketchbook/app/manifest.ts b/apps/sketchbook/app/manifest.ts
+index b1d1d41..28c64c4 100644
+--- a/apps/sketchbook/app/manifest.ts
++++ b/apps/sketchbook/app/manifest.ts
+@@ -1,4 +1,4 @@
+ import type {MetadataRoute} from "next";
+ export default function manifest():MetadataRoute.Manifest{
+-  return {id:"/sketchbook/",name:"Sketchbook — アイデアを描く",short_name:"Sketchbook",description:"浮かんだかたちを、すぐに残す。",start_url:"/sketchbook/",scope:"/sketchbook/",display:"standalone",background_color:"#f6f4ef",theme_color:"#f6f4ef",lang:"ja",icons:[{src:"/sketchbook/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/sketchbook/icon-512.png",sizes:"512x512",type:"image/png"}]};
++  return {id:"/sketchbook/",name:"Sketchbook",short_name:"Sketchbook",description:"スケッチの作成・保存・編集",start_url:"/sketchbook/",scope:"/sketchbook/",display:"standalone",background_color:"#f6f4ef",theme_color:"#f6f4ef",lang:"ja",icons:[{src:"/sketchbook/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/sketchbook/icon-512.png",sizes:"512x512",type:"image/png"}]};
+ }
+diff --git a/apps/sketchbook/app/page.tsx b/apps/sketchbook/app/page.tsx
+index a860b1a..00e14d3 100644
+--- a/apps/sketchbook/app/page.tsx
++++ b/apps/sketchbook/app/page.tsx
+@@ -1,14 +1,15 @@
+ "use client";
++import {encryptBackup,decryptBackup,beforeVaultLock} from "@personal-tools/api-client";
+ import {useEffect,useId,useRef,useState,type ReactNode,type MouseEvent} from "react";
+ import type {ItemRelation,Note,Sketch,SketchDraft,SketchStroke,SyncRecord} from "@personal-tools/core";
+ import type {RecallRepository} from "@personal-tools/api-client";
+-import {ConflictError,uploadSketchPreview} from "@personal-tools/api-client";
++import {ConflictError,uploadEncryptedSketchPreview as uploadSketchPreview} from "@personal-tools/api-client";
+ import {usePersonalToolsCloud,type CloudSnapshot} from "@personal-tools/auth/react";
+ import {getBrowserAuthClient} from "@personal-tools/auth/browser";
+ import {DrawingCanvas,SketchThumbnail} from "./drawing-canvas";
+ import {commitStroke,undoStroke,redoStroke,drawingPng} from "./drawing";
+ 
+-const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[],resources:[]};
++const EMPTY:CloudSnapshot={notes:[],spaces:[],sketches:[],relations:[],resources:[],projects:[],labels:[]};
+ const blank=():SketchDraft=>({title:"",strokes:[],spaceIds:[]});
+ const fingerprint=(draft:SketchDraft)=>JSON.stringify({title:draft.title.trim(),strokes:draft.strokes,spaceIds:[...draft.spaceIds].sort()});
+ const draftOf=(sketch:Sketch):SketchDraft=>({title:sketch.title,strokes:sketch.strokes,spaceIds:sketch.spaceIds,editingId:sketch.id,expectedRevision:sketch.localRevision});
+@@ -78,7 +79,7 @@ export default function Sketchbook(){
+ 
+   const selected=data.sketches.find(sketch=>sketch.id===editor.editingId),deleted=!!selected?.deletedAt;
+   const stale=!!selected&&editor.expectedRevision!==selected.localRevision;
+-  const activeRelations=data.relations.filter(relation=>!relation.deletedAt&&relation.fromItemId===editor.editingId);
++  const activeRelations=data.relations.filter(relation=>!relation.deletedAt&&relation.type==="inspired_by"&&relation.fromItemId===editor.editingId&&data.notes.some(note=>note.id===relation.toItemId));
+   const sourceNotes=activeRelations.map(relation=>({relation,note:data.notes.find(note=>note.id===relation.toItemId)}));
+   const liveNotes=data.notes.filter(note=>!note.deletedAt);
+   const shown=data.sketches.filter(sketch=>(view==="trash"?!!sketch.deletedAt:!sketch.deletedAt)&&(!spaceFilter||sketch.spaceIds.includes(spaceFilter))&&sketch.title.normalize("NFKC").toLocaleLowerCase("ja").includes(search.normalize("NFKC").toLocaleLowerCase("ja"))).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));
+@@ -89,6 +90,7 @@ export default function Sketchbook(){
+   function mutate(change:Partial<SketchDraft>){version.current++;setDraftSaved(false);setEditor(current=>{const next={...current,...change};editorRef.current=next;return next;});}
+   function changeHistory(kind:"undo"|"redo",history={strokes:editorRef.current.strokes,redo}){const next=kind==="undo"?undoStroke(history):redoStroke(history);if(next===history)return;setRedo(next.redo);mutate({strokes:next.strokes});}
+   function append(stroke:SketchStroke){const current=editorRef.current.strokes;if(current.length>=2000||current.reduce((count,item)=>count+item.points.length,0)+stroke.points.length>20000){setError("この紙の描画上限に達しました。保存して、新しいスケッチを作ってください。");return;}const next=commitStroke({strokes:current,redo},stroke);setRedo(next.redo);mutate({strokes:next.strokes});}
++  useEffect(()=>beforeVaultLock(()=>queueDraft(structuredClone(editorRef.current))),[]);
+   function queueDraft(draft:SketchDraft){const repo=repository.current,at=epoch.current;if(!repo)return Promise.resolve();draftQueue.current=draftQueue.current.catch(()=>{}).then(async()=>{if(at!==epoch.current||repo!==repository.current)return;await repo.saveSketchDraft(draft);if(at===epoch.current&&fingerprint(editorRef.current)===fingerprint(draft))setDraftSaved(true);});return draftQueue.current;}
+   useEffect(()=>{if(selected&&stale&&!dirty&&!saving&&!drawing)installEditor(draftOf(selected),selected);},[selected,stale,dirty,saving,drawing]);
+   useEffect(()=>{if(!ready)return;const guard=context();const timer=setTimeout(()=>{void queueDraft(structuredClone(editor)).catch(value=>{if(guard.current())failure(value);});},250);return()=>clearTimeout(timer);},[editor,ready]);
+@@ -145,19 +147,19 @@ export default function Sketchbook(){
+   return <div className="app-shell">
+     <aside className="sidebar">
+       <a className="brand" href="/sketchbook/" onClick={event=>{event.preventDefault();newSketch();}}><img src="/sketchbook/icon.svg" width="36" height="36" alt=""/><span>SKETCHBOOK</span></a>
+-      <p className="brand-caption">浮かんだかたちを、ここに。</p>
++      <p className="brand-caption">スケッチを保存・編集</p>
+       <button className="new-sketch" onClick={newSketch} disabled={!ready||saving||drawing}><Icon name="plus"/>新しいスケッチ</button>
+       <nav className="views" aria-label="スケッチの一覧"><button className={view==="all"?"active":""} onClick={()=>setView("all")}><Icon name="grid"/>すべてのスケッチ<span>{data.sketches.filter(sketch=>!sketch.deletedAt).length}</span></button><button className={view==="trash"?"active":""} onClick={()=>setView("trash")}><Icon name="trash"/>ごみ箱<span>{data.sketches.filter(sketch=>sketch.deletedAt).length}</span></button></nav>
+       <div className="gallery-heading"><span>{view==="trash"?"TRASH":"YOUR PAGES"}</span><span>{shown.length}枚</span></div>
+       <label className="search"><span className="sr-only">スケッチを探す</span><input type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="タイトルで探す"/></label>
+       <select className="space-filter" aria-label="スペースで絞り込む" value={spaceFilter} onChange={event=>setSpaceFilter(event.target.value)}><option value="">すべてのスペース</option>{data.spaces.map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select>
+-      <div className="gallery">{shown.length?shown.map(sketch=><button className={`gallery-card ${editor.editingId===sketch.id?"selected":""}`} key={sketch.id} onClick={()=>open(sketch)}><SketchThumbnail strokes={sketch.strokes} label={`${sketch.title||"無題のスケッチ"}を開く`}/><span className="gallery-meta"><strong>{sketch.title||"無題のスケッチ"}</strong><time>{date(sketch.updatedAt)}</time></span>{cloud.pendingItemIds.includes(sketch.id)&&<span className="gallery-pending">同期待ち</span>}</button>):<div className="gallery-empty"><Icon name="pen" size={26}/><p>{view==="trash"?"ごみ箱は空です":"最初の一枚を描いてみましょう"}</p></div>}</div>
+-      <div className="sidebar-bottom"><a href="/collect/" onClick={event=>appLink(event,"/collect/")}><span className="recall-mark">▧</span><span>Collect<small>資料を集める</small></span><Icon name="arrow" size={16}/></a><a href="/recall/" onClick={event=>appLink(event,"/recall/")}><span className="recall-mark">◌</span><span>Recall<small>ことばで残す</small></span><Icon name="arrow" size={16}/></a><button className="settings-link" onClick={()=>setModal("settings")}><Icon name="settings"/>保存とアカウント</button></div>
++      <div className="gallery">{shown.length?shown.map(sketch=><button className={`gallery-card ${editor.editingId===sketch.id?"selected":""}`} key={sketch.id} onClick={()=>open(sketch)}><SketchThumbnail strokes={sketch.strokes} label={`${sketch.title||"無題のスケッチ"}を開く`}/><span className="gallery-meta"><strong>{sketch.title||"無題のスケッチ"}</strong><time>{date(sketch.updatedAt)}</time></span>{cloud.pendingItemIds.includes(sketch.id)&&<span className="gallery-pending">同期待ち</span>}</button>):<div className="gallery-empty"><Icon name="pen" size={26}/><p>{view==="trash"?"ごみ箱は空です":"スケッチがありません"}</p></div>}</div>
++      <div className="sidebar-bottom"><a href="/atlas/" onClick={event=>appLink(event,"/atlas/")}><span className="recall-mark">⌘</span><span>Atlas<small>記録をつなぐ</small></span><Icon name="arrow" size={16}/></a><a href="/collect/" onClick={event=>appLink(event,"/collect/")}><span className="recall-mark">▧</span><span>Collect<small>資料を集める</small></span><Icon name="arrow" size={16}/></a><a href="/recall/" onClick={event=>appLink(event,"/recall/")}><span className="recall-mark">◌</span><span>Recall<small>ことばで残す</small></span><Icon name="arrow" size={16}/></a><button className="settings-link" onClick={()=>setModal("settings")}><Icon name="settings"/>保存とアカウント</button></div>
+     </aside>
+     <main className="main-pane">
+       <header className="topbar"><div className="breadcrumb"><span>Personal tools</span><i>/</i>Sketchbook</div><a className="mobile-brand" href="/recall/" onClick={event=>appLink(event,"/recall/")}>◌ Recall <Icon name="arrow" size={14}/></a><button className={`status ${cloud.syncStatus.phase==="error"||failedPreviews?"warning":""}`} onClick={()=>setModal("settings")}><span className="status-dot"/>{status}</button></header>
+       <div className="workspace">
+-        <section className="page-heading"><div><p className="eyebrow">A PLACE FOR YOUR IDEAS</p><h1>かたちに、残す。</h1></div><p className="heading-note">うまく描くより、<br/>思いついたそのままで。</p></section>
++        <section className="page-heading"><div><p className="eyebrow">SKETCHBOOK</p><h1>スケッチを描く</h1></div></section>
+         {error&&<div className="error" role="alert"><span>{error}</span><button className="icon-button" onClick={()=>setError("")} aria-label="エラー表示を閉じる"><Icon name="close" size={15}/></button></div>}
+         {(stale||saveConflict)&&dirty&&<div className="warning-note"><p>別の画面でこのスケッチが更新されました。描きかけの内容は下書きに残っています。</p><div className="modal-buttons"><button className="button primary" disabled={saving||drawing} onClick={()=>void save(true)}>別の一枚として保存</button><button className="button" disabled={saving} onClick={()=>selected&&open(selected)}>最新の保存内容を開く</button></div></div>}
+         <section className="drawing-panel" aria-label="スケッチの編集">
+@@ -172,9 +174,9 @@ export default function Sketchbook(){
+           <div className={`paper-wrap ${deleted?"deleted-paper":""}`}><DrawingCanvas strokes={editor.strokes} tool={tool} color={color} width={width} disabled={!ready||deleted} onStroke={append} onDrawingChange={setDrawing} onLimit={()=>setError("この紙の描画上限に達しました。ここまでの線は残っています。保存して、新しいスケッチを作ってください。")}/>{!editor.strokes.length&&<span className="paper-placeholder"><span>＋</span>ここから、ひと筆。</span>}</div>
+           <div className="paper-footer"><span>1200 × 800 <i>·</i> {editor.strokes.length} strokes</span><span>ペン・指・マウスで描けます</span></div>
+         </section>
+-        <div className="below-paper"><div className="space-chips" aria-label="このスケッチのスペース">{data.spaces.map(space=><button className={`chip ${editor.spaceIds.includes(space.id)?"selected":""}`} key={space.id} disabled={!ready||deleted} onClick={()=>mutate({spaceIds:editor.spaceIds.includes(space.id)?editor.spaceIds.filter(id=>id!==space.id):[...editor.spaceIds,space.id]})}><i style={{background:space.color}}/>{space.name}</button>)}<button className="add-space" onClick={()=>setModal("settings")} aria-label="スペースを追加"><Icon name="plus" size={14}/></button></div><div className="save-actions">{selected&&<button className="icon-button" aria-label={deleted?"スケッチを復元":"スケッチをごみ箱へ"} disabled={busy||saving||dirty||drawing} onClick={()=>void perform(()=>trash(selected))}><Icon name={deleted?"undo":"trash"}/></button>}<button className="button" disabled={!ready||busy||drawing} onClick={()=>void perform(async guard=>{const captured=structuredClone(editorRef.current);const blob=await drawingPng(captured.strokes);if(guard.current())download(blob,`${captured.title.trim()||"sketch"}.png`);})}><Icon name="download" size={16}/><span>PNG</span></button>{deleted?<button className="button primary" disabled={busy||saving} onClick={()=>selected&&void perform(()=>trash(selected))}>ごみ箱から戻す</button>:<button className="button primary" disabled={!ready||saving||drawing||(!dirty&&!!editor.editingId)} onClick={()=>void save()}><Icon name="save" size={16}/>{saving?"保存中…":"スケッチを保存"}</button>}</div></div>
+-        <section className="inspiration"><div className="section-heading"><h2><Icon name="link" size={16}/>着想のつながり</h2><button disabled={!ready||deleted||busy} onClick={()=>{setSourceSearch("");setModal("sources");}}><Icon name="plus" size={13}/>Recallのメモを関連付ける</button></div>{sourceNotes.length||pendingSource?<div className="source-list">{sourceNotes.map(({relation,note})=><div className="source-card" key={relation.id}><span className="source-label">INSPIRED BY</span>{note?<a href={`/recall/?item=${encodeURIComponent(note.id)}`} onClick={event=>appLink(event,`/recall/?item=${encodeURIComponent(note.id)}`)}><span>{titleOf(note)}</span><small>{note.deletedAt?"ごみ箱のメモ":"Recallで開く"}<Icon name="arrow" size={12}/></small></a>:<p>元のメモを同期すると表示できます</p>}<button className="icon-button" title="関連付けを解除" aria-label="この関連付けを解除" onClick={()=>void perform(()=>removeSource(relation))} disabled={busy}><Icon name="close" size={14}/></button></div>)}{pendingSource&&<div className="source-card pending-source"><span className="source-label">INSPIRED BY</span><p>{liveNotes.find(note=>note.id===pendingSource)?titleOf(liveNotes.find(note=>note.id===pendingSource)!):"選択したメモ"}<small>スケッチを保存すると関連付きます</small></p><button className="icon-button" aria-label="着想元の選択を取り消す" onClick={()=>setPendingSource("")}><Icon name="close" size={14}/></button></div>}</div>:<p className="inspiration-empty">ひとつのことばから、次のかたちへ。着想元のメモをここにつなげられます。</p>}</section>
+-        <footer className="page-footer"><span>{offline?"オフライン · 端末への保存は続けられます":"あなたのアイデアを、あなたのペースで。"}</span><span>{dirty?"下書きはこのブラウザに保存されます":"Sketchbook"}</span></footer>
++        <div className="below-paper"><div className="space-chips" aria-label="このスケッチのスペース">{data.spaces.map(space=><button className={`chip ${editor.spaceIds.includes(space.id)?"selected":""}`} key={space.id} disabled={!ready||deleted} onClick={()=>mutate({spaceIds:editor.spaceIds.includes(space.id)?editor.spaceIds.filter(id=>id!==space.id):[...editor.spaceIds,space.id]})}><i style={{background:space.color}}/>{space.name}</button>)}<button className="add-space" onClick={()=>setModal("settings")} aria-label="スペースを追加"><Icon name="plus" size={14}/></button></div><div className="save-actions">{selected&&<button className="icon-button" aria-label={deleted?"スケッチを復元":"スケッチをごみ箱へ"} disabled={busy||saving||dirty||drawing} onClick={()=>void perform(()=>trash(selected))}><Icon name={deleted?"undo":"trash"}/></button>}<button className="button" disabled={!ready||busy||drawing} onClick={()=>void perform(async guard=>{const captured=structuredClone(editorRef.current);const blob=await drawingPng(captured.strokes);if(guard.current())download(blob,`${captured.title.trim()||"sketch"}.png`);})}><Icon name="download" size={16}/><span>PNG（暗号化なし）</span></button>{deleted?<button className="button primary" disabled={busy||saving} onClick={()=>selected&&void perform(()=>trash(selected))}>ごみ箱から戻す</button>:<button className="button primary" disabled={!ready||saving||drawing||(!dirty&&!!editor.editingId)} onClick={()=>void save()}><Icon name="save" size={16}/>{saving?"保存中…":"スケッチを保存"}</button>}</div></div>
++        <section className="inspiration"><div className="section-heading"><h2><Icon name="link" size={16}/>着想のつながり</h2><button disabled={!ready||deleted||busy} onClick={()=>{setSourceSearch("");setModal("sources");}}><Icon name="plus" size={13}/>Recallのメモを関連付ける</button></div>{sourceNotes.length||pendingSource?<div className="source-list">{sourceNotes.map(({relation,note})=><div className="source-card" key={relation.id}><span className="source-label">INSPIRED BY</span>{note?<a href={`/recall/?item=${encodeURIComponent(note.id)}`} onClick={event=>appLink(event,`/recall/?item=${encodeURIComponent(note.id)}`)}><span>{titleOf(note)}</span><small>{note.deletedAt?"ごみ箱のメモ":"Recallで開く"}<Icon name="arrow" size={12}/></small></a>:<p>元のメモを同期すると表示できます</p>}<button className="icon-button" title="関連付けを解除" aria-label="この関連付けを解除" onClick={()=>void perform(()=>removeSource(relation))} disabled={busy}><Icon name="close" size={14}/></button></div>)}{pendingSource&&<div className="source-card pending-source"><span className="source-label">INSPIRED BY</span><p>{liveNotes.find(note=>note.id===pendingSource)?titleOf(liveNotes.find(note=>note.id===pendingSource)!):"選択したメモ"}<small>スケッチを保存すると関連付きます</small></p><button className="icon-button" aria-label="着想元の選択を取り消す" onClick={()=>setPendingSource("")}><Icon name="close" size={14}/></button></div>}</div>:<p className="inspiration-empty">関連するRecallのメモを追加できます。</p>}</section>
++        <footer className="page-footer"><span>{offline?"オフライン · 端末への保存は続けられます":"スケッチを保存・編集"}</span><span>{dirty?"下書きはこのブラウザに保存されます":"Sketchbook"}</span></footer>
+       </div>
+     </main>
+     {notice&&<div className="toast" role="status"><Icon name="check" size={16}/>{notice}</div>}
+@@ -184,7 +186,7 @@ export default function Sketchbook(){
+       {cloud.authMessage&&<p className="auth-message" role="status">{cloud.authMessage}</p>}
+       {cloud.conflicts.length>0&&<section className="conflict-list"><h3>別の変更が見つかりました</h3><p className="muted">「両方残す」は端末のスケッチを別の一枚として保存します。メモの競合はRecallからも確認できます。</p>{cloud.conflicts.map(conflict=><article key={conflict.id} className="conflict-card"><div className="conflict-versions"><div><h4>この端末の版</h4><Version record={conflict.local}/></div><div><h4>クラウドの版</h4><Version record={conflict.remote}/></div></div><div className="modal-buttons"><button className="button primary" disabled={busy} onClick={()=>void perform(async guard=>{await cloud.resolveConflict(conflict.id,"keep_both");if(guard.current())setNotice("両方の版を残しました");})}>両方残す</button><button className="button" disabled={busy} onClick={()=>void perform(()=>cloud.resolveConflict(conflict.id,"keep_remote"))}>クラウドの版を使う</button></div></article>)}</section>}
+       <hr/><h3>スペース</h3><form className="space-form" onSubmit={event=>{event.preventDefault();void perform(async guard=>{await guard.repo?.createSpace(spaceName);if(guard.current()){setSpaceName("");setNotice("スペースを追加しました");}});}}><input className="text-input" aria-label="新しいスペース名" maxLength={40} placeholder="新しいスペース名" value={spaceName} onChange={event=>setSpaceName(event.target.value)}/><button className="button" disabled={busy||!spaceName.trim()}>追加</button></form>
+-      <hr/><h3>バックアップ</h3><p className="muted">この保存先のスケッチとスペースを書き出します。下書きとメモへの関連付けは含みません。読み込みは別の一枚として追加するため、繰り返すと重複します。</p><div className="modal-buttons"><button className="button" disabled={busy||!ready} onClick={()=>void perform(async guard=>{if(!guard.repo)return;const backup=await guard.repo.exportSketchBackup();if(guard.current())download(new Blob([JSON.stringify(backup)],{type:"application/json"}),`sketchbook-${new Date().toISOString().slice(0,10)}.json`);})}>JSONを書き出す</button><button className="button" disabled={busy||!ready} onClick={()=>importInput.current?.click()}>JSONを追加読み込み</button></div><input ref={importInput} type="file" accept="application/json,.json" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value="";if(!file)return;void perform(async guard=>{if(file.size>25*1024*1024)throw new Error("25MB以内のJSONファイルを選んでください。");const text=await file.text();if(!guard.current()||!guard.repo)return;const result=await guard.repo.importSketchBackup(JSON.parse(text));if(guard.current())setNotice(`${result.sketches}枚を追加しました`);});}}/>
++      <hr/><h3>バックアップ</h3><p className="muted">この保存先のスケッチとスペースを書き出します。下書きとメモへの関連付けは含みません。読み込みは別の一枚として追加するため、繰り返すと重複します。</p><div className="modal-buttons"><button className="button" disabled={busy||!ready} onClick={()=>void perform(async guard=>{if(!guard.repo)return;const backup=await guard.repo.exportSketchBackup();if(guard.current())download(new Blob([await encryptBackup(backup)],{type:"application/json"}),`sketchbook-${new Date().toISOString().slice(0,10)}.json`);})}>暗号化バックアップを書き出す</button><button className="button" disabled={busy||!ready} onClick={()=>importInput.current?.click()}>JSONを追加読み込み</button></div><input ref={importInput} type="file" accept="application/json,.json" hidden onChange={event=>{const file=event.target.files?.[0];event.target.value="";if(!file)return;void perform(async guard=>{if(file.size>100*1024*1024)throw new Error("100MB以内のJSONファイルを選んでください。");const text=await file.text();if(!guard.current()||!guard.repo)return;const result=await guard.repo.importSketchBackup(await decryptBackup(JSON.parse(text)));if(guard.current())setNotice(`${result.sketches}枚を追加しました`);});}}/>
+       <hr/><h3>端末への保存</h3><p className="muted">{pwaState}</p><p className="muted">ブラウザのデータを消すと、未同期のスケッチと下書きも消えます。大切なものはバックアップを残してください。</p><button className="button" onClick={()=>void perform(async guard=>{const granted=await navigator.storage?.persist?.();if(guard.current())setNotice(granted?"保存領域の保護が有効です":"保存領域の保護はブラウザが判断します");})}>保存領域の保護を依頼する</button>
+     </Modal>}
+     {pendingNavigation&&<Modal title="描きかけの変更があります" onClose={()=>setPendingNavigation(null)}><p className="muted">このスケッチを保存してから移動できます。</p><div className="modal-buttons"><button className="button primary" disabled={saving||drawing} onClick={()=>void(async()=>{const move=pendingNavigation;if(await save()){setPendingNavigation(null);move();}})()}>保存して移動</button><button className="button" disabled={saving} onClick={()=>void(async()=>{const move=pendingNavigation,guard=context();try{await queueDraft(blank());if(guard.current()){setPendingNavigation(null);move();}}catch(value){if(guard.current())failure(value);}})()}>変更を破棄して移動</button><button className="button" onClick={()=>setPendingNavigation(null)}>描き続ける</button></div></Modal>}
+diff --git a/apps/sketchbook/next.config.ts b/apps/sketchbook/next.config.ts
+index 5443b01..021bf4c 100644
+--- a/apps/sketchbook/next.config.ts
++++ b/apps/sketchbook/next.config.ts
+@@ -2,6 +2,6 @@ import type {NextConfig} from "next";
+ const config:NextConfig={
+   basePath:"/sketchbook",trailingSlash:true,
+   transpilePackages:["@personal-tools/core","@personal-tools/api-client","@personal-tools/auth"],
+-  async headers(){return [{source:"/",headers:[{key:"X-Sketchbook-Public-Shell",value:"1"}]}];},
++  async headers(){return [{source:"/:path*",headers:[{key:"Referrer-Policy",value:"no-referrer"},{key:"X-Content-Type-Options",value:"nosniff"},{key:"X-Frame-Options",value:"DENY"},{key:"Content-Security-Policy",value:"frame-ancestors 'none'; object-src 'none'; base-uri 'self'"}]},{source:"/",headers:[{key:"X-Sketchbook-Public-Shell",value:"1"}]}];},
+ };
+ export default config;
+diff --git a/apps/sketchbook/public/sw.js b/apps/sketchbook/public/sw.js
+index f721a70..8ba0676 100644
+--- a/apps/sketchbook/public/sw.js
++++ b/apps/sketchbook/public/sw.js
+@@ -1,5 +1,5 @@
+ // Only an anonymous public shell and this app's static files enter the offline cache.
+-const CACHE="sketchbook-shell-v3",BASE="/sketchbook",SHELL=`${BASE}/`;
++const CACHE="sketchbook-vault-shell-v1",BASE="/sketchbook",SHELL=`${BASE}/`;
+ self.addEventListener("install",event=>event.waitUntil((async()=>{
+   const cache=await caches.open(CACHE);
+   const response=await fetch(SHELL,{cache:"reload",credentials:"omit"});
+diff --git a/deploy/Caddyfile.example b/deploy/Caddyfile.example
+index 273e96f..ef278ba 100644
+--- a/deploy/Caddyfile.example
++++ b/deploy/Caddyfile.example
+@@ -1,6 +1,6 @@
+ # Replace the domain and upstream origins before use; this is a later HTTPS deployment example.
+-# This example runs Caddy and all three app processes on the same machine.
+-# Each backend app is built with basePath /recall, /sketchbook or /collect; do not strip the prefix.
++# This example runs Caddy and all four app processes on the same machine.
++# Each backend app is built with basePath /recall, /sketchbook /collect or /atlas; do not strip the prefix.
+ tools.example.com {
+     @recall path /recall /recall/*
+     reverse_proxy @recall 127.0.0.1:3102
+@@ -8,5 +8,7 @@ tools.example.com {
+     reverse_proxy @sketchbook 127.0.0.1:3101
+     @collect path /collect /collect/*
+     reverse_proxy @collect 127.0.0.1:3103
++    @atlas path /atlas /atlas/*
++    reverse_proxy @atlas 127.0.0.1:3104
+     redir / /recall/ 302
+ }
+diff --git a/docs/roadmap.md b/docs/roadmap.md
+index e33ee8f..d677d9f 100644
+--- a/docs/roadmap.md
++++ b/docs/roadmap.md
+@@ -65,6 +65,8 @@ URL貼り付け、画像ファイル追加、出典＋自分のメモ、未整
+ 
+ ## Phase 5 — Atlas＋画像意味検索
+ 
++2026-10-31：Atlasの横断一覧・絞り込み、全relationの追加／逆向き表示、プロジェクトと手動タグ、同期を実装。任意のcaption/OCR／タグ提案／text embeddingの永続jobと検索RPC、評価用25クエリーと集計を追加した。本人の私有資料による検索品質評価、実APIでの解析、実機PWA確認は未実施。[起動・設定](phase5-setup.md)／[検証記録](phase5-verification.md)。
++
+ まず種類・スペースをまたぐ一覧と絞り込み、relation追加・逆向き表示、プロジェクトへの所属を実装。続けて少数の私有テスト資料でcaption/OCR、自動タグ提案、text embedding、必要ならmultimodal embeddingを評価する。
+ 
+ 参照：[Supabase semantic searchのSQL関数とrpc例](https://supabase.com/docs/guides/ai/semantic-search)、[vector columns](https://supabase.com/docs/guides/ai/vector-columns)、[Postgres text parser](https://www.postgresql.org/docs/current/textsearch-parsers.html)。
+@@ -76,3 +78,7 @@ URL貼り付け、画像ファイル追加、出典＋自分のメモ、未整
+ ## Final — 継続的な検証
+ 
+ 各段階で採用版の公式資料と実装を照合し、未文書化API・仮の認証・秘密鍵のclient露出・RLS漏れ・公開cache内の個人データを点検する。必要な保存・同期・権限試験を行い、受け入れ条件を満たした範囲を明記する。PWAはiPhone Safari／Android Chromeで「初回オンライン→完全終了→機内モード再起動→記録→通信復帰」を毎回の重要変更で確認する。
++
++## 暗号化金庫
++
++AES-256-GCM / Argon2idによる端末内の解錠、暗号文の保存・同期・バックアップ、復旧鍵、ロック、既存データの検証付き移行を実装。外部AI・URL自動取得・GET共有ターゲットは停止。[利用と保護範囲](encrypted-vault.md)、[検証記録](vault-verification.md)を参照。本人の実データの移行は初回設定後に行う。
+diff --git a/package.json b/package.json
+index 3f4675b..361edbc 100644
+--- a/package.json
++++ b/package.json
+@@ -6,14 +6,17 @@
+   "packageManager": "pnpm@11.25.0",
+   "scripts": {
+     "dev": "node scripts/run-apps.mjs dev",
+-    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect build",
++    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect --filter @personal-tools/atlas build",
+     "start": "node scripts/run-apps.mjs start",
+-    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect typecheck",
+-    "test": "node --experimental-strip-types --test tests/*.test.ts",
++    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect --filter @personal-tools/atlas typecheck",
++    "test": "node --experimental-strip-types --import ./tests/vault-setup.ts --test --test-concurrency=3 tests/*.test.ts",
+     "dev:recall": "pnpm --filter @personal-tools/recall dev",
+     "dev:sketchbook": "pnpm --filter @personal-tools/sketchbook dev",
+     "dev:gateway": "node scripts/gateway.mjs",
+     "start:gateway": "node scripts/gateway.mjs",
++    "dev:atlas": "pnpm --filter @personal-tools/atlas dev",
++    "atlas:worker": "node --env-file-if-exists=apps/atlas/.env.local --experimental-strip-types scripts/atlas-worker.ts",
++    "atlas:evaluate": "node --experimental-strip-types scripts/evaluate-atlas.ts",
+     "dev:collect": "pnpm --filter @personal-tools/collect dev"
+   },
+   "devDependencies": {
+diff --git a/packages/api-client/package.json b/packages/api-client/package.json
+index aeb409b..71218b3 100644
+--- a/packages/api-client/package.json
++++ b/packages/api-client/package.json
+@@ -1 +1 @@
+-{"name":"@personal-tools/api-client","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@personal-tools/core":"workspace:*"}}
++{"name":"@personal-tools/api-client","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"@personal-tools/core":"workspace:*","hash-wasm":"4.12.0"}}
+diff --git a/packages/api-client/src/index.ts b/packages/api-client/src/index.ts
+index a634505..5cb4bc6 100644
+--- a/packages/api-client/src/index.ts
++++ b/packages/api-client/src/index.ts
+@@ -2,4 +2,6 @@ export * from "./repository.ts";
+ export * from "./sync.ts";
+ export * from "./sketch-preview.ts";
+ export * from "./resource-files.ts";
++export * from "./vault.ts";
++export * from "./vault-files.ts";
+ export type { SyncOperation, SyncConflict, SyncChange, SyncPushResult, SyncPullResult, SyncStatus } from "@personal-tools/core";
+diff --git a/packages/api-client/src/repository.ts b/packages/api-client/src/repository.ts
+index 78051ec..17b8d06 100644
+--- a/packages/api-client/src/repository.ts
++++ b/packages/api-client/src/repository.ts
+@@ -1,5 +1,9 @@
+ import { parseBackup, parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, assertSketchSyncBudget, jsonbByteLength, parseResource, parseResourceImage, parseCollectDraft, parseCollectBackup, resourceUrl, canonicalResourceUrl, emptyResourceMetadata, MAX_COLLECT_BACKUP_BYTES, MAX_COLLECT_BACKUP_JSON_BYTES, type Resource, type CollectDraft, type CollectBackup, type ResourceImage, type ResourceMetadataJob, type Backup, type SketchBackup, type Sketch, type SketchDraft, type ItemRelation, type SyncRecord, type Note, type Space, type LocalOperation, type SyncOperation, type SyncConflict, type SyncPushResult, type SyncPullResult } from "@personal-tools/core";
+ import {prepareResourceImage,blobToBase64,base64ToBlob} from "./resource-files.ts";
++import {requireVault,assertVault} from "./vault.ts";
++import {encryptedTransaction,migrateEncryptedDatabase} from "./vault-idb.ts";
++import {RELATION_TYPES,parseProjectFields,parseTags,type AtlasProject,type ItemLabels,type RelationType,type AtlasItem} from "@personal-tools/core";
++import {ATLAS_REQUESTS_SPACE_NAME,type AtlasRequestSharing,type AtlasRequestsExport} from "@personal-tools/core";
+ export class ConflictError extends Error {
+     constructor() {
+         super("別の画面でこのメモが更新されました。入力を残したまま、最新のメモを読み直してください。");
+@@ -13,7 +17,7 @@ type SaveNoteInput = {
+     deletedAt?: string | null;
+ };
+ export type SaveSketchInput = SketchDraft & { id?: string; pinned?: boolean; deletedAt?: string | null; expectedRevision?: number };
+-export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[] };
++export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[];projects:AtlasProject[];labels:ItemLabels[] };
+ export type SaveResourceInput = Omit<CollectDraft,"editingId"|"expectedRevision"> & {id?:string;file?:Blob;pinned?:boolean;deletedAt?:string|null;metadata?:Resource["metadata"]};
+ export type ResourceChanges = Partial<Pick<Resource,"title"|"memo"|"url"|"sourceUrl"|"spaceIds"|"inbox"|"pinned"|"deletedAt">>;
+ export type SyncState = {
+@@ -24,6 +28,12 @@ export type SyncState = {
+     lastSyncedAt: string | null;
+ };
+ export interface RecallRepository {
++    loadAtlasRequestSharing(): Promise<AtlasRequestSharing | null>;
++    prepareAtlasRequestSharing(spaceId?: string): Promise<AtlasRequestSharing>;
++    disableAtlasRequestSharing(): Promise<void>;
++    exportAtlasRequests(): Promise<AtlasRequestsExport>;
++    loadRecallEditDraft():Promise<{noteId:string;body:string;spaceIds:string[];revision:number}|null>;
++    saveRecallEditDraft(value:{noteId:string;body:string;spaceIds:string[];revision:number}|null):Promise<void>;
+     snapshot(): Promise<SuiteSnapshot>;
+     loadDraft(): Promise<{
+         body: string;
+@@ -33,7 +43,10 @@ export interface RecallRepository {
+     saveNote(input: SaveNoteInput, expectedRevision?: number): Promise<Note>;
+     saveSketch(input: SaveSketchInput, expectedRevision?: number): Promise<Sketch>;
+     updateSketch(id: string, changes: Partial<Pick<Sketch, "title" | "strokes" | "spaceIds" | "pinned" | "deletedAt">>, expectedRevision: number): Promise<Sketch>;
+-    saveRelation(input: { fromItemId: string; toItemId: string; type: "inspired_by" }): Promise<ItemRelation>;
++    saveRelation(input: { fromItemId: string; toItemId: string; type: RelationType }): Promise<ItemRelation>;
++    saveProject(input: Pick<AtlasProject,"name"|"description"|"status"|"dueDate"|"itemIds"> & {id?:string;deletedAt?:string|null}, expectedRevision?:number):Promise<AtlasProject>;
++    saveLabels(id:string,tags:string[],expectedRevision?:number):Promise<ItemLabels>;
++    exportAtlasBackup():Promise<{format:"personal-tools.atlas";version:1;exportedAt:string;projects:AtlasProject[];labels:ItemLabels[];relations:ItemRelation[]}>;
+     deleteRelation(id: string, expectedRevision: number): Promise<void>;
+     loadSketchDraft(): Promise<SketchDraft>;
+     saveSketchDraft(draft: SketchDraft): Promise<void>;
+@@ -66,6 +79,8 @@ export type StoredOperation = SyncOperation & {
+     localRevision: number;
+ };
+ export interface AccountRecallRepository extends RecallRepository {
++    isEncryptedSyncReady():Promise<boolean>;
++    prepareEncryptedSync(records:SyncRecord[],mode?:"legacy"|"existing"):Promise<void>;
+     readonly ownerId: string;
+     getSyncState(): Promise<SyncState>;
+     importDeviceData(): Promise<{
+@@ -79,8 +94,9 @@ export interface AccountRecallRepository extends RecallRepository {
+     markSynced(): Promise<void>;
+ }
+ const DEVICE_DB = "personal-tools-recall-local-v1";
+-const STORES = ["notes", "spaces", "sketches", "relations", "resources", "resourceFiles", "resourceJobs", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
++const STORES = ["notes", "spaces", "sketches", "relations", "resources", "projects", "labels", "resourceFiles", "resourceJobs", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
+ const DEFAULT_SPACES = [["daily", "日常", "#729379"], ["creative", "創作", "#8b7bae"], ["research", "研究", "#b38c58"]] as const;
++const ATLAS_REQUEST_SHARING_KEY = "atlas-request-sharing";
+ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+ const copy = <T>(value: T): T => structuredClone(value);
+ const sameResourceImage=(a:ResourceImage|null,b:ResourceImage|null)=>a===null||b===null?a===b:
+@@ -119,8 +135,8 @@ async function atomic<T>(tx: IDBTransaction, work: () => Promise<T> | T): Promis
+     }
+ }
+ const isNote = (record: SyncRecord): record is Note => "kind" in record && record.kind === "note";
+-const entityOf = (record: SyncRecord): "note" | "space" | "sketch" | "relation" | "resource" => "kind" in record ? record.kind : "space";
+-const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations",resource:"resources" }[entity]!);
++const entityOf = (record: SyncRecord) => "kind" in record ? record.kind : "space";
++const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations",resource:"resources",project:"projects",labels:"labels" }[entity]!);
+ const revision = (record: SyncRecord) => record.serverRevision ?? 0;
+ function portable(data: {
+     notes: Note[];
+@@ -137,6 +153,16 @@ function portable(data: {
+ export function openRecallRepository(name = DEVICE_DB): Promise<RecallRepository> {
+     return openRepository(name, null);
+ }
++export async function migrateVaultDatabases(){
++    const vault=requireVault();
++    if(!indexedDB.databases)throw new Error("このブラウザは既存データの暗号化移行に対応していません。対応ブラウザで開いてください。");
++    for(const entry of await indexedDB.databases()){
++        if(!entry.name?.startsWith("personal-tools-recall-"))continue;
++        const name=entry.name;
++        const db=await new Promise<IDBDatabase>((resolve,reject)=>{let blocked=false;const r=indexedDB.open(name,6);r.onupgradeneeded=()=>{for(const store of STORES)if(!r.result.objectStoreNames.contains(store))r.result.createObjectStore(store,{keyPath:"id"});};r.onsuccess=()=>{if(blocked){r.result.close();return;}resolve(r.result);};r.onerror=()=>reject(r.error);r.onblocked=()=>{blocked=true;reject(new Error("古いツールのタブを閉じてから、もう一度解錠してください。"));};});
++        try{await migrateEncryptedDatabase(db,STORES,vault);}finally{db.close();}
++    }
++}
+ export function openAccountRecallRepository(userId: string, options: {
+     name?: string;
+ } = {}): Promise<AccountRecallRepository> {
+@@ -145,6 +171,7 @@ export function openAccountRecallRepository(userId: string, options: {
+     return openRepository(options.name ?? `personal-tools-recall-account-${userId.toLowerCase()}`, userId.toLowerCase()) as Promise<AccountRecallRepository>;
+ }
+ async function openRepository(name: string, ownerId: string | null): Promise<RecallRepository | AccountRecallRepository> {
++    const vault=requireVault();
+     if (typeof indexedDB === "undefined")
+         throw new Error("このブラウザでは端末内保存を利用できません。");
+     // Missing stores are created only during versionchange; the v1 device notes and drafts survive.
+@@ -152,7 +179,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+     let invalidated = false;
+     const db = await new Promise<IDBDatabase>((resolve, reject) => {
+         let blocked = false;
+-        const req = indexedDB.open(name, 4);
++        const req = indexedDB.open(name, 6);
+         req.onupgradeneeded = (event) => {
+             for (const store of STORES)
+                 if (!req.result.objectStoreNames.contains(store))
+@@ -161,7 +188,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+                     });
+             // A v3 cursor may already have passed a resource hidden from its stream.
+             // Replay the full owner stream once; server revisions protect cached newer values.
+-            if (event.oldVersion < 4) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
++            if (event.oldVersion < 5) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
+         };
+         req.onsuccess = () => {
+             if (blocked) {
+@@ -180,9 +207,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+             reject(new Error("ほかのRecallのタブを閉じて、開き直してください。"));
+         };
+     });
++    try{await migrateEncryptedDatabase(db,STORES,vault);}catch(error){db.close();throw error;}
+     let closed = false;
+     const listeners = new Set<() => void>();
+     function ensureOpen() {
++        assertVault(vault);
+         if (closed || invalidated)
+             throw new Error("このノートは閉じられました。画面を開き直してください。");
+     }
+@@ -197,9 +226,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+     const emit = () => { notify(); channel?.postMessage("changed"); };
+     function transaction(stores: string[] = STORES, mode: IDBTransactionMode = "readwrite") {
+         ensureOpen();
+-        return db.transaction(stores, mode, mode === "readwrite" ? {
+-            durability: "strict"
+-        } : undefined);
++        return encryptedTransaction(db,stores,mode,vault);
+     }
+     async function readAll<T>(store: string): Promise<T[]> {
+         const tx = transaction([store], "readonly");
+@@ -270,6 +297,77 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+         throw error;
+     }
+     const repo: RecallRepository = {
++        async loadAtlasRequestSharing() {
++            const tx = transaction(["meta"], "readonly");
++            return atomic(tx, async () => {
++                const entry = await request(tx.objectStore("meta").get(ATLAS_REQUEST_SHARING_KEY));
++                return (entry?.value as AtlasRequestSharing | undefined) ?? null;
++            });
++        },
++        async prepareAtlasRequestSharing(spaceId) {
++            const tx = transaction();
++            const sharing = await atomic(tx, async () => {
++                const meta = tx.objectStore("meta"), spaces = tx.objectStore("spaces");
++                const entry = await request(meta.get(ATLAS_REQUEST_SHARING_KEY));
++                if (entry) {
++                    const current = entry.value as AtlasRequestSharing;
++                    if (spaceId && spaceId !== current.spaceId)
++                        throw new Error("共有元を変更するには、先にCodex向けの共有設定を解除してください。");
++                    if (!await request(spaces.get(current.spaceId)))
++                        throw new Error("共有元のスペースが見つかりません。共有設定を解除して設定し直してください。");
++                    return current;
++                }
++                const existing = await request(spaces.getAll()) as Space[];
++                const candidates = existing.filter(space => space.name.normalize("NFKC") === ATLAS_REQUESTS_SPACE_NAME);
++                if (!spaceId && candidates.length > 1)
++                    throw new Error("同名のスペースが複数あります。共有元のAtlas要望スペースを選んでください。");
++                let space = spaceId ? candidates.find(space => space.id === spaceId) : candidates[0];
++                if (spaceId && !space)
++                    throw new Error("共有元にはAtlas要望スペースだけを指定できます。");
++                if (!space) {
++                    space = {
++                        id: crypto.randomUUID(), name: ATLAS_REQUESTS_SPACE_NAME, color: "#638eaa",
++                        createdAt: new Date().toISOString(), ...(ownerId ? {ownerId, localRevision: 1, serverRevision: null} : {})
++                    };
++                    spaces.put(space);
++                    await queue(tx, space);
++                }
++                const value: AtlasRequestSharing = {spaceId: space.id, shareId: crypto.randomUUID()};
++                meta.put({id: ATLAS_REQUEST_SHARING_KEY, value});
++                return value;
++            });
++            emit();
++            return sharing;
++        },
++        async disableAtlasRequestSharing() {
++            const tx = transaction(["meta"]);
++            await atomic(tx, () => {tx.objectStore("meta").delete(ATLAS_REQUEST_SHARING_KEY);});
++            emit();
++        },
++        async exportAtlasRequests() {
++            const tx = transaction(["meta", "spaces", "notes"], "readonly");
++            const result = await atomic(tx, async (): Promise<AtlasRequestsExport> => {
++                const entry = await request(tx.objectStore("meta").get(ATLAS_REQUEST_SHARING_KEY));
++                if (!entry) throw new Error("Atlas要望の共有元を先に設定してください。");
++                const sharing = entry.value as AtlasRequestSharing;
++                if (!await request(tx.objectStore("spaces").get(sharing.spaceId)))
++                    throw new Error("共有元のスペースが見つかりません。共有設定を解除して設定し直してください。");
++                // This runs only inside the unlocked Recall client. Never use
++                // exportBackup/snapshot or spread records into this public data.
++                const notes = await request(tx.objectStore("notes").getAll()) as Note[];
++                return {
++                    format: "personal-tools.atlas-requests", version: 1, mode: "snapshot",
++                    scope: ATLAS_REQUESTS_SPACE_NAME, shareId: sharing.shareId, exportedAt: new Date().toISOString(),
++                    notes: notes.filter(note => !note.deletedAt && note.spaceIds.includes(sharing.spaceId))
++                        .map(note => ({id: note.id, body: note.body, updatedAt: note.updatedAt}))
++                        .sort((a, b) => a.id.localeCompare(b.id))
++                };
++            });
++            ensureOpen();
++            return result;
++        },
++        async loadRecallEditDraft(){const tx=transaction(["drafts"],"readonly");return atomic(tx,async()=>{const d=await request(tx.objectStore("drafts").get("recall-edit"));return d?.value??null;});},
++        async saveRecallEditDraft(value){const tx=transaction(["drafts"]);await atomic(tx,()=>{if(value)tx.objectStore("drafts").put({id:"recall-edit",value});else tx.objectStore("drafts").delete("recall-edit");});},
+         close() {
+             closed = true;
+             listeners.clear();
+@@ -301,11 +399,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+             });
+         },
+         async snapshot() {
+-            const tx = transaction(["notes", "spaces", "sketches", "relations","resources"], "readonly");
++            const tx = transaction(["notes", "spaces", "sketches", "relations","resources","projects","labels"], "readonly");
+             return atomic(tx, async () => {
+                 const [notes, spaces, sketches, relations,resources] = await Promise.all([request(tx.objectStore("notes").getAll()) as Promise<Note[]>, request(tx.objectStore("spaces").getAll()) as Promise<Space[]>, request(tx.objectStore("sketches").getAll()) as Promise<Sketch[]>, request(tx.objectStore("relations").getAll()) as Promise<ItemRelation[]>,request(tx.objectStore("resources").getAll()) as Promise<Resource[]>]);
+                 return {
+-                    notes, spaces, sketches, relations,resources
++                    notes, spaces, sketches, relations,resources,projects:await request(tx.objectStore("projects").getAll()) as AtlasProject[],labels:await request(tx.objectStore("labels").getAll()) as ItemLabels[]
+                 };
+             });
+         },
+@@ -355,17 +453,19 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+             return repo.saveSketch({ ...previous, ...changes, id }, expectedRevision);
+         },
+         async saveRelation(input) {
+-            if (input.type !== "inspired_by" || input.fromItemId === input.toItemId) throw new Error("着想元のメモを選んでください。");
++            if (!RELATION_TYPES.includes(input.type) || input.fromItemId === input.toItemId) throw new Error("別の記録と関係を選んでください。");
++            if(input.type==="related_to"&&input.fromItemId>input.toItemId)input={...input,fromItemId:input.toItemId,toItemId:input.fromItemId};
+             // Independent devices derive the same edge ID before opening the IDB transaction.
+-            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`inspired_by:${input.fromItemId}:${input.toItemId}`)));
++            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${input.type}:${input.fromItemId}:${input.toItemId}`)));
+             digest[6] = (digest[6] & 15) | 80; digest[8] = (digest[8] & 63) | 128;
+             const hex = [...digest.slice(0, 16)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+             const edgeId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+             const tx = transaction();
+             const saved = await atomic(tx, async () => {
+-                const sketch = await request(tx.objectStore("sketches").get(input.fromItemId)) as Sketch | undefined;
+-                const note = await request(tx.objectStore("notes").get(input.toItemId)) as Note | undefined;
+-                if (!sketch || sketch.deletedAt || !note || note.deletedAt) throw new Error("スケッチまたは着想元のメモが見つかりません。");
++                for(const itemId of [input.fromItemId,input.toItemId]){
++                    const candidates=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(itemId)) as Promise<AtlasItem|undefined>));
++                    if(!candidates.some(item=>item&&!item.deletedAt&&item.ownerId===ownerId))throw new Error("関連付ける記録が見つかりません。");
++                }
+                 const existing = (await request(tx.objectStore("relations").getAll()) as ItemRelation[]).find(relation => relation.fromItemId === input.fromItemId && relation.toItemId === input.toItemId && relation.type === input.type);
+                 if (existing && !existing.deletedAt) return existing;
+                 const now = new Date().toISOString();
+@@ -385,6 +485,32 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+             });
+             emit();
+         },
++        async saveProject(input,expectedRevision){
++            const fields=parseProjectFields(input),tx=transaction();
++            const saved=await atomic(tx,async()=>{
++                const previous=input.id?await request(tx.objectStore("projects").get(input.id)) as AtlasProject|undefined:undefined;
++                if(input.id&&(!previous||previous.localRevision!==expectedRevision))throw new ConflictError();
++                for(const id of fields.itemIds){
++                    const items=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(id)) as Promise<AtlasItem|undefined>));
++                    if(!items.some(item=>item&&item.ownerId===ownerId))throw new Error("所属する記録が見つかりません。");
++                }
++                const now=new Date().toISOString();
++                const record:AtlasProject={...fields,id:previous?.id??crypto.randomUUID(),kind:"project",ownerId,createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:input.deletedAt??null,localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null};
++                tx.objectStore("projects").put(record);await queue(tx,record);return record;
++            });emit();return saved;
++        },
++        async saveLabels(id,tags,expectedRevision){
++            const parsed=parseTags(tags),tx=transaction();
++            const saved=await atomic(tx,async()=>{
++                const items=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(id)) as Promise<AtlasItem|undefined>));
++                if(!items.some(item=>item&&item.ownerId===ownerId&&!item.deletedAt))throw new Error("タグを付ける記録が見つかりません。");
++                const previous=await request(tx.objectStore("labels").get(id)) as ItemLabels|undefined;
++                if((previous?.localRevision??undefined)!==expectedRevision)throw new ConflictError();
++                const now=new Date().toISOString(),record:ItemLabels={id,kind:"labels",ownerId,tags:parsed,createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:null,localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null};
++                tx.objectStore("labels").put(record);await queue(tx,record);return record;
++            });emit();return saved;
++        },
++        async exportAtlasBackup(){const data=await repo.snapshot();return {format:"personal-tools.atlas",version:1,exportedAt:new Date().toISOString(),projects:data.projects,labels:data.labels,relations:data.relations};},
+         async exportSketchBackup() {
+             const data = await repo.snapshot();
+             const sketches = [...data.sketches];
+@@ -637,6 +763,34 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+         return repo;
+     const account: AccountRecallRepository = {
+         ...repo, ownerId,
++        async isEncryptedSyncReady(){const tx=transaction(["meta"],"readonly");return atomic(tx,async()=>!!await request(tx.objectStore("meta").get("encrypted-sync")));},
++        async prepareEncryptedSync(records,mode="legacy"){
++            const tx=transaction();await atomic(tx,async()=>{
++                if(await request(tx.objectStore("meta").get("encrypted-sync")))return;
++                const pending=await request(tx.objectStore("syncOutbox").getAll()) as StoredOperation[];
++                if(mode==="existing"){
++                    const remotes=new Map(records.map(r=>[`${entityOf(r)}:${r.id}`,r]));
++                    const pushes:SyncRecord[]=[];
++                    tx.objectStore("syncOutbox").clear();tx.objectStore("meta").put({id:"cursor",value:"0"});tx.objectStore("meta").put({id:"sequence",value:0});
++                    for(const target of ["spaces","notes","sketches","resources","relations","projects","labels"]){for(const local of await request(tx.objectStore(target).getAll()) as SyncRecord[]){
++                        const key=`${entityOf(local)}:${local.id}`,remote=remotes.get(key),dirty=pending.some(p=>p.entityId===local.id&&p.kind===`put_${entityOf(local)}`);
++                        const sameSeed=remote&&entityOf(local)==="space"&&DEFAULT_SPACES.some(([id])=>id===local.id)&&JSON.stringify({name:(local as Space).name,color:(local as Space).color})===JSON.stringify({name:(remote as Space).name,color:(remote as Space).color});
++                        if(remote&&(!dirty||sameSeed)){tx.objectStore(target).put(remote);remotes.delete(key);}else{const value={...local,serverRevision:null};tx.objectStore(target).put(value);pushes.push(value);remotes.delete(key);}
++                    }}
++                    for(const remote of remotes.values())tx.objectStore(storeOf(entityOf(remote))).put(remote);
++                    for(const value of pushes)await queue(tx,value);
++                    const conflicts=await request(tx.objectStore("conflicts").getAll()) as SyncConflict[];
++                    for(const conflict of conflicts){const remote=records.find(r=>r.id===conflict.entityId&&entityOf(r)===conflict.entity);if(remote)tx.objectStore("conflicts").put({...conflict,remote});}
++                    tx.objectStore("meta").put({id:"encrypted-sync",value:true});return;
++                }
++                for(const record of records){if(record.ownerId!==ownerId)throw new Error("別の所有者の移行を拒否しました。");const target=storeOf(entityOf(record)),previous=await request(tx.objectStore(target).get(record.id)) as SyncRecord|undefined;
++                    if(!previous||!pending.some(p=>p.entityId===record.id&&p.kind===`put_${entityOf(record)}`)&&revision(record)>revision(previous))tx.objectStore(target).put(record);
++                }
++                tx.objectStore("syncOutbox").clear();tx.objectStore("meta").put({id:"cursor",value:"0"});tx.objectStore("meta").put({id:"sequence",value:0});
++                for(const target of ["spaces","notes","sketches","resources","relations","projects","labels"]){for(const record of await request(tx.objectStore(target).getAll()) as SyncRecord[]){const migrated={...record,serverRevision:null};tx.objectStore(target).put(migrated);await queue(tx,migrated);}}
++                tx.objectStore("meta").put({id:"encrypted-sync",value:true});
++            });emit();
++        },
+         async exportBackup() {
+             const tx = transaction(["notes", "spaces", "conflicts"], "readonly");
+             return atomic(tx, async () => {
+@@ -804,7 +958,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
+                 if (resolution === "keep_both") {
+                     const local = conflict.local;
+                     const newId = crypto.randomUUID();
+-                    const saved: SyncRecord = "kind" in local && local.kind === "relation" ? {
++                    const saved: SyncRecord = "kind" in local && (local.kind === "relation" || local.kind === "labels") ? {
+                         ...local, ownerId, deletedAt: null, updatedAt: new Date().toISOString(),
+                         serverRevision: conflict.remote.serverRevision ?? null,
+                         localRevision: (conflict.remote.localRevision ?? 0) + 1,
+diff --git a/packages/api-client/src/sync.ts b/packages/api-client/src/sync.ts
+index d54895f..80d66fe 100644
+--- a/packages/api-client/src/sync.ts
++++ b/packages/api-client/src/sync.ts
+@@ -1,5 +1,6 @@
+-import { parseSketchStrokes, parseResource, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus } from "@personal-tools/core";
++import { RELATION_TYPES,parseProjectFields,parseTags, parseSketchStrokes, parseResource, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus } from "@personal-tools/core";
+ import type { AccountRecallRepository } from "./repository.ts";
++import {assertVault,encryptVault,decryptVault,requireVault,vaultCommitment,type CipherBox} from "./vault.ts";
+ export interface SyncTransport {
+     readonly userId: string;
+     push(operation: SyncOperation): Promise<SyncPushResult>;
+@@ -49,9 +50,12 @@ function validateRecord(value: unknown, userId: string): SyncRecord {
+     }
+     else if (record.kind === "relation") {
+         const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+-        if (record.type !== "inspired_by" || typeof record.fromItemId !== "string" || !uuid.test(record.fromItemId) || typeof record.toItemId !== "string" || !uuid.test(record.toItemId) || record.fromItemId === record.toItemId ||
++        if (!RELATION_TYPES.includes(record.type as never) || typeof record.fromItemId !== "string" || !uuid.test(record.fromItemId) || typeof record.toItemId !== "string" || !uuid.test(record.toItemId) || record.fromItemId === record.toItemId ||
+             !isDate(record.updatedAt) || !(record.deletedAt === null || isDate(record.deletedAt))) throw new SyncTransportError("関連付けの同期応答が正しくありません。");
+     }
++    else if(record.kind==="project"||record.kind==="labels"){
++        try{if(record.kind==="project")parseProjectFields(record);else parseTags(record.tags);if(!isDate(record.updatedAt)||!(record.deletedAt===null||isDate(record.deletedAt)))throw new Error();}catch{throw new SyncTransportError("Atlasの同期応答が正しくありません。");}
++    }
+     else if(record.kind==="resource"){
+         try{parseResource(record);}catch{throw new SyncTransportError("資料の同期応答が正しくありません。");}
+     }
+@@ -83,7 +87,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string):
+             };
+         },
+         async pull(cursor, limit) {
+-            const { data, error } = await client.rpc("pull_tools_changes", {
++            const { data, error } = await client.rpc("pull_atlas_changes", {
+                 p_cursor: cursor, p_limit: limit
+             });
+             if (error)
+@@ -94,7 +98,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string):
+             let previousCursor = BigInt(cursor);
+             const changes: SyncChange[] = result.changes.map(value => {
+                 const change = asObject(value);
+-                if (!["note", "space", "sketch", "relation","resource"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
++                if (!["note", "space", "sketch", "relation","resource","project","labels"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
+                     throw new SyncTransportError("同期の変更位置が正しくありません。");
+                 previousCursor = BigInt(change.cursor);
+                 const record = validateRecord(change.record, userId);
+@@ -112,6 +116,31 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string):
+         },
+     };
+ }
++export function createEncryptedSyncTransport(client:RpcClient,userId:string):SyncTransport{
++ const vault=requireVault();
++ const context=(entity:string,id:string)=>`sync:${JSON.stringify([userId,entity,id])}`;
++ async function record(value:unknown){
++  const r=asObject(value);if(typeof r.entity!=="string"||typeof r.id!=="string"||!Number.isSafeInteger(r.revision)||Number(r.revision)<1)throw new SyncTransportError(RETRY_MESSAGE);
++  const payload=asObject(await decryptVault(r.box as CipherBox,context(r.entity,r.id),vault));
++  if(payload.id!==r.id||("kind" in payload?payload.kind:"space")!==r.entity)throw new SyncTransportError(RETRY_MESSAGE);
++  return validateRecord({...payload,serverRevision:r.revision},userId);
++ }
++ return {userId,async push(operation){
++  assertVault(vault);const entity=operation.kind.slice(4),box=await encryptVault(operation.payload,context(entity,operation.entityId),vault);
++  const commitment=await vaultCommitment(operation.payload,`operation:${userId}:${operation.id}`,vault);
++  const {data,error}=await client.rpc("push_vault_record",{p_operation:{id:operation.id,entity,entityId:operation.entityId,baseRevision:operation.baseRevision,previousOperationId:operation.previousOperationId??null,box,commitment}});assertVault(vault);if(error)throw rpcError(error);
++  const result=asObject(data);if(result.operationId!==operation.id||!["applied","conflict"].includes(result.status as string))throw new SyncTransportError(RETRY_MESSAGE);
++  const canonical=await record(result.record);if(canonical.id!==operation.entityId||("kind" in canonical?canonical.kind:"space")!==entity)throw new SyncTransportError(RETRY_MESSAGE);
++  return {status:result.status as "applied"|"conflict",operationId:operation.id,record:canonical,...(typeof result.conflictId==="string"?{conflictId:result.conflictId}:{})};
++ },async pull(cursor,limit){
++  assertVault(vault);const {data,error}=await client.rpc("pull_vault_changes",{p_cursor:cursor,p_limit:limit});assertVault(vault);if(error)throw rpcError(error);
++  const result=asObject(data);if(typeof result.cursor!=="string"||!/^\d{1,19}$/.test(result.cursor)||typeof result.hasMore!=="boolean"||!Array.isArray(result.changes)||result.changes.length>limit)throw new SyncTransportError(RETRY_MESSAGE);
++  let previous=BigInt(cursor);const changes:SyncChange[]=[];
++  for(const value of result.changes){const c=asObject(value);if(typeof c.cursor!=="string"||!/^\d{1,19}$/.test(c.cursor)||BigInt(c.cursor)<=previous)throw new SyncTransportError(RETRY_MESSAGE);previous=BigInt(c.cursor);const payload=await record(c.record);if(c.entity!==("kind" in payload?payload.kind:"space"))throw new SyncTransportError(RETRY_MESSAGE);changes.push({cursor:c.cursor,entity:c.entity as SyncChange["entity"],record:payload});}
++  if(previous>BigInt(result.cursor)||BigInt(result.cursor)<BigInt(cursor))throw new SyncTransportError(RETRY_MESSAGE);
++  return {cursor:result.cursor,hasMore:result.hasMore,changes};
++ }};
++}
+ export type SyncEngine = {
+     run(): Promise<SyncStatus>;
+     stop(): void;
+diff --git a/packages/auth/package.json b/packages/auth/package.json
+index a034988..cb12f58 100644
+--- a/packages/auth/package.json
++++ b/packages/auth/package.json
+@@ -8,7 +8,8 @@
+     "./browser": "./src/browser.ts",
+     "./server": "./src/server.ts",
+     "./proxy": "./src/proxy.ts",
+-    "./react": "./src/react.ts"
++    "./react": "./src/react.ts",
++    "./vault": "./src/vault.tsx"
+   },
+   "dependencies": {
+     "@supabase/ssr": "0.12.7",
+diff --git a/packages/auth/src/react.ts b/packages/auth/src/react.ts
+index 9e29b7f..8ae4ad9 100644
+--- a/packages/auth/src/react.ts
++++ b/packages/auth/src/react.ts
+@@ -2,11 +2,13 @@
+ import {useCallback,useEffect,useRef,useState} from "react";
+ import {accountDatabaseName,callbackLocation,createSharedSessionRefresh,getPublicSupabaseConfig,type Identity,type SharedSessionRefreshBoundary} from "./index.ts";
+ import {getBrowserAuthClient,type BrowserAuthClient} from "./browser.ts";
+-import {openRecallRepository,openAccountRecallRepository,createSyncEngine,createSupabaseSyncTransport,type RecallRepository,type AccountRecallRepository} from "@personal-tools/api-client";
++import {openRecallRepository,openAccountRecallRepository,createSyncEngine,createEncryptedSyncTransport,type RecallRepository,type AccountRecallRepository,type SuiteSnapshot} from "@personal-tools/api-client";
++import {prepareCloudVault} from "../../api-client/src/vault-cloud.ts";
++import {lockVault,flushVaultDrafts} from "../../api-client/src/vault.ts";
+ import type {Note,Space,Sketch,ItemRelation,SketchDraft,CollectDraft,Resource,SyncConflict,SyncStatus} from "@personal-tools/core";
+ 
+-export type CloudApp="recall"|"sketchbook"|"collect";
+-export type CloudSnapshot={notes:Note[];spaces:Space[];sketches:Sketch[];relations:ItemRelation[];resources:Resource[]};
++export type CloudApp="recall"|"sketchbook"|"collect"|"atlas";
++export type CloudSnapshot=SuiteSnapshot;
+ type DraftFor<A extends CloudApp>=A extends "collect"?CollectDraft:A extends "sketchbook"?SketchDraft:{body:string;spaceIds:string[]};
+ type ImportFor<A extends CloudApp>=A extends "collect"?{resources:number;spaces:number}:A extends "sketchbook"?{sketches:number;spaces:number}:{notes:number;spaces:number};
+ export type CloudCallbacks<A extends CloudApp>={reset:()=>void;ready:(repository:RecallRepository,data:CloudSnapshot,draft:DraftFor<A>)=>void;snapshot:(data:CloudSnapshot)=>void;failure:(error:unknown)=>void};
+@@ -72,13 +74,14 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
+       const project=getPublicSupabaseConfig();
+       const repository=next.mode==="account"&&project?await openAccountRecallRepository(next.userId,{name:accountDatabaseName(next.userId,project.url)}):await openRecallRepository();
+       if(!mounted.current||epoch!==generation.current){repository.close();return;}
++      if(next.mode==="account"&&client.current){try{await prepareCloudVault(client.current,repository as AccountRecallRepository,()=>mounted.current&&epoch===generation.current);}catch(error){repository.close();throw error;}if(!mounted.current||epoch!==generation.current){repository.close();return;}}
+       const [data,draft]=await Promise.all([repository.snapshot(),(app==="collect"?repository.loadCollectDraft():app==="sketchbook"?repository.loadSketchDraft():repository.loadDraft())]);
+       if(!mounted.current||epoch!==generation.current){repository.close();return;}
+       current.current=repository;callbacksRef.current.ready(repository,data,draft as DraftFor<A>);
+       const account=accountRepository(repository);
+       if(account&&client.current){
+         const authClient=client.current;
+-        const transport=createSupabaseSyncTransport({rpc:async(name,args)=>await authClient.rpc(name,args)},account.ownerId);
++        const transport=createEncryptedSyncTransport({rpc:async(name,args)=>await authClient.rpc(name,args)},account.ownerId);
+         const sync=createSyncEngine(account,transport);engine.current=sync;
+         cleanups.current.push(sync.subscribe(status=>{if(mounted.current&&epoch===generation.current)setSyncStatus(status);}));
+         setSyncStatus(sync.getStatus());
+@@ -186,6 +189,7 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
+   }
+   async function signOut(){
+     const auth=client.current;if(!auth)return;
++    await flushVaultDrafts().catch(()=>{});
+     authRefresh.current?.block();
+     locked.current=true;writePreference(LOCK_KEY,"1");writePreference(MODE_KEY,"device");
+     currentUser.current=null;setUser(null);closeCurrent();void selectWorkspace({mode:"device"});
+@@ -197,7 +201,7 @@ export function usePersonalToolsCloud<A extends CloudApp>(callbacks:CloudCallbac
+       if(error){auth.auth.stopAutoRefresh();setAuthMessage("この端末の表示を閉じました。通信できずサーバー側のログアウトを完了できていません。再ログインするまでアカウントのメモは開きません。");}
+       else setAuthMessage("このブラウザからログアウトしました。端末内モードを利用できます。");
+     }catch{auth.auth.stopAutoRefresh();setAuthMessage("この端末の表示を閉じました。サーバー側のログアウトは通信復帰後に確認してください。");}
+-    finally{if(mounted.current)setAuthBusy(false);}
++    finally{if(mounted.current)setAuthBusy(false);lockVault();}
+   }
+   async function useDevice(){writePreference(MODE_KEY,"device");await selectWorkspace({mode:"device"});}
+   async function useAccount(){const user=currentUser.current;if(!user)return;writePreference(MODE_KEY,"account");await selectWorkspace({mode:"account",userId:user.id});}
+diff --git a/packages/core/src/index.ts b/packages/core/src/index.ts
+index 884b7d5..e60692d 100644
+--- a/packages/core/src/index.ts
++++ b/packages/core/src/index.ts
+@@ -1,5 +1,8 @@
+ import type {Resource} from "./collect.ts";
+ export * from "./collect.ts";
++export * from "./atlas.ts";
++export * from "./atlas-requests.ts";
++import type {AtlasProject, ItemLabels} from "./atlas.ts";
+ import { jsonbByteLength } from "./jsonb.ts";
+ export { jsonbByteLength } from "./jsonb.ts";
+ export type AppId = "recall" | "sketchbook" | "collect" | "atlas";
+@@ -42,11 +45,11 @@ export type Sketch = {
+     localRevision: number; serverRevision: number | null;
+ };
+ export type ItemRelation = Relation & {
+-    kind: "relation"; type: "inspired_by"; ownerId: string | null;
++    kind: "relation"; ownerId: string | null;
+     createdAt: string; updatedAt: string; deletedAt: string | null;
+     localRevision: number; serverRevision: number | null;
+ };
+-export type SyncRecord = Note | Space | Sketch | ItemRelation | Resource;
++export type SyncRecord = Note | Space | Sketch | ItemRelation | Resource | AtlasProject | ItemLabels;
+ export type SketchDraft = { title: string; strokes: SketchStroke[]; spaceIds: string[]; editingId?: string; expectedRevision?: number };
+ export type SketchBackup = {
+     format: "personal-tools.sketchbook"; version: 1; exportedAt: string;
+@@ -70,7 +73,7 @@ export type Backup = {
+ };
+ export type SyncOperation = {
+     id: string;
+-    kind: "put_note" | "put_space" | "put_sketch" | "put_relation" | "put_resource";
++    kind: "put_note" | "put_space" | "put_sketch" | "put_relation" | "put_resource" | "put_project" | "put_labels";
+     entityId: string;
+     baseRevision: number | null;
+     previousOperationId?: string;
+@@ -79,7 +82,7 @@ export type SyncOperation = {
+ };
+ export type SyncConflict = {
+     id: string;
+-    entity: "note" | "space" | "sketch" | "relation" | "resource";
++    entity: "note" | "space" | "sketch" | "relation" | "resource" | "project" | "labels";
+     entityId: string;
+     local: SyncRecord;
+     remote: SyncRecord;
+@@ -87,7 +90,7 @@ export type SyncConflict = {
+ };
+ export type SyncChange = {
+     cursor: string;
+-    entity: "note" | "space" | "sketch" | "relation" | "resource";
++    entity: "note" | "space" | "sketch" | "relation" | "resource" | "project" | "labels";
+     record: SyncRecord;
+ };
+ export type SyncPushResult = {
+diff --git a/pnpm-lock.yaml b/pnpm-lock.yaml
+index 9cca90a..0ab6dfc 100644
+--- a/pnpm-lock.yaml
++++ b/pnpm-lock.yaml
+@@ -27,6 +27,27 @@ importers:
+         specifier: ^5.9.3
+         version: 5.9.3
+ 
++  apps/atlas:
++    dependencies:
++      '@personal-tools/api-client':
++        specifier: workspace:*
++        version: link:../../packages/api-client
++      '@personal-tools/auth':
++        specifier: workspace:*
++        version: link:../../packages/auth
++      '@personal-tools/core':
++        specifier: workspace:*
++        version: link:../../packages/core
++      next:
++        specifier: 16.4.3
++        version: 16.4.3(@types/node@24.19.2)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
++      react:
++        specifier: 19.3.1
++        version: 19.3.1
++      react-dom:
++        specifier: 19.3.1
++        version: 19.3.1(react@19.3.1)
++
+   apps/collect:
+     dependencies:
+       '@personal-tools/api-client':
+@@ -104,6 +125,9 @@ importers:
+       '@personal-tools/core':
+         specifier: workspace:*
+         version: link:../core
++      hash-wasm:
++        specifier: 4.12.0
++        version: 4.12.0
+ 
+   packages/auth:
+     dependencies:
+@@ -457,6 +481,9 @@ packages:
+     resolution: {integrity: sha512-ihhmr0KoET51jT8R4YhbUYuLLvr1qqO6INISygtN16i8loR8kAxtAUr4+EKHTSMjL+lggaAn4OC7DRqzrNgnuQ==}
+     engines: {node: '>=18'}
+ 
++  hash-wasm@4.12.0:
++    resolution: {integrity: sha512-+/2B2rYLb48I/evdOIhP+K/DD2ca2fgBjp6O+GBEnCDk2e4rpeXIK8GvIyRPjTezgmWn9gmKwkQjjx6BtqDHVQ==}
++
+   htmlparser2@10.0.0:
+     resolution: {integrity: sha512-TwAZM+zE5Tq3lrEHvOlvwgj1XLWQCtaaibSN11Q+gGBAS7Y1uZSWwXXRe4iF6OXnaq1riyQAPFOBtYc77Mxq0g==}
+ 
+@@ -787,6 +814,8 @@ snapshots:
+ 
+   fake-indexeddb@6.2.6: {}
+ 
++  hash-wasm@4.12.0: {}
++
+   htmlparser2@10.0.0:
+     dependencies:
+       domelementtype: 2.3.0
+diff --git a/scripts/gateway.mjs b/scripts/gateway.mjs
+index 5228fbe..0f38c03 100644
+--- a/scripts/gateway.mjs
++++ b/scripts/gateway.mjs
+@@ -12,8 +12,9 @@ export function getGatewayConfig(env=process.env){
+   const recallPort=port(env.RECALL_BACKEND_PORT,gatewayPort+2,"RECALL_BACKEND_PORT");
+   const sketchbookPort=port(env.SKETCHBOOK_PORT,gatewayPort+1,"SKETCHBOOK_PORT");
+   const collectPort=port(env.COLLECT_PORT,gatewayPort+3,"COLLECT_PORT");
+-  if(new Set([gatewayPort,recallPort,sketchbookPort,collectPort]).size!==4)throw new Error("The gateway and app backends require different ports.");
+-  return {gatewayPort,recallPort,sketchbookPort,collectPort};
++  const atlasPort=port(env.ATLAS_PORT,gatewayPort+4,"ATLAS_PORT");
++  if(new Set([gatewayPort,recallPort,sketchbookPort,collectPort,atlasPort]).size!==5)throw new Error("The gateway and app backends require different ports.");
++  return {gatewayPort,recallPort,sketchbookPort,collectPort,atlasPort};
+ }
+ function upstreamPort(rawUrl,config){
+   if(typeof rawUrl!=="string"||!rawUrl.startsWith("/")||rawUrl.startsWith("//"))return null;
+@@ -21,6 +22,7 @@ function upstreamPort(rawUrl,config){
+   if(/^\/recall(?:\/|$)/.test(pathname))return config.recallPort;
+   if(/^\/sketchbook(?:\/|$)/.test(pathname))return config.sketchbookPort;
+   if(/^\/collect(?:\/|$)/.test(pathname))return config.collectPort??null;
++  if(/^\/atlas(?:\/|$)/.test(pathname))return config.atlasPort??null;
+   return null;
+ }
+ function forwardedHeaders(request){
+diff --git a/scripts/run-apps.mjs b/scripts/run-apps.mjs
+index 101d05a..d4b6b0e 100644
+--- a/scripts/run-apps.mjs
++++ b/scripts/run-apps.mjs
+@@ -3,13 +3,13 @@ import {createRequire} from "node:module";
+ import {fileURLToPath} from "node:url";
+ import path from "node:path";
+ import {getGatewayConfig,startGateway} from "./gateway.mjs";
+-import {sketchbookOrigin,collectOrigin} from "./zones.mjs";
++import {sketchbookOrigin,collectOrigin,atlasOrigin} from "./zones.mjs";
+ 
+ const mode=process.argv[2];
+ if(!["dev","start"].includes(mode))throw new Error("Expected dev or start.");
+ const root=fileURLToPath(new URL("../",import.meta.url));
+ const config=getGatewayConfig();
+-const env={...process.env,SKETCHBOOK_ORIGIN:sketchbookOrigin(process.env.SKETCHBOOK_ORIGIN??`http://127.0.0.1:${config.sketchbookPort}`),COLLECT_ORIGIN:collectOrigin(process.env.COLLECT_ORIGIN??`http://127.0.0.1:${config.collectPort}`)};
++const env={...process.env,SKETCHBOOK_ORIGIN:sketchbookOrigin(process.env.SKETCHBOOK_ORIGIN??`http://127.0.0.1:${config.sketchbookPort}`),COLLECT_ORIGIN:collectOrigin(process.env.COLLECT_ORIGIN??`http://127.0.0.1:${config.collectPort}`),ATLAS_ORIGIN:atlasOrigin(process.env.ATLAS_ORIGIN??`http://127.0.0.1:${config.atlasPort}`)};
+ // Upgrade requests must reach each app's own HMR server before Next handles them.
+ // A separate gateway keeps the browser origin stable for cookies and IndexedDB.
+ const gateway=await startGateway(config);
+@@ -22,7 +22,7 @@ async function terminate(child){
+ async function stop(code){if(stopping)return;stopping=true;process.exitCode=code;await Promise.all([gateway.close(),...children.map(terminate)]);}
+ process.once("SIGINT",()=>void stop(0));process.once("SIGTERM",()=>void stop(0));
+ try{
+-  for(const [app,appPort] of [["recall",config.recallPort],["sketchbook",config.sketchbookPort],["collect",config.collectPort]]){
++  for(const [app,appPort] of [["recall",config.recallPort],["sketchbook",config.sketchbookPort],["collect",config.collectPort],["atlas",config.atlasPort]]){
+     const cwd=path.join(root,"apps",app);
+     const require=createRequire(path.join(cwd,"package.json"));
+     const next=require.resolve("next/dist/bin/next");
+@@ -34,4 +34,5 @@ try{
+ }catch(error){console.error(error.message);await stop(1);}
+ console.log(`Recall: http://127.0.0.1:${config.gatewayPort}/recall/`);
+ console.log(`Sketchbook: http://127.0.0.1:${config.gatewayPort}/sketchbook/`);
++console.log(`Atlas: http://127.0.0.1:${config.gatewayPort}/atlas/`);
+ console.log(`Collect: http://127.0.0.1:${config.gatewayPort}/collect/`);
+diff --git a/scripts/zones.d.mts b/scripts/zones.d.mts
+index 7b79272..8ce23e6 100644
+--- a/scripts/zones.d.mts
++++ b/scripts/zones.d.mts
+@@ -2,3 +2,5 @@ export function sketchbookOrigin(value?:string):string;
+ export function sketchbookRewrites(value?:string):{source:string;destination:string;basePath:false}[];
+ export function collectOrigin(value?:string):string;
+ export function collectRewrites(value?:string):{source:string;destination:string;basePath:false}[];
++export function atlasOrigin(value?:string):string;
++export function atlasRewrites(value?:string):{source:string;destination:string;basePath:false}[];
+diff --git a/scripts/zones.mjs b/scripts/zones.mjs
+index 534e58d..63a40dc 100644
+--- a/scripts/zones.mjs
++++ b/scripts/zones.mjs
+@@ -23,3 +23,10 @@ export function collectOrigin(value = "http://127.0.0.1:3103") {
+ export function collectRewrites(value) {
+   return [{source:"/collect/:path(.*)",destination:`${collectOrigin(value)}/collect/:path`,basePath:false}];
+ }
++export function atlasOrigin(value = "http://127.0.0.1:3104") {
++  try { return sketchbookOrigin(value); }
++  catch { throw new Error("ATLAS_ORIGIN must be an HTTPS origin (or a local loopback HTTP origin)."); }
++}
++export function atlasRewrites(value) {
++  return [{source:"/atlas/:path(.*)",destination:`${atlasOrigin(value)}/atlas/:path`,basePath:false}];
++}
+diff --git a/supabase/README.md b/supabase/README.md
+index 1681a42..983d848 100644
+--- a/supabase/README.md
++++ b/supabase/README.md
+@@ -68,3 +68,11 @@ Supabaseの実際のメール配信、PostgREST/JWT、Storage upload/download/si
+ - [Storage access control](https://supabase.com/docs/guides/storage/security/access-control)
+ - [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html)
+ - [PGlite API](https://pglite.dev/docs/api)
++
++## Phase 5
++
++Atlasのprojects・project_items・item_labelsと同期stream、任意のAI設定・analysis_jobs・search_documentsを追加します。可変次元のembeddingで少数資料を評価し、ownerと絞り込みをSQL内で順位より前に適用します。新規テーブルはRLS有効、変更はRPCのみ、解析workerはservice_role専用です。手順は [Phase 5](../docs/phase5-setup.md)、実際の反映履歴は [検証記録](../docs/phase5-verification.md) を参照してください。
++
++## 暗号化金庫
++
++`20261031082941_encrypted_vault.sql` が暗号文用の所有者RLS、同期RPC、移行アーカイブ、private画像bucketを追加します。初回の解錠・アカウント接続時に旧データを検証しながら移行します。鍵情報だけの追加で既存データが直ちに暗号化されるわけではありません。[手順と保護範囲](../docs/encrypted-vault.md)を参照してください。
+diff --git a/tests/collect-ui.test.ts b/tests/collect-ui.test.ts
+index e63372a..35d7445 100644
+--- a/tests/collect-ui.test.ts
++++ b/tests/collect-ui.test.ts
+@@ -4,6 +4,25 @@ import assert from "node:assert/strict";
+ import {ConflictError,openRecallRepository,prepareResourceImage} from "../packages/api-client/src/index.ts";
+ import {blankCapture,captureFingerprint,draftFor,initialCapture,mergeShareCapture,readShareCapture,rebaseMetadataDraft,safeLink,withoutShareParams} from "../apps/collect/app/capture.ts";
+ import {saveCaptureResource} from "../apps/collect/app/draft-save.ts";
++import {clipboardImage} from "../apps/collect/app/clipboard.ts";
++import {imageCaptureFields} from "../apps/collect/app/capture.ts";
++
++test("Collect image input: a link URL becomes the source without discarding a distinct existing source",()=>{
++  const draft={...blankCapture(),url:"https://example.test/article",title:"残す題",memo:"残す本文",spaceIds:["research"]},before=structuredClone(draft);
++  assert.deepEqual(imageCaptureFields(draft),{resourceType:"image",url:"",sourceUrl:draft.url});
++  assert.deepEqual(draft,before);
++  assert.throws(()=>imageCaptureFields({...draft,sourceUrl:"https://example.test/original"}),/両方を残す/);
++});
++
++test("Collect clipboard: text stays native, file lists are not duplicated, and multiple images require separate pastes",()=>{
++  const file=new File(["image"],"pasted.png",{type:"image/png"});
++  const data=(items:unknown[],files:File[]=[])=>({items,files}) as unknown as Pick<DataTransfer,"items"|"files">;
++  assert.equal(clipboardImage(data([{kind:"string",type:"text/plain"}],[])),null);
++  assert.equal(clipboardImage(data([{kind:"file",type:"image/png",getAsFile:()=>file}],[file])),file);
++  assert.equal(clipboardImage(data([],[file])),file);
++  assert.equal(clipboardImage(data([{kind:"file",type:"image/png",getAsFile:()=>null}])),null);
++  assert.throws(()=>clipboardImage(data([],[file,file])),/1枚ずつ/);
++});
+ 
+ const databaseName=()=>`collect-ui-${crypto.randomUUID()}`;
+ const gif=()=>new Blob([Buffer.from("R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==","base64")],{type:"image/gif"});
+diff --git a/tests/collect.test.ts b/tests/collect.test.ts
+index 5be761f..6295e4e 100644
+--- a/tests/collect.test.ts
++++ b/tests/collect.test.ts
+@@ -15,7 +15,7 @@ const name=()=>`collect-test-${crypto.randomUUID()}`;
+ const png=()=>new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="),char=>char.charCodeAt(0))],{type:"image/png"});
+ const link=(title="資料",url="https://example.com/article#one"):SaveResourceInput=>({resourceType:"link",url,sourceUrl:"",title,memo:"自分のメモ",spaceIds:[],inbox:true,image:null});
+ async function device(t:TestContext,owner:string){const repo=await openAccountRecallRepository(owner,{name:name()});t.after(()=>repo.close());return repo;}
+-function transport(owner:string){return createSupabaseSyncTransport({async rpc(method,args){try{return {data:method==="apply_sync_operation"?await database.apply(owner,args.p_operation):await database.pullTools(owner,String(args.p_cursor),Number(args.p_limit)),error:null};}catch(error){return {data:null,error:{message:String(error)}};}}},owner);}
++function transport(owner:string){return createSupabaseSyncTransport({async rpc(method,args){try{return {data:method==="apply_sync_operation"?await database.apply(owner,args.p_operation):await database.pullAtlas(owner,String(args.p_cursor),Number(args.p_limit)),error:null};}catch(error){return {data:null,error:{message:String(error)}};}}},owner);}
+ async function sync(repo:AccountRecallRepository,phase="idle"){
+   const engine=createSyncEngine(repo,transport(repo.ownerId));try{const state=await engine.run();assert.equal(state.phase,phase,state.error);return state;}finally{engine.stop();}
+ }
+@@ -43,7 +43,7 @@ test("Collect: quota failure rolls back original, resource, draft clearing and s
+   const dbName=name(),owner=await database.addUser(),repo=await openAccountRecallRepository(owner,{name:dbName});t.after(()=>repo.close());
+   await repo.saveCollectDraft(link("残す下書き"));const pending=(await repo.pendingOperations()).length;
+   const add=IDBObjectStore.prototype.add;
+-  IDBObjectStore.prototype.add=function(value:unknown,key?:IDBValidKey){if(this.name==="syncOutbox"&&(value as {kind?:string}).kind==="put_resource")throw new DOMException("Full","QuotaExceededError");return add.call(this,value,key);};
++  IDBObjectStore.prototype.add=function(value:unknown,key?:IDBValidKey){if(this.name==="syncOutbox")throw new DOMException("Full","QuotaExceededError");return add.call(this,value,key);};
+   try{await assert.rejects(repo.saveResource({...link(),resourceType:"image",url:"",image:await prepareResourceImage(png()),file:png()}),/Full/);}finally{IDBObjectStore.prototype.add=add;}
+   assert.equal((await repo.snapshot()).resources.length,0);assert.equal(await storedCount(dbName,"resourceFiles"),0);
+   assert.equal((await repo.pendingOperations()).length,pending);assert.equal((await repo.loadCollectDraft()).title,"残す下書き");
+@@ -146,7 +146,7 @@ test("Collect sync race: a newer deferred remote survives an older in-flight ack
+   resource=(await repo.snapshot()).resources[0];await repo.updateResource(resource.id,{memo:"local edit"},resource.localRevision);
+   const op=(await repo.pendingOperations()).find(op=>op.kind==="put_resource")!,accepted=await database.apply(owner,op);
+   const remote=await database.apply(owner,operation({...accepted.record as unknown as Resource,title:"newer remote"},Number(accepted.record.serverRevision)));
+-  await repo.acceptPull(await database.pullTools(owner,(await repo.getSyncState()).cursor) as never);
++  await repo.acceptPull(await database.pullAtlas(owner,(await repo.getSyncState()).cursor) as never);
+   assert.equal((await repo.snapshot()).resources[0].memo,"local edit");
+   await repo.acceptPush(op,accepted as never);assert.equal((await repo.snapshot()).resources[0].title,"newer remote");assert.equal((await repo.snapshot()).resources[0].serverRevision,remote.record.serverRevision);
+   assert.equal((await repo.getSyncState()).pending,0);
+@@ -155,8 +155,8 @@ test("Collect sync race: a newer deferred remote survives an older in-flight ack
+ test("Collect SQL: v2 and v3 streams hide resources, full stream paginates through every entity",async t=>{
+   const owner=await database.addUser(),repo=await device(t,owner);await repo.saveResource(link());await repo.saveNote({body:"Recall",spaceIds:[]});await repo.saveSketch({title:"Sketchbook",strokes:[],spaceIds:[]});await sync(repo);
+   const recall=await database.pull(owner),suite=await database.pullSuite(owner);assert.ok(recall.changes.every(c=>["note","space"].includes(c.entity)));assert.ok(suite.changes.some(c=>c.entity==="sketch"));assert.ok(suite.changes.every(c=>String(c.entity)!=="resource"));
+-  const all=[];let cursor="0",more=true,pages=0;while(more){assert.ok(++pages<20,"pagination must advance");const page=await database.pullTools(owner,cursor,1);assert.equal(page.changes.length,1);assert.ok(BigInt(page.cursor)>BigInt(cursor));all.push(...page.changes);cursor=page.cursor;more=page.hasMore;}
+-  assert.ok(all.some(c=>c.entity==="resource"));assert.equal((await database.pullTools(owner,cursor)).hasMore,false);
++  const all=[];let cursor="0",more=true,pages=0;while(more){assert.ok(++pages<20,"pagination must advance");const page=await database.pullAtlas(owner,cursor,1);assert.equal(page.changes.length,1);assert.ok(BigInt(page.cursor)>BigInt(cursor));all.push(...page.changes);cursor=page.cursor;more=page.hasMore;}
++  assert.ok(all.some(c=>c.entity==="resource"));assert.equal((await database.pullAtlas(owner,cursor)).hasMore,false);
+   const empty=await database.pullSuite(owner,suite.cursor);assert.equal(empty.hasMore,false);assert.equal(empty.changes.length,0);
+ });
+ 
+diff --git a/tests/gateway.test.ts b/tests/gateway.test.ts
+index 9c176a0..a50d1e4 100644
+--- a/tests/gateway.test.ts
++++ b/tests/gateway.test.ts
+@@ -33,15 +33,16 @@ async function request(port:number,path:string,method="GET",body=""){
+   });
+ }
+ test("local gateway forwards exact paths, queries, cookies, HEAD, streamed bodies and independent app outages",async t=>{
+-  const recall=await upstream("recall"),sketch=await upstream("sketchbook"),collect=await upstream("collect");
+-  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port,collectPort:collect.port});
++  const recall=await upstream("recall"),sketch=await upstream("sketchbook"),collect=await upstream("collect"),atlas=await upstream("atlas");
++  const gateway=createGatewayServer({recallPort:recall.port,sketchbookPort:sketch.port,collectPort:collect.port,atlasPort:atlas.port});
+   gateway.server.listen(0,"127.0.0.1");await once(gateway.server,"listening");const address=gateway.server.address();assert.ok(address&&typeof address!=="string");const port=address.port;
+   let recallClosed=false;
+-  t.after(async()=>{await gateway.close();if(!recallClosed)await recall.close();await sketch.close();await collect.close();});
++  t.after(async()=>{await gateway.close();if(!recallClosed)await recall.close();await sketch.close();await collect.close();await atlas.close();});
+   const path="/sketchbook/_next/static/%5Bchunk%5D.js?from=note%2Fone&item=sketch-1";
+   const reply=await request(port,path,"POST","payload across chunks");assert.equal(reply.status,200);
+   assert.deepEqual(JSON.parse(reply.body),{app:"sketchbook",path,method:"POST",cookie:"test-cookie=not-a-real-session",authorization:"Bearer test-only",host:`127.0.0.1:${port}`,forwarded:`127.0.0.1:${port}`,body:"payload across chunks"});
+   assert.equal(reply.headers["set-cookie"]?.length,2);
++  const atlasReply=await request(port,"/atlas/api/ai/?item=test%2Fone","POST","atlas-payload");assert.equal(atlasReply.status,200);assert.equal(atlasReply.headers["x-app"],"atlas");assert.equal(JSON.parse(atlasReply.body).path,"/atlas/api/ai/?item=test%2Fone");assert.equal(JSON.parse(atlasReply.body).body,"atlas-payload");
+   const head=await request(port,"/recall/","HEAD");assert.equal(head.status,200);assert.equal(head.body,"");assert.equal(head.headers["x-app"],"recall");
+   assert.equal((await request(port,"/recall/stream")).body,"first-last");
+   assert.equal((await request(port,"/")).headers.location,"/recall/");
+@@ -65,8 +66,8 @@ test("local gateway routes Upgrade handshakes and buffered bidirectional bytes t
+   const text=await result;assert.match(text,/^HTTP\/1\.1 101 Switching Protocols/);assert.ok(text.includes("backend-head:collect:/collect/_next/webpack-hmr?token=test-only:first-client-bytes"));assert.ok(text.includes("second-client-bytes"));
+ });
+ test("local gateway configuration keeps public origin stable and validates distinct loopback ports",()=>{
+-  assert.deepEqual(getGatewayConfig({}),{gatewayPort:3100,recallPort:3102,sketchbookPort:3101,collectPort:3103});
+-  assert.deepEqual(getGatewayConfig({RECALL_PORT:"3300"}),{gatewayPort:3300,recallPort:3302,sketchbookPort:3301,collectPort:3303});
+-  assert.deepEqual(getGatewayConfig({GATEWAY_PORT:"3400",RECALL_PORT:"3300",RECALL_BACKEND_PORT:"3408",SKETCHBOOK_PORT:"3409"}),{gatewayPort:3400,recallPort:3408,sketchbookPort:3409,collectPort:3403});
++  assert.deepEqual(getGatewayConfig({}),{gatewayPort:3100,recallPort:3102,sketchbookPort:3101,collectPort:3103,atlasPort:3104});
++  assert.deepEqual(getGatewayConfig({RECALL_PORT:"3300"}),{gatewayPort:3300,recallPort:3302,sketchbookPort:3301,collectPort:3303,atlasPort:3304});
++  assert.deepEqual(getGatewayConfig({GATEWAY_PORT:"3400",RECALL_PORT:"3300",RECALL_BACKEND_PORT:"3408",SKETCHBOOK_PORT:"3409"}),{gatewayPort:3400,recallPort:3408,sketchbookPort:3409,collectPort:3403,atlasPort:3404});
+   for(const env of [{GATEWAY_PORT:"80"},{GATEWAY_PORT:"65535"},{SKETCHBOOK_PORT:"3100"},{COLLECT_PORT:"3102"},{RECALL_BACKEND_PORT:"not-a-port"}])assert.throws(()=>getGatewayConfig(env));
+ });
+diff --git a/tests/helpers/database.ts b/tests/helpers/database.ts
+index 22fde39..9e5c670 100644
+--- a/tests/helpers/database.ts
++++ b/tests/helpers/database.ts
+@@ -11,6 +11,7 @@ export async function createTestDatabase() {
+   const db=await PGlite.create();
+   await db.exec(`
+     create role anon nologin;
++    create role service_role nologin;
+     create role authenticated nologin;
+     create schema auth;
+     create table auth.users(id uuid primary key);
+@@ -55,6 +56,10 @@ export async function createTestDatabase() {
+       const result=await queryAs(userId,"select public.pull_suite_changes($1,$2) as result",[cursor,limit]);
+       return result.rows[0].result as {changes:{cursor:string;entity:"note"|"space"|"sketch"|"relation";record:Record<string,unknown>}[];cursor:string;hasMore:boolean};
+     },
++    async pullAtlas(userId:string,cursor="0",limit=100) {
++      const result=await queryAs(userId,"select public.pull_atlas_changes($1,$2) as result",[cursor,limit]);
++      return result.rows[0].result as import("../../packages/core/src/index.ts").SyncPullResult;
++    },
+     async pullTools(userId:string,cursor="0",limit=100) {
+       const result=await queryAs(userId,"select public.pull_tools_changes($1,$2) as result",[cursor,limit]);
+       return result.rows[0].result as {changes:{cursor:string;entity:"note"|"space"|"sketch"|"relation"|"resource";record:Record<string,unknown>}[];cursor:string;hasMore:boolean};
+diff --git a/tests/sketchbook.test.ts b/tests/sketchbook.test.ts
+index 2743289..7104896 100644
+--- a/tests/sketchbook.test.ts
++++ b/tests/sketchbook.test.ts
+@@ -18,7 +18,7 @@ function transport(ownerId: string) {
+     return createSupabaseSyncTransport({ async rpc(method, args) {
+         try {
+             return { data: method === "apply_sync_operation" ? await database.apply(ownerId, args.p_operation)
+-                : await database.pullSuite(ownerId, String(args.p_cursor), Number(args.p_limit)), error: null };
++                : await database.pullAtlas(ownerId, String(args.p_cursor), Number(args.p_limit)), error: null };
+         } catch (error) { return { data: null, error: { message: String(error) } }; }
+     } }, ownerId);
+ }
+@@ -111,7 +111,7 @@ test("Sketchbook SQL: owner scoping, invalid strokes and cross-owner source refe
+     await assert.rejects(database.apply(b, invalid), /Invalid stroke/);
+     const relationId = crypto.randomUUID();
+     await assert.rejects(database.apply(b, { id: crypto.randomUUID(), kind: "put_relation", entityId: relationId, baseRevision: null,
+-        payload: { id: relationId, kind: "relation", type: "inspired_by", fromItemId: drawing.id, toItemId: note.id, createdAt: new Date().toISOString(), deletedAt: null } }), /not found in your account/);
++        payload: { id: relationId, kind: "relation", type: "inspired_by", fromItemId: drawing.id, toItemId: note.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deletedAt: null } }), /not found in your account/);
+     assert.equal((await database.queryAs(a, "select * from public.sketches")).rows.length, 0);
+     await assert.rejects(database.queryAs(a, "select private._sync_sketch($1,$2)", [b, drawing.id]), /permission denied/);
+     await assert.rejects(database.queryAs(null, "select public.pull_suite_changes('0',100)"), /permission denied/);
+diff --git a/tests/sync-database.test.ts b/tests/sync-database.test.ts
+index c05ef36..acb4860 100644
+--- a/tests/sync-database.test.ts
++++ b/tests/sync-database.test.ts
+@@ -38,8 +38,8 @@ function sqlTransport(userId: string): SyncTransport {
+         if (name === "pull_suite_changes") {
+           return {data: await database.pullSuite(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
+         }
+-        if (name === "pull_tools_changes") {
+-          return {data: await database.pullTools(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
++        if (name === "pull_atlas_changes") {
++          return {data: await database.pullAtlas(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
+         }
+         throw new Error(`Unexpected RPC: ${name}`);
+       } catch (error) {
+diff --git a/tests/sync.test.ts b/tests/sync.test.ts
+index b80e8c3..911edcf 100644
+--- a/tests/sync.test.ts
++++ b/tests/sync.test.ts
+@@ -25,9 +25,9 @@ function transport(userId: string, pageSize = 100): SyncTransport {
+                     return {
+                         data: await database.pullSuite(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
+                     };
+-                if (name === "pull_tools_changes")
++                if (name === "pull_atlas_changes")
+                     return {
+-                        data: await database.pullTools(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
++                        data: await database.pullAtlas(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
+                     };
+                 throw new Error("Unknown application RPC");
+             }
+@@ -101,16 +101,18 @@ test("v1端末DBを移行してメモと下書きを保持する", async () => {
+     assert.equal((await repo.loadDraft()).body, "書きかけ");
+     repo.close();
+     const upgraded = await new Promise<IDBDatabase>((resolve, reject) => {
+-        const req = indexedDB.open(name, 4);
++        const req = indexedDB.open(name, 6);
+         req.onsuccess = () => resolve(req.result);
+         req.onerror = () => reject(req.error);
+     });
+     const originalIntent = await new Promise<{payload:Note}>((resolve, reject) => {
+-        const req = upgraded.transaction("outbox", "readonly").objectStore("outbox").get(note.id);
+-        req.onsuccess = () => resolve(req.result);
++        const req = upgraded.transaction("outbox", "readonly").objectStore("outbox").getAll();
++        req.onsuccess = () => resolve(req.result[0]);
+         req.onerror = () => reject(req.error);
+     });
+-    assert.equal(originalIntent.payload.body, "移行前のメモ");
++    const {decryptVault}=await import("../packages/api-client/src/vault.ts");
++    const restored=await decryptVault<{payload:Note}>((originalIntent as any).sealed,`idb:${JSON.stringify([name,"outbox",(originalIntent as any).id])}`);
++    assert.equal(restored.payload.body, "移行前のメモ");
+     upgraded.close();
+ });
+ test("2端末で新規・編集・削除・復元と任意スペースを同期する", async () => {
+diff --git a/tests/zones.test.ts b/tests/zones.test.ts
+index 58b68d4..1949aa6 100644
+--- a/tests/zones.test.ts
++++ b/tests/zones.test.ts
+@@ -1,7 +1,7 @@
+ import test from "node:test";
+ import assert from "node:assert/strict";
+ import {createRequire} from "node:module";
+-import {sketchbookOrigin,sketchbookRewrites,collectOrigin,collectRewrites} from "../scripts/zones.mjs";
++import {sketchbookOrigin,sketchbookRewrites,collectOrigin,collectRewrites,atlasOrigin,atlasRewrites} from "../scripts/zones.mjs";
+ // Use the pinned Next matcher/compiler to catch real route-normalization regressions.
+ // These are test-only internals; production uses the documented rewrite configuration.
+ const require=createRequire(new URL("../apps/recall/package.json",import.meta.url));
+@@ -22,7 +22,14 @@ test("multi-zone route preserves page slashes, files, nested assets and query in
+   assert.equal(sketchbookOrigin("https://sketch.example.com/"),"https://sketch.example.com");
+ });
+ test("zone destination accepts an origin, never credentials, arbitrary paths or nonlocal plaintext",()=>{
+-  for(const input of ["https://user:secret@example.com","https://example.com/sketchbook","https://example.com/?secret=x","https://example.com/#x","http://example.com","file:///C:/secrets"]){assert.throws(()=>sketchbookOrigin(input));assert.throws(()=>collectOrigin(input));}
++  for(const input of ["https://user:secret@example.com","https://example.com/sketchbook","https://example.com/?secret=x","https://example.com/#x","http://example.com","file:///C:/secrets"]){assert.throws(()=>sketchbookOrigin(input));assert.throws(()=>collectOrigin(input));assert.throws(()=>atlasOrigin(input));}
++});
++test("Atlas zone preserves AI routes, item links, manifest and static assets in the Next compiler",()=>{
++ const [rule]=atlasRewrites("http://127.0.0.1:3504"),match=getPathMatch(rule.source,{strict:true});
++ for(const pathname of ["/atlas/","/atlas/api/ai/","/atlas/manifest.webmanifest","/atlas/sw.js","/atlas/_next/static/chunks/app/page.js"]){
++  const params=match(pathname);assert.ok(params);const {parsedDestination}=prepareDestination({destination:rule.destination,params,query:{item:"original-id"},appendParamsToQuery:false});assert.equal(parsedDestination.pathname,pathname);assert.deepEqual(parsedDestination.query,{item:"original-id"});assert.equal(parsedDestination.origin,"http://127.0.0.1:3504");
++ }
++ assert.equal(match("/atlas-foreign/"),false);
+ });
+ 
+ test("Collect rewrite preserves share queries, metadata route and its independent asset paths",()=>{

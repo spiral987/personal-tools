@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-01",
+  "origin": "https://personal-tools-seven-ruby.vercel.app",
+  "teamId": "team_poDUNnJCPceytXN1Ptbtzr14",
+  "teamSlug": "spiral987-c31cbce1",
+  "plan": "hobby",
+  "source": {
+    "baseCommit": "b791e28",
+    "workingTreeChanges": true,
+    "snapshot": "b67ad839e3a1",
+    "files": 104,
+    "bytes": 636995
+  },
+  "projects": [
+    {
+      "name": "personal-tools",
+      "id": "prj_RqHSucgrcnqb7CwiYtoh5ux1FU8K",
+      "rootDirectory": "apps/recall",
+      "domain": "personal-tools-seven-ruby.vercel.app",
+      "deploymentId": "dpl_2y5XGHXUPfUCoRpki8Z1QJpjw42z",
+      "state": "READY",
+      "previousDeploymentId": "dpl_AsUGnoXsMdNGHUgmba8m9XU4Bgrr",
+      "deploymentUrl": "https://personal-tools-ba17jy1gy-spiral987-c31cbce1.vercel.app",
+      "replacedDDeploymentId": "dpl_68TaaqCK15tVxA8R5KvgX5BFxWpf"
+    },
+    {
+      "name": "personal-tools-atlas",
+      "id": "prj_n4xUd7NHcTn36wSib2IDtW3HEVdE",
+      "rootDirectory": "apps/atlas",
+      "domain": "personal-tools-atlas.vercel.app",
+      "deploymentId": "dpl_5zPbrYH6h5s3JXRa4tEpRYuBUFTe",
+      "state": "READY",
+      "previousDeploymentId": "dpl_AtQZP2dSLWUiutQXc91B9PoPBusY",
+      "deploymentUrl": "https://personal-tools-atlas-43di3ktdq-spiral987-c31cbce1.vercel.app",
+      "replacedDDeploymentId": "dpl_6frxjJT4HDmxevRk3WRaYc4WMeX6"
+    },
+    {
+      "name": "personal-tools-collect",
+      "id": "prj_cbdzRx2VLesnExViJ0WSEawMqQhw",
+      "rootDirectory": "apps/collect",
+      "domain": "personal-tools-collect.vercel.app",
+      "deploymentId": "dpl_CgCghuGt5uVgXk2PnphVJCzv6TcP",
+      "state": "READY",
+      "previousDeploymentId": "dpl_61b1QzpjzLXUNZ2gFTd57GmhBQcS",
+      "deploymentUrl": "https://personal-tools-collect-eqdcmznaw-spiral987-c31cbce1.vercel.app",
+      "replacedDDeploymentId": "dpl_FQayR2esDAFPVGyxvL17QQemCqU7"
+    },
+    {
+      "name": "personal-tools-sketchbook",
+      "id": "prj_GCR5Oe89SoKv82VMSX6SzcvcoUQC",
+      "rootDirectory": "apps/sketchbook",
+      "domain": "personal-tools-sketchbook.vercel.app",
+      "deploymentId": "dpl_7mj19gCMAaHVmBFv3jCevTD4obZD",
+      "state": "READY",
+      "previousDeploymentId": "dpl_59whM8ZerL3brHRsHMjN7g9XHpib",
+      "deploymentUrl": "https://personal-tools-sketchbook-elnadipdj-spiral987-c31cbce1.vercel.app",
+      "replacedDDeploymentId": "dpl_4QYmc92d1UkamyEx8wPbNx1jWHnA"
+    }
+  ],
+  "supabaseAuth": {
+    "status": "configured_by_user",
+    "configurationEvidence": "User confirmed both URL settings on 2026-11-01; not independently read back",
+    "siteUrl": "https://personal-tools-seven-ruby.vercel.app",
+    "additionalRedirectUrl": "https://personal-tools-seven-ruby.vercel.app/recall/auth/callback/"
+  },
+  "verification": {
+    "httpChecks": 61,
+    "browserGroups": 9,
+    "offlineReloadAllFourApps": true,
+    "realAccountLogin": false,
+    "galaxyDevice": false,
+    "lifecycleBrowserGroups": 9,
+    "tests": 184,
+    "allFourTypecheck": true,
+    "allFourBuild": true,
+    "offlineCacheVersion": "v5"
+  },
+  "phase": "D",
+  "retention": {
+    "projectRef": "zdixgamfhdgnqbgjckpj",
+    "cron": "personal-tools-vault-retention",
+    "schedule": "*/10 * * * *",
+    "naturalCronRun": "succeeded",
+    "edgeFunction": "vault-retention",
+    "edgeVersion": 1,
+    "workerHttpStatus": 200,
+    "workerUnauthorizedStatus": 401,
+    "migrationRequiredOnFirstUnlock": true,
+    "realUserDataUsedForExpiryTest": false
+  }
+}

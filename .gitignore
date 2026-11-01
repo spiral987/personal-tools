@@ -9,3 +9,4 @@ next-env.d.ts
 *.log
 /supabase/.temp/
 /supabase/.branches/
+work/**/browser-profile-*/

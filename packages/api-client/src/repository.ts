@@ -1,5 +1,11 @@
+import {trashIsExpired} from "@personal-tools/core";
 import { parseBackup, parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, assertSketchSyncBudget, jsonbByteLength, parseResource, parseResourceImage, parseCollectDraft, parseCollectBackup, resourceUrl, canonicalResourceUrl, emptyResourceMetadata, MAX_COLLECT_BACKUP_BYTES, MAX_COLLECT_BACKUP_JSON_BYTES, type Resource, type CollectDraft, type CollectBackup, type ResourceImage, type ResourceMetadataJob, type Backup, type SketchBackup, type Sketch, type SketchDraft, type ItemRelation, type SyncRecord, type Note, type Space, type LocalOperation, type SyncOperation, type SyncConflict, type SyncPushResult, type SyncPullResult } from "@personal-tools/core";
 import {prepareResourceImage,blobToBase64,base64ToBlob} from "./resource-files.ts";
+import {requireVault,assertVault} from "./vault.ts";
+import {encryptedTransaction,migrateEncryptedDatabase} from "./vault-idb.ts";
+import {RELATION_TYPES,parseProjectFields,parseTags,type AtlasProject,type ItemLabels,type RelationType,type AtlasItem} from "@personal-tools/core";
+import {ATLAS_REQUESTS_SPACE_NAME,type AtlasRequestSharing,type AtlasRequestsExport} from "@personal-tools/core";
+import {createRepositoryLifecycle} from "./repository-lifecycle.ts";
 export class ConflictError extends Error {
     constructor() {
         super("別の画面でこのメモが更新されました。入力を残したまま、最新のメモを読み直してください。");
@@ -13,7 +19,7 @@ type SaveNoteInput = {
     deletedAt?: string | null;
 };
 export type SaveSketchInput = SketchDraft & { id?: string; pinned?: boolean; deletedAt?: string | null; expectedRevision?: number };
-export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[] };
+export type SuiteSnapshot = { notes: Note[]; spaces: Space[]; sketches: Sketch[]; relations: ItemRelation[];resources:Resource[];projects:AtlasProject[];labels:ItemLabels[] };
 export type SaveResourceInput = Omit<CollectDraft,"editingId"|"expectedRevision"> & {id?:string;file?:Blob;pinned?:boolean;deletedAt?:string|null;metadata?:Resource["metadata"]};
 export type ResourceChanges = Partial<Pick<Resource,"title"|"memo"|"url"|"sourceUrl"|"spaceIds"|"inbox"|"pinned"|"deletedAt">>;
 export type SyncState = {
@@ -24,6 +30,15 @@ export type SyncState = {
     lastSyncedAt: string | null;
 };
 export interface RecallRepository {
+    deleteSpace(id:string):Promise<void>;
+    setItemProjects(itemId:string,projectIds:string[]):Promise<void>;
+    purgeExpired(force?:boolean):Promise<number>;
+    loadAtlasRequestSharing(): Promise<AtlasRequestSharing | null>;
+    prepareAtlasRequestSharing(spaceId?: string): Promise<AtlasRequestSharing>;
+    disableAtlasRequestSharing(): Promise<void>;
+    exportAtlasRequests(): Promise<AtlasRequestsExport>;
+    loadRecallEditDraft():Promise<{noteId:string;body:string;spaceIds:string[];revision:number}|null>;
+    saveRecallEditDraft(value:{noteId:string;body:string;spaceIds:string[];revision:number}|null):Promise<void>;
     snapshot(): Promise<SuiteSnapshot>;
     loadDraft(): Promise<{
         body: string;
@@ -33,7 +48,10 @@ export interface RecallRepository {
     saveNote(input: SaveNoteInput, expectedRevision?: number): Promise<Note>;
     saveSketch(input: SaveSketchInput, expectedRevision?: number): Promise<Sketch>;
     updateSketch(id: string, changes: Partial<Pick<Sketch, "title" | "strokes" | "spaceIds" | "pinned" | "deletedAt">>, expectedRevision: number): Promise<Sketch>;
-    saveRelation(input: { fromItemId: string; toItemId: string; type: "inspired_by" }): Promise<ItemRelation>;
+    saveRelation(input: { fromItemId: string; toItemId: string; type: RelationType }): Promise<ItemRelation>;
+    saveProject(input: Pick<AtlasProject,"name"|"description"|"status"|"dueDate"|"itemIds"> & {id?:string;deletedAt?:string|null}, expectedRevision?:number):Promise<AtlasProject>;
+    saveLabels(id:string,tags:string[],expectedRevision?:number):Promise<ItemLabels>;
+    exportAtlasBackup():Promise<{format:"personal-tools.atlas";version:1;exportedAt:string;projects:AtlasProject[];labels:ItemLabels[];relations:ItemRelation[]}>;
     deleteRelation(id: string, expectedRevision: number): Promise<void>;
     loadSketchDraft(): Promise<SketchDraft>;
     saveSketchDraft(draft: SketchDraft): Promise<void>;
@@ -66,6 +84,8 @@ export type StoredOperation = SyncOperation & {
     localRevision: number;
 };
 export interface AccountRecallRepository extends RecallRepository {
+    isEncryptedSyncReady():Promise<boolean>;
+    prepareEncryptedSync(records:SyncRecord[],mode?:"legacy"|"existing"):Promise<void>;
     readonly ownerId: string;
     getSyncState(): Promise<SyncState>;
     importDeviceData(): Promise<{
@@ -79,8 +99,9 @@ export interface AccountRecallRepository extends RecallRepository {
     markSynced(): Promise<void>;
 }
 const DEVICE_DB = "personal-tools-recall-local-v1";
-const STORES = ["notes", "spaces", "sketches", "relations", "resources", "resourceFiles", "resourceJobs", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
+const STORES = ["notes", "spaces", "sketches", "relations", "resources", "projects", "labels", "resourceFiles", "resourceJobs", "outbox", "drafts", "syncOutbox", "conflicts", "meta"];
 const DEFAULT_SPACES = [["daily", "日常", "#729379"], ["creative", "創作", "#8b7bae"], ["research", "研究", "#b38c58"]] as const;
+const ATLAS_REQUEST_SHARING_KEY = "atlas-request-sharing";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const copy = <T>(value: T): T => structuredClone(value);
 const sameResourceImage=(a:ResourceImage|null,b:ResourceImage|null)=>a===null||b===null?a===b:
@@ -119,8 +140,8 @@ async function atomic<T>(tx: IDBTransaction, work: () => Promise<T> | T): Promis
     }
 }
 const isNote = (record: SyncRecord): record is Note => "kind" in record && record.kind === "note";
-const entityOf = (record: SyncRecord): "note" | "space" | "sketch" | "relation" | "resource" => "kind" in record ? record.kind : "space";
-const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations",resource:"resources" }[entity]!);
+const entityOf = (record: SyncRecord) => "kind" in record ? record.kind : "space";
+const storeOf = (entity: string) => ({ note: "notes", space: "spaces", sketch: "sketches", relation: "relations",resource:"resources",project:"projects",labels:"labels" }[entity]!);
 const revision = (record: SyncRecord) => record.serverRevision ?? 0;
 function portable(data: {
     notes: Note[];
@@ -137,6 +158,16 @@ function portable(data: {
 export function openRecallRepository(name = DEVICE_DB): Promise<RecallRepository> {
     return openRepository(name, null);
 }
+export async function migrateVaultDatabases(){
+    const vault=requireVault();
+    if(!indexedDB.databases)throw new Error("このブラウザは既存データの暗号化移行に対応していません。対応ブラウザで開いてください。");
+    for(const entry of await indexedDB.databases()){
+        if(!entry.name?.startsWith("personal-tools-recall-"))continue;
+        const name=entry.name;
+        const db=await new Promise<IDBDatabase>((resolve,reject)=>{let blocked=false;const r=indexedDB.open(name,6);r.onupgradeneeded=()=>{for(const store of STORES)if(!r.result.objectStoreNames.contains(store))r.result.createObjectStore(store,{keyPath:"id"});};r.onsuccess=()=>{if(blocked){r.result.close();return;}resolve(r.result);};r.onerror=()=>reject(r.error);r.onblocked=()=>{blocked=true;reject(new Error("古いツールのタブを閉じてから、もう一度解錠してください。"));};});
+        try{await migrateEncryptedDatabase(db,STORES,vault);}finally{db.close();}
+    }
+}
 export function openAccountRecallRepository(userId: string, options: {
     name?: string;
 } = {}): Promise<AccountRecallRepository> {
@@ -145,6 +176,7 @@ export function openAccountRecallRepository(userId: string, options: {
     return openRepository(options.name ?? `personal-tools-recall-account-${userId.toLowerCase()}`, userId.toLowerCase()) as Promise<AccountRecallRepository>;
 }
 async function openRepository(name: string, ownerId: string | null): Promise<RecallRepository | AccountRecallRepository> {
+    const vault=requireVault();
     if (typeof indexedDB === "undefined")
         throw new Error("このブラウザでは端末内保存を利用できません。");
     // Missing stores are created only during versionchange; the v1 device notes and drafts survive.
@@ -152,7 +184,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
     let invalidated = false;
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
         let blocked = false;
-        const req = indexedDB.open(name, 4);
+        const req = indexedDB.open(name, 6);
         req.onupgradeneeded = (event) => {
             for (const store of STORES)
                 if (!req.result.objectStoreNames.contains(store))
@@ -161,7 +193,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                     });
             // A v3 cursor may already have passed a resource hidden from its stream.
             // Replay the full owner stream once; server revisions protect cached newer values.
-            if (event.oldVersion < 4) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
+            if (event.oldVersion < 5) req.transaction!.objectStore("meta").put({ id: "cursor", value: "0" });
         };
         req.onsuccess = () => {
             if (blocked) {
@@ -180,9 +212,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             reject(new Error("ほかのRecallのタブを閉じて、開き直してください。"));
         };
     });
+    try{await migrateEncryptedDatabase(db,STORES,vault);}catch(error){db.close();throw error;}
     let closed = false;
     const listeners = new Set<() => void>();
     function ensureOpen() {
+        assertVault(vault);
         if (closed || invalidated)
             throw new Error("このノートは閉じられました。画面を開き直してください。");
     }
@@ -197,9 +231,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
     const emit = () => { notify(); channel?.postMessage("changed"); };
     function transaction(stores: string[] = STORES, mode: IDBTransactionMode = "readwrite") {
         ensureOpen();
-        return db.transaction(stores, mode, mode === "readwrite" ? {
-            durability: "strict"
-        } : undefined);
+        return encryptedTransaction(db,[...new Set([...stores,"meta"])],mode,vault);
     }
     async function readAll<T>(store: string): Promise<T[]> {
         const tx = transaction([store], "readonly");
@@ -236,6 +268,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         }
         store.add(operation);
     }
+    const lifecycle=createRepositoryLifecycle({ownerId,transaction,queue,emit});
     try {
         const tx = transaction();
         await atomic(tx, async () => {
@@ -270,6 +303,78 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         throw error;
     }
     const repo: RecallRepository = {
+        deleteSpace:lifecycle.deleteSpace,setItemProjects:lifecycle.setItemProjects,purgeExpired:lifecycle.purgeExpired,
+        async loadAtlasRequestSharing() {
+            const tx = transaction(["meta"], "readonly");
+            return atomic(tx, async () => {
+                const entry = await request(tx.objectStore("meta").get(ATLAS_REQUEST_SHARING_KEY));
+                return (entry?.value as AtlasRequestSharing | undefined) ?? null;
+            });
+        },
+        async prepareAtlasRequestSharing(spaceId) {
+            const tx = transaction();
+            const sharing = await atomic(tx, async () => {
+                const meta = tx.objectStore("meta"), spaces = tx.objectStore("spaces");
+                const entry = await request(meta.get(ATLAS_REQUEST_SHARING_KEY));
+                if (entry) {
+                    const current = entry.value as AtlasRequestSharing;
+                    if (spaceId && spaceId !== current.spaceId)
+                        throw new Error("共有元を変更するには、先にCodex向けの共有設定を解除してください。");
+                    if (!await request(spaces.get(current.spaceId)))
+                        throw new Error("共有元のスペースが見つかりません。共有設定を解除して設定し直してください。");
+                    return current;
+                }
+                const existing = await request(spaces.getAll()) as Space[];
+                const candidates = existing.filter(space => space.name.normalize("NFKC") === ATLAS_REQUESTS_SPACE_NAME);
+                if (!spaceId && candidates.length > 1)
+                    throw new Error("同名のスペースが複数あります。共有元のAtlas要望スペースを選んでください。");
+                let space = spaceId ? candidates.find(space => space.id === spaceId) : candidates[0];
+                if (spaceId && !space)
+                    throw new Error("共有元にはAtlas要望スペースだけを指定できます。");
+                if (!space) {
+                    space = {
+                        id: crypto.randomUUID(), name: ATLAS_REQUESTS_SPACE_NAME, color: "#638eaa",
+                        createdAt: new Date().toISOString(), ...(ownerId ? {ownerId, localRevision: 1, serverRevision: null} : {})
+                    };
+                    spaces.put(space);
+                    await queue(tx, space);
+                }
+                const value: AtlasRequestSharing = {spaceId: space.id, shareId: crypto.randomUUID()};
+                meta.put({id: ATLAS_REQUEST_SHARING_KEY, value});
+                return value;
+            });
+            emit();
+            return sharing;
+        },
+        async disableAtlasRequestSharing() {
+            const tx = transaction(["meta"]);
+            await atomic(tx, () => {tx.objectStore("meta").delete(ATLAS_REQUEST_SHARING_KEY);});
+            emit();
+        },
+        async exportAtlasRequests() {
+            const tx = transaction(["meta", "spaces", "notes"], "readonly");
+            const result = await atomic(tx, async (): Promise<AtlasRequestsExport> => {
+                const entry = await request(tx.objectStore("meta").get(ATLAS_REQUEST_SHARING_KEY));
+                if (!entry) throw new Error("Atlas要望の共有元を先に設定してください。");
+                const sharing = entry.value as AtlasRequestSharing;
+                if (!await request(tx.objectStore("spaces").get(sharing.spaceId)))
+                    throw new Error("共有元のスペースが見つかりません。共有設定を解除して設定し直してください。");
+                // This runs only inside the unlocked Recall client. Never use
+                // exportBackup/snapshot or spread records into this public data.
+                const notes = await request(tx.objectStore("notes").getAll()) as Note[];
+                return {
+                    format: "personal-tools.atlas-requests", version: 1, mode: "snapshot",
+                    scope: ATLAS_REQUESTS_SPACE_NAME, shareId: sharing.shareId, exportedAt: new Date().toISOString(),
+                    notes: notes.filter(note => !note.deletedAt && note.spaceIds.includes(sharing.spaceId))
+                        .map(note => ({id: note.id, body: note.body, updatedAt: note.updatedAt}))
+                        .sort((a, b) => a.id.localeCompare(b.id))
+                };
+            });
+            ensureOpen();
+            return result;
+        },
+        async loadRecallEditDraft(){const tx=transaction(["drafts"],"readonly");return atomic(tx,async()=>{const d=await request(tx.objectStore("drafts").get("recall-edit"));return d?.value??null;});},
+        async saveRecallEditDraft(value){const tx=transaction(["drafts","notes"]);await atomic(tx,async()=>{if(value){await lifecycle.assertEditable(tx,"note",value.noteId);tx.objectStore("drafts").put({id:"recall-edit",value:{...value,spaceIds:await lifecycle.filterSpaceIds(tx,value.spaceIds)}});}else tx.objectStore("drafts").delete("recall-edit");});},
         close() {
             closed = true;
             listeners.clear();
@@ -294,18 +399,19 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         },
         async saveDraft(body, spaceIds) {
             const tx = transaction(["drafts"]);
-            await atomic(tx, () => {
+            await atomic(tx, async () => {
                 tx.objectStore("drafts").put({
-                    id: "composer", body, spaceIds
+                    id: "composer", body, spaceIds:await lifecycle.filterSpaceIds(tx,spaceIds)
                 });
             });
         },
         async snapshot() {
-            const tx = transaction(["notes", "spaces", "sketches", "relations","resources"], "readonly");
+            await lifecycle.purgeExpired();
+            const tx = transaction(["notes", "spaces", "sketches", "relations","resources","projects","labels"], "readonly");
             return atomic(tx, async () => {
                 const [notes, spaces, sketches, relations,resources] = await Promise.all([request(tx.objectStore("notes").getAll()) as Promise<Note[]>, request(tx.objectStore("spaces").getAll()) as Promise<Space[]>, request(tx.objectStore("sketches").getAll()) as Promise<Sketch[]>, request(tx.objectStore("relations").getAll()) as Promise<ItemRelation[]>,request(tx.objectStore("resources").getAll()) as Promise<Resource[]>]);
                 return {
-                    notes, spaces, sketches, relations,resources
+                    notes:notes.filter(r=>!trashIsExpired(r)), spaces:spaces.filter(r=>!r.deletedAt), sketches:sketches.filter(r=>!trashIsExpired(r)), relations,resources:resources.filter(r=>!trashIsExpired(r)),projects:await request(tx.objectStore("projects").getAll()) as AtlasProject[],labels:await request(tx.objectStore("labels").getAll()) as ItemLabels[]
                 };
             });
         },
@@ -314,6 +420,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             return atomic(tx, async () => {
                 const draft = await request(tx.objectStore("drafts").get("sketch-composer"));
                 return draft ? { title: draft.title, strokes: draft.strokes, spaceIds: draft.spaceIds,
+                    ...(draft.sourceNoteId ? { sourceNoteId:draft.sourceNoteId } : {}),
                     ...(draft.editingId ? { editingId: draft.editingId, expectedRevision: draft.expectedRevision } : {}) } : { title: "", strokes: [], spaceIds: [] };
             });
         },
@@ -322,9 +429,10 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             const strokes = parseSketchStrokes(draft.strokes);
             const spaceIds = parseSketchSpaceIds(draft.spaceIds);
             jsonbByteLength(draft.title);
-            const tx = transaction(["drafts"]);
+            if(draft.sourceNoteId&&!uuidPattern.test(draft.sourceNoteId))throw new Error("下書きの関連メモを確認してください。");
+            const tx = transaction(["drafts","sketches"]);
             if (draft.editingId && (!uuidPattern.test(draft.editingId) || !Number.isSafeInteger(draft.expectedRevision) || Number(draft.expectedRevision) < 1)) throw new Error("下書きの更新番号が正しくありません。");
-            await atomic(tx, () => { tx.objectStore("drafts").put({ id: "sketch-composer", title: draft.title, strokes, spaceIds, ...(draft.editingId ? { editingId: draft.editingId, expectedRevision: draft.expectedRevision } : {}) }); });
+            await atomic(tx, async () => {if(draft.editingId)await lifecycle.assertEditable(tx,"sketch",draft.editingId);tx.objectStore("drafts").put({ id: "sketch-composer", title: draft.title, strokes, spaceIds:await lifecycle.filterSpaceIds(tx,spaceIds), ...(draft.sourceNoteId?{sourceNoteId:draft.sourceNoteId}:{}), ...(draft.editingId ? { editingId: draft.editingId, expectedRevision: draft.expectedRevision } : {}) }); });
         },
         async saveSketch(input, expectedRevision) {
             if (typeof input.title !== "string" || input.title.length > 120) throw new Error("タイトルは120文字以内で入力してください。");
@@ -334,12 +442,13 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             const tx = transaction(), id = input.id ?? crypto.randomUUID();
             const saved = await atomic(tx, async () => {
                 const previous = await request(tx.objectStore("sketches").get(id)) as Sketch | undefined;
+                await lifecycle.assertEditable(tx,"sketch",id,previous);
                 if ((input.id && !previous) || (previous && (expectedRevision ?? input.expectedRevision) !== previous.localRevision)) throw new ConflictError();
-                const spaces = await request(tx.objectStore("spaces").getAllKeys());
-                if (spaceIds.some(spaceId => !spaces.includes(spaceId))) throw new Error("スペースが見つかりません。");
+                const spaces = await request(tx.objectStore("spaces").getAllKeys()),filteredSpaceIds=await lifecycle.filterSpaceIds(tx,spaceIds);
+                if (filteredSpaceIds.some(spaceId => !spaces.includes(spaceId))) throw new Error("スペースが見つかりません。");
                 const now = new Date().toISOString();
                 const sketch: Sketch = { id, kind: "sketch", originApp: "sketchbook", ownerId, title: input.title.trim(), width: 1200, height: 800,
-                    strokes, spaceIds, pinned: input.pinned ?? previous?.pinned ?? false,
+                    strokes, spaceIds:filteredSpaceIds, pinned: input.pinned ?? previous?.pinned ?? false,
                     createdAt: previous?.createdAt ?? now, updatedAt: now, deletedAt: input.deletedAt === undefined ? previous?.deletedAt ?? null : input.deletedAt,
                     localRevision: (previous?.localRevision ?? 0) + 1, serverRevision: previous?.serverRevision ?? null };
                 assertSketchSyncBudget(sketch);
@@ -355,17 +464,19 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             return repo.saveSketch({ ...previous, ...changes, id }, expectedRevision);
         },
         async saveRelation(input) {
-            if (input.type !== "inspired_by" || input.fromItemId === input.toItemId) throw new Error("着想元のメモを選んでください。");
+            if (!RELATION_TYPES.includes(input.type) || input.fromItemId === input.toItemId) throw new Error("別の記録と関係を選んでください。");
+            if(input.type==="related_to"&&input.fromItemId>input.toItemId)input={...input,fromItemId:input.toItemId,toItemId:input.fromItemId};
             // Independent devices derive the same edge ID before opening the IDB transaction.
-            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`inspired_by:${input.fromItemId}:${input.toItemId}`)));
+            const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${input.type}:${input.fromItemId}:${input.toItemId}`)));
             digest[6] = (digest[6] & 15) | 80; digest[8] = (digest[8] & 63) | 128;
             const hex = [...digest.slice(0, 16)].map(byte => byte.toString(16).padStart(2, "0")).join("");
             const edgeId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
             const tx = transaction();
             const saved = await atomic(tx, async () => {
-                const sketch = await request(tx.objectStore("sketches").get(input.fromItemId)) as Sketch | undefined;
-                const note = await request(tx.objectStore("notes").get(input.toItemId)) as Note | undefined;
-                if (!sketch || sketch.deletedAt || !note || note.deletedAt) throw new Error("スケッチまたは着想元のメモが見つかりません。");
+                for(const itemId of [input.fromItemId,input.toItemId]){
+                    const candidates=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(itemId)) as Promise<AtlasItem|undefined>));
+                    if(!candidates.some(item=>item&&!item.deletedAt&&item.ownerId===ownerId))throw new Error("関連付ける記録が見つかりません。");
+                }
                 const existing = (await request(tx.objectStore("relations").getAll()) as ItemRelation[]).find(relation => relation.fromItemId === input.fromItemId && relation.toItemId === input.toItemId && relation.type === input.type);
                 if (existing && !existing.deletedAt) return existing;
                 const now = new Date().toISOString();
@@ -385,6 +496,33 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             });
             emit();
         },
+        async saveProject(input,expectedRevision){
+            const fields=parseProjectFields(input),tx=transaction();
+            const saved=await atomic(tx,async()=>{
+                const previous=input.id?await request(tx.objectStore("projects").get(input.id)) as AtlasProject|undefined:undefined;
+                if(input.id&&(!previous||previous.localRevision!==expectedRevision))throw new ConflictError();
+                fields.itemIds=(await Promise.all(fields.itemIds.map(async id=>({id,purged:await Promise.all(["note","sketch","resource"].map(entity=>lifecycle.notice(tx,entity,id)))})))).filter(row=>!row.purged.some(p=>p&&!p.temporary)).map(row=>row.id);
+                for(const id of fields.itemIds){
+                    const items=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(id)) as Promise<AtlasItem|undefined>));
+                    if(!items.some(item=>item&&item.ownerId===ownerId))throw new Error("所属する記録が見つかりません。");
+                }
+                const now=new Date().toISOString();
+                const record:AtlasProject={...fields,id:previous?.id??crypto.randomUUID(),kind:"project",ownerId,createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:input.deletedAt??null,localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null};
+                tx.objectStore("projects").put(record);await queue(tx,record);return record;
+            });emit();return saved;
+        },
+        async saveLabels(id,tags,expectedRevision){
+            const parsed=parseTags(tags),tx=transaction();
+            const saved=await atomic(tx,async()=>{
+                const items=await Promise.all(["notes","sketches","resources"].map(store=>request(tx.objectStore(store).get(id)) as Promise<AtlasItem|undefined>));
+                if(!items.some(item=>item&&item.ownerId===ownerId&&!item.deletedAt))throw new Error("タグを付ける記録が見つかりません。");
+                const previous=await request(tx.objectStore("labels").get(id)) as ItemLabels|undefined;
+                if((previous?.localRevision??undefined)!==expectedRevision)throw new ConflictError();
+                const now=new Date().toISOString(),record:ItemLabels={id,kind:"labels",ownerId,tags:parsed,createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:null,localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null};
+                tx.objectStore("labels").put(record);await queue(tx,record);return record;
+            });emit();return saved;
+        },
+        async exportAtlasBackup(){const data=await repo.snapshot();return {format:"personal-tools.atlas",version:1,exportedAt:new Date().toISOString(),projects:data.projects,labels:data.labels,relations:data.relations};},
         async exportSketchBackup() {
             const data = await repo.snapshot();
             const sketches = [...data.sketches];
@@ -423,6 +561,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             if(file){const image=await prepareResourceImage(file,draft.image?.filename);if(!draft.image||image.sha256!==draft.image.sha256||image.mimeType!==draft.image.mimeType||image.size!==draft.image.size)throw new Error("下書きの原本が一致しません。");}
             const tx=transaction(["drafts","resourceFiles","resources"]);
             await atomic(tx,async()=>{
+                draft.spaceIds=await lifecycle.filterSpaceIds(tx,draft.spaceIds);if(draft.editingId)await lifecycle.assertEditable(tx,"resource",draft.editingId);
                 if(draft.image){
                     if(file)tx.objectStore("resourceFiles").put({id:draft.image.sha256,blob:file});
                     else if(!await request(tx.objectStore("resourceFiles").get(draft.image.sha256))){
@@ -434,8 +573,8 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             });
         },
         async getCollectDraftFile(){
-            const tx=transaction(["drafts","resourceFiles"],"readonly");
-            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));if(!draft?.image)return null;const stored=await request(tx.objectStore("resourceFiles").get(draft.image.sha256));return stored?.blob??null;});
+            const tx=transaction(["drafts","resourceFiles","resources"],"readonly");
+            return atomic(tx,async()=>{const draft=await request(tx.objectStore("drafts").get("collect-composer"));if(!draft?.image)return null;if(draft.editingId){const target=await request(tx.objectStore("resources").get(draft.editingId));if(!target||trashIsExpired(target)||await lifecycle.notice(tx,"resource",draft.editingId))return null;}const stored=await request(tx.objectStore("resourceFiles").get(draft.image.sha256));return stored?.blob??null;});
         },
         async saveResource(input,expectedRevision){
             let original:ResourceImage|null=null;
@@ -443,13 +582,14 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             const id=input.id??crypto.randomUUID(),tx=transaction();
             const saved=await atomic(tx,async()=>{
                 const previous=await request(tx.objectStore("resources").get(id)) as Resource|undefined;
+                await lifecycle.assertEditable(tx,"resource",id,previous);
                 if((input.id&&!previous)||(previous&&expectedRevision!==previous.localRevision))throw new ConflictError();
                 const image=original??(input.image?parseResourceImage(input.image):null);
                 if(previous&&(previous.resourceType!==input.resourceType||!sameResourceImage(previous.image,image)))throw new Error("画像の原本を変更するときは、新しい資料として追加してください。");
                 const now=new Date().toISOString(),url=resourceUrl(input.url,input.resourceType==="image");
                 const resource=parseResource({
                     id,kind:"resource",originApp:"collect",ownerId,resourceType:input.resourceType,url,sourceUrl:resourceUrl(input.sourceUrl||url,true),
-                    title:input.title.trim(),memo:input.memo,spaceIds:input.spaceIds,inbox:input.inbox,pinned:input.pinned??previous?.pinned??false,image,
+                    title:input.title.trim(),memo:input.memo,spaceIds:await lifecycle.filterSpaceIds(tx,input.spaceIds),inbox:input.inbox,pinned:input.pinned??previous?.pinned??false,image,
                     metadata:previous&&previous.url!==url?emptyResourceMetadata():input.metadata??previous?.metadata??emptyResourceMetadata(),
                     createdAt:previous?.createdAt??now,updatedAt:now,deletedAt:input.deletedAt===undefined?previous?.deletedAt??null:input.deletedAt,
                     localRevision:(previous?.localRevision??0)+1,serverRevision:previous?.serverRevision??null,
@@ -471,7 +611,7 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
         },
         async getResourceFile(id){
             const tx=transaction(["resources","resourceFiles"],"readonly");
-            return atomic(tx,async()=>{const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!resource?.image)return null;const stored=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));return stored?.blob??null;});
+            return atomic(tx,async()=>{const resource=await request(tx.objectStore("resources").get(id)) as Resource|undefined;if(!resource?.image||trashIsExpired(resource)||await lifecycle.notice(tx,"resource",id))return null;const stored=await request(tx.objectStore("resourceFiles").get(resource.image.sha256));return stored?.blob??null;});
         },
         async cacheResourceFile(id,file){
             const resource=(await readAll<Resource>("resources")).find(value=>value.id===id);if(!resource?.image)throw new Error("画像資料が見つかりません。");
@@ -560,14 +700,16 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             const id = input.id ?? crypto.randomUUID();
             const note = await atomic(tx, async () => {
                 const previous = await request(tx.objectStore("notes").get(id)) as Note | undefined;
+                await lifecycle.assertEditable(tx,"note",id,previous);
                 if ((input.id && !previous) || (previous && expectedRevision !== previous.localRevision))
                     throw new ConflictError();
                 const spaces = await request(tx.objectStore("spaces").getAllKeys());
-                if (input.spaceIds.some(spaceId => !spaces.includes(spaceId)))
+                const filteredSpaceIds=await lifecycle.filterSpaceIds(tx,input.spaceIds);
+                if (filteredSpaceIds.some(spaceId => !spaces.includes(spaceId)))
                     throw new Error("スペースが見つかりません。");
                 const now = new Date().toISOString();
                 const saved: Note = {
-                    id, kind: "note", originApp: "recall", ownerId, body: input.body.trim(), spaceIds: [...new Set(input.spaceIds)], pinned: input.pinned ?? previous?.pinned ?? false, createdAt: previous?.createdAt ?? now, updatedAt: now, deletedAt: input.deletedAt === undefined ? previous?.deletedAt ?? null : input.deletedAt, localRevision: (previous?.localRevision ?? 0) + 1, serverRevision: previous?.serverRevision ?? null
+                    id, kind: "note", originApp: "recall", ownerId, body: input.body.trim(), spaceIds: [...new Set(filteredSpaceIds)], pinned: input.pinned ?? previous?.pinned ?? false, createdAt: previous?.createdAt ?? now, updatedAt: now, deletedAt: input.deletedAt === undefined ? previous?.deletedAt ?? null : input.deletedAt, localRevision: (previous?.localRevision ?? 0) + 1, serverRevision: previous?.serverRevision ?? null
                 };
                 tx.objectStore("notes").put(saved);
                 await queue(tx, saved);
@@ -633,10 +775,39 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             return result;
         },
     };
+    await lifecycle.purgeExpired(true);
     if (!ownerId)
         return repo;
     const account: AccountRecallRepository = {
         ...repo, ownerId,
+        async isEncryptedSyncReady(){const tx=transaction(["meta"],"readonly");return atomic(tx,async()=>!!await request(tx.objectStore("meta").get("encrypted-sync")));},
+        async prepareEncryptedSync(records,mode="legacy"){
+            const tx=transaction();await atomic(tx,async()=>{
+                if(await request(tx.objectStore("meta").get("encrypted-sync")))return;
+                const pending=await request(tx.objectStore("syncOutbox").getAll()) as StoredOperation[];
+                if(mode==="existing"){
+                    const remotes=new Map(records.map(r=>[`${entityOf(r)}:${r.id}`,r]));
+                    const pushes:SyncRecord[]=[];
+                    tx.objectStore("syncOutbox").clear();tx.objectStore("meta").put({id:"cursor",value:"0"});tx.objectStore("meta").put({id:"sequence",value:0});
+                    for(const target of ["spaces","notes","sketches","resources","relations","projects","labels"]){for(const local of await request(tx.objectStore(target).getAll()) as SyncRecord[]){
+                        const key=`${entityOf(local)}:${local.id}`,remote=remotes.get(key),dirty=pending.some(p=>p.entityId===local.id&&p.kind===`put_${entityOf(local)}`);
+                        const sameSeed=remote&&entityOf(local)==="space"&&DEFAULT_SPACES.some(([id])=>id===local.id)&&JSON.stringify({name:(local as Space).name,color:(local as Space).color})===JSON.stringify({name:(remote as Space).name,color:(remote as Space).color});
+                        if(remote&&(!dirty||sameSeed)){tx.objectStore(target).put(remote);remotes.delete(key);}else{const value={...local,serverRevision:null};tx.objectStore(target).put(value);pushes.push(value);remotes.delete(key);}
+                    }}
+                    for(const remote of remotes.values())tx.objectStore(storeOf(entityOf(remote))).put(remote);
+                    for(const value of pushes)await queue(tx,value);
+                    const conflicts=await request(tx.objectStore("conflicts").getAll()) as SyncConflict[];
+                    for(const conflict of conflicts){const remote=records.find(r=>r.id===conflict.entityId&&entityOf(r)===conflict.entity);if(remote)tx.objectStore("conflicts").put({...conflict,remote});}
+                    tx.objectStore("meta").put({id:"encrypted-sync",value:true});return;
+                }
+                for(const record of records){if(record.ownerId!==ownerId)throw new Error("別の所有者の移行を拒否しました。");const target=storeOf(entityOf(record)),previous=await request(tx.objectStore(target).get(record.id)) as SyncRecord|undefined;
+                    if(!previous||!pending.some(p=>p.entityId===record.id&&p.kind===`put_${entityOf(record)}`)&&revision(record)>revision(previous))tx.objectStore(target).put(record);
+                }
+                tx.objectStore("syncOutbox").clear();tx.objectStore("meta").put({id:"cursor",value:"0"});tx.objectStore("meta").put({id:"sequence",value:0});
+                for(const target of ["spaces","notes","sketches","resources","relations","projects","labels"]){for(const record of await request(tx.objectStore(target).getAll()) as SyncRecord[]){const migrated={...record,serverRevision:null};tx.objectStore(target).put(migrated);await queue(tx,migrated);}}
+                tx.objectStore("meta").put({id:"encrypted-sync",value:true});
+            });emit();
+        },
         async exportBackup() {
             const tx = transaction(["notes", "spaces", "conflicts"], "readonly");
             return atomic(tx, async () => {
@@ -681,6 +852,10 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
             return (await readAll<StoredOperation>("syncOutbox")).sort((a, b) => a.sequence - b.sequence);
         },
         async acceptPush(operation, result) {
+            if(result.status==="purged"){
+                if(result.operationId!==operation.id||result.purged.id!==operation.entityId||result.purged.entity!==operation.kind.slice(4)||result.purged.ownerId!==ownerId)throw new Error("削除通知が同期先と一致しません。");
+                const tx=transaction();await atomic(tx,()=>lifecycle.applyPurges(tx,[result.purged]));emit();return;
+            }
             if (result.operationId !== operation.id || result.record.id !== operation.entityId || result.record.ownerId !== ownerId)
                 throw new Error("同期応答のアカウントまたはメモが一致しません。");
             const tx = transaction();
@@ -696,7 +871,8 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                 // A different app may have pulled a newer remote while this immutable
                 // operation was in flight. Its cursor already committed, so retain that
                 // full record until all local operations on the entity are acknowledged.
-                const remote = deferred && revision(deferred.value) > revision(result.record) ? deferred.value : result.record;
+                const remote = await lifecycle.sanitizeRecord(tx,deferred && revision(deferred.value) > revision(result.record) ? deferred.value : result.record);
+                if(!remote){tx.objectStore("syncOutbox").delete(operation.id);return;}
                 const allPending = await request(tx.objectStore("syncOutbox").getAll()) as StoredOperation[];
                 const later = allPending.filter(o => o.kind === operation.kind && o.entityId === operation.entityId && o.sequence > operation.sequence);
                 if (result.status === "conflict") {
@@ -724,6 +900,9 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                         });
                     if (!later.length) tx.objectStore("meta").delete(deferredKey);
                 }
+                if(result.status==="applied"&&!later.length&&revision(remote)===revision(result.record)&&JSON.stringify(remote)!==JSON.stringify(result.record)){
+                    const saved=await request(tx.objectStore(target).get(remote.id)) as SyncRecord|undefined;if(saved)await queue(tx,saved);
+                }
                 const conflicts = await request(tx.objectStore("conflicts").getAll()) as SyncConflict[];
                 for (const conflict of conflicts) {
                     if (conflict.entity === entity && conflict.entityId === operation.entityId && revision(remote) > revision(conflict.remote))
@@ -743,9 +922,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                 const currentCursor = await request(tx.objectStore("meta").get("cursor"));
                 if (BigInt(result.cursor) < BigInt(String(currentCursor?.value ?? "0")))
                     return;
+                if(result.purges?.length)await lifecycle.applyPurges(tx,result.purges);
                 const pending = await request(tx.objectStore("syncOutbox").getAll()) as StoredOperation[];
                 const conflicts = await request(tx.objectStore("conflicts").getAll()) as SyncConflict[];
-                for (const change of result.changes) {
+                for (const incoming of result.changes) {
+                    const clean=await lifecycle.sanitizeRecord(tx,incoming.record);if(!clean)continue;const change={...incoming,record:clean};
                     const target = storeOf(change.entity);
                     const kind = `put_${change.entity}`;
                     for (const conflict of conflicts) {
@@ -764,10 +945,11 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                     const deferred = await request(tx.objectStore("meta").get(deferredKey)) as { id: string; value: SyncRecord } | undefined;
                     const remote = deferred && revision(deferred.value) > revision(change.record) ? deferred.value : change.record;
                     const previous = await request(tx.objectStore(target).get(change.record.id)) as SyncRecord | undefined;
-                    if (!previous || revision(remote) > revision(previous))
-                        tx.objectStore(target).put({
-                            ...remote, localRevision: (previous?.localRevision ?? 0) + 1
-                        });
+                    if (!previous || revision(remote) > revision(previous)) {
+                        const saved={...remote,localRevision:(previous?.localRevision??0)+1};
+                        tx.objectStore(target).put(saved);
+                        if(remote===change.record&&JSON.stringify(clean)!==JSON.stringify(incoming.record))await queue(tx,saved);
+                    }
                     tx.objectStore("meta").delete(deferredKey);
                 }
                 tx.objectStore("meta").put({
@@ -803,8 +985,9 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                     return;
                 if (resolution === "keep_both") {
                     const local = conflict.local;
+                    await lifecycle.assertEditable(tx,conflict.entity,conflict.entityId,local);
                     const newId = crypto.randomUUID();
-                    const saved: SyncRecord = "kind" in local && local.kind === "relation" ? {
+                    const saved: SyncRecord = "kind" in local && (local.kind === "relation" || local.kind === "labels") ? {
                         ...local, ownerId, deletedAt: null, updatedAt: new Date().toISOString(),
                         serverRevision: conflict.remote.serverRevision ?? null,
                         localRevision: (conflict.remote.localRevision ?? 0) + 1,
@@ -813,8 +996,9 @@ async function openRepository(name: string, ownerId: string | null): Promise<Rec
                     } : {
                         ...local, id: newId, ownerId, localRevision: 1, serverRevision: null, createdAt: new Date().toISOString()
                     };
-                    tx.objectStore(storeOf(entityOf(saved))).put(saved);
-                    await queue(tx, saved);
+                    const clean=await lifecycle.sanitizeRecord(tx,saved);if(!clean)throw new Error("この記録は完全に削除されています。");
+                    tx.objectStore(storeOf(entityOf(clean))).put(clean);
+                    await queue(tx, clean);
                 }
                 tx.objectStore("conflicts").delete(id);
             });

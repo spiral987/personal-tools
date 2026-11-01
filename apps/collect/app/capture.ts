@@ -1,5 +1,9 @@
 import type {CollectDraft,Resource} from "@personal-tools/core";
 export const blankCapture=():CollectDraft=>({resourceType:"link",url:"",sourceUrl:"",title:"",memo:"",spaceIds:[],inbox:true,image:null});
+export function imageCaptureFields(draft:CollectDraft):Pick<CollectDraft,"resourceType"|"url"|"sourceUrl">{
+  if(draft.url.trim()&&draft.sourceUrl.trim()&&draft.url.trim()!==draft.sourceUrl.trim())throw new Error("URLと出典URLが異なります。両方を残すには、リンクを保存してから新しい収集に画像を追加してください。");
+  return {resourceType:"image",url:"",sourceUrl:draft.sourceUrl||draft.url};
+}
 export const draftFor=(resource:Resource):CollectDraft=>({resourceType:resource.resourceType,url:resource.url??"",sourceUrl:resource.sourceUrl??"",title:resource.title,memo:resource.memo,spaceIds:[...resource.spaceIds],inbox:resource.inbox,image:resource.image,editingId:resource.id,expectedRevision:resource.localRevision});
 export function captureFingerprint(draft:CollectDraft):string{return JSON.stringify({resourceType:draft.resourceType,url:draft.url.trim(),sourceUrl:draft.sourceUrl.trim(),title:draft.title.trim(),memo:draft.memo,spaceIds:[...draft.spaceIds].sort(),inbox:draft.inbox,image:draft.image?{sha256:draft.image.sha256,mimeType:draft.image.mimeType,size:draft.image.size,filename:draft.image.filename}:null});}
 export function sameImageContent(a:CollectDraft["image"],b:CollectDraft["image"]):boolean{return !!a&&!!b&&a.sha256===b.sha256&&a.size===b.size&&a.mimeType===b.mimeType;}

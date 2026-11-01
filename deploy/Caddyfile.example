@@ -1,6 +1,6 @@
 # Replace the domain and upstream origins before use; this is a later HTTPS deployment example.
-# This example runs Caddy and all three app processes on the same machine.
-# Each backend app is built with basePath /recall, /sketchbook or /collect; do not strip the prefix.
+# This example runs Caddy and all four app processes on the same machine.
+# Each backend app is built with basePath /recall, /sketchbook /collect or /atlas; do not strip the prefix.
 tools.example.com {
     @recall path /recall /recall/*
     reverse_proxy @recall 127.0.0.1:3102
@@ -8,5 +8,7 @@ tools.example.com {
     reverse_proxy @sketchbook 127.0.0.1:3101
     @collect path /collect /collect/*
     reverse_proxy @collect 127.0.0.1:3103
-    redir / /recall/ 302
+    @atlas path /atlas /atlas/*
+    reverse_proxy @atlas 127.0.0.1:3104
+    redir / /atlas/ 302
 }

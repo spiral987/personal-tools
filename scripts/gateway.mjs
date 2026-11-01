@@ -12,8 +12,9 @@ export function getGatewayConfig(env=process.env){
   const recallPort=port(env.RECALL_BACKEND_PORT,gatewayPort+2,"RECALL_BACKEND_PORT");
   const sketchbookPort=port(env.SKETCHBOOK_PORT,gatewayPort+1,"SKETCHBOOK_PORT");
   const collectPort=port(env.COLLECT_PORT,gatewayPort+3,"COLLECT_PORT");
-  if(new Set([gatewayPort,recallPort,sketchbookPort,collectPort]).size!==4)throw new Error("The gateway and app backends require different ports.");
-  return {gatewayPort,recallPort,sketchbookPort,collectPort};
+  const atlasPort=port(env.ATLAS_PORT,gatewayPort+4,"ATLAS_PORT");
+  if(new Set([gatewayPort,recallPort,sketchbookPort,collectPort,atlasPort]).size!==5)throw new Error("The gateway and app backends require different ports.");
+  return {gatewayPort,recallPort,sketchbookPort,collectPort,atlasPort};
 }
 function upstreamPort(rawUrl,config){
   if(typeof rawUrl!=="string"||!rawUrl.startsWith("/")||rawUrl.startsWith("//"))return null;
@@ -21,6 +22,7 @@ function upstreamPort(rawUrl,config){
   if(/^\/recall(?:\/|$)/.test(pathname))return config.recallPort;
   if(/^\/sketchbook(?:\/|$)/.test(pathname))return config.sketchbookPort;
   if(/^\/collect(?:\/|$)/.test(pathname))return config.collectPort??null;
+  if(/^\/atlas(?:\/|$)/.test(pathname))return config.atlasPort??null;
   return null;
 }
 function forwardedHeaders(request){
@@ -39,8 +41,9 @@ function unavailable(response){
 export function createGatewayServer(config){
   const sockets=new Set();
   const server=http.createServer((request,response)=>{
-    if(request.url==="/"){
-      response.writeHead(302,{Location:"/recall/","Cache-Control":"no-store"});response.end();return;
+    if(request.url?.split("?",1)[0]==="/"){
+      const search=request.url.includes("?")?request.url.slice(request.url.indexOf("?")):"";
+      response.writeHead(302,{Location:"/atlas/"+search,"Cache-Control":"no-store"});response.end();return;
     }
     const target=upstreamPort(request.url,config);
     if(target===null){response.writeHead(404,{"Content-Type":"text/plain; charset=utf-8","Cache-Control":"no-store"});response.end("このページはありません。");return;}
@@ -91,7 +94,7 @@ export async function startGateway(config=getGatewayConfig()){
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
   const config=getGatewayConfig();
   const gateway=await startGateway(config);
-  console.log(`Personal Tools: http://127.0.0.1:${config.gatewayPort}/recall/`);
+  console.log(`Personal Tools: http://127.0.0.1:${config.gatewayPort}/atlas/`);
   let closing=false;const stop=()=>{if(closing)return;closing=true;void gateway.close().catch(()=>{process.exitCode=1;});};
   process.once("SIGINT",stop);process.once("SIGTERM",stop);
 }

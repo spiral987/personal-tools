@@ -38,8 +38,8 @@ function sqlTransport(userId: string): SyncTransport {
         if (name === "pull_suite_changes") {
           return {data: await database.pullSuite(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
         }
-        if (name === "pull_tools_changes") {
-          return {data: await database.pullTools(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
+        if (name === "pull_atlas_changes") {
+          return {data: await database.pullAtlas(userId, String(args.p_cursor), Number(args.p_limit)), error: null};
         }
         throw new Error(`Unexpected RPC: ${name}`);
       } catch (error) {

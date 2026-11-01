@@ -1,0 +1,213 @@
+{
+  "collect": [
+    {
+      "name": "画面での画像ファイル選択・下書き自動保存",
+      "pass": true
+    },
+    {
+      "name": "再読込後の画像下書き復元・投稿・原本表示",
+      "pass": true
+    },
+    {
+      "name": "Ctrl+Vで画像を保存し、本文・タイトル・出典・選択済み画像を保持",
+      "pass": true
+    },
+    {
+      "name": "投稿した2枚の原本が再読込後も表示される",
+      "pass": true
+    },
+    {
+      "name": "保存済み資料の編集中に画像貼り付けで原本を変更しない",
+      "pass": true
+    },
+    {
+      "name": "画像を含まない文章のCtrl+Vは標準動作を維持",
+      "pass": true
+    },
+    {
+      "name": "壊れた画像の貼り付けは入力を保持して拒否",
+      "pass": true
+    },
+    {
+      "name": "容量エラーでは保存済みと表示せず入力を保持し、再試行で投稿できる",
+      "pass": true
+    },
+    {
+      "name": "スマートフォン幅で画像貼り付け・投稿",
+      "pass": true
+    },
+    {
+      "name": "Recallの作成ボタンとコピーを削除し、既存の関連スケッチへのリンクを維持",
+      "pass": true
+    }
+  ],
+  "suite": [
+    {
+      "name": "ルートURLはAtlasホームへ移動し、3ツールへの入口を表示",
+      "pass": true
+    },
+    {
+      "name": "PC・390px幅で全4ツールの相互移動、現在地、設定、検索位置を確認",
+      "pass": true,
+      "navigationPairs": 24,
+      "geometry": [
+        {
+          "tool": "atlas",
+          "topbar": {
+            "x": 244,
+            "y": 0,
+            "width": 1196,
+            "height": 79
+          },
+          "search": {
+            "x": 1078,
+            "y": 140.546875,
+            "width": 280,
+            "height": 43
+          },
+          "settings": {
+            "x": 1362,
+            "y": 23,
+            "width": 32,
+            "height": 32
+          },
+          "spaces": {
+            "x": 34,
+            "y": 580.59375,
+            "width": 175,
+            "height": 28
+          },
+          "overflow": false,
+          "font": "Inter, \"Helvetica Neue\", Arial, \"Hiragino Kaku Gothic ProN\", \"Noto Sans JP\", Meiryo, sans-serif",
+          "brand": "rgb(52, 55, 53)",
+          "ink": "rgb(52, 55, 53)"
+        },
+        {
+          "tool": "recall",
+          "topbar": {
+            "x": 244,
+            "y": 0,
+            "width": 1196,
+            "height": 79
+          },
+          "search": {
+            "x": 1078,
+            "y": 140.546875,
+            "width": 280,
+            "height": 43
+          },
+          "settings": {
+            "x": 1362,
+            "y": 23,
+            "width": 32,
+            "height": 32
+          },
+          "spaces": {
+            "x": 34,
+            "y": 580.59375,
+            "width": 175,
+            "height": 28
+          },
+          "overflow": false,
+          "font": "Inter, \"Helvetica Neue\", Arial, \"Hiragino Kaku Gothic ProN\", \"Noto Sans JP\", Meiryo, sans-serif",
+          "brand": "rgb(52, 55, 53)",
+          "ink": "rgb(52, 55, 53)"
+        },
+        {
+          "tool": "collect",
+          "topbar": {
+            "x": 244,
+            "y": 0,
+            "width": 1196,
+            "height": 79
+          },
+          "search": {
+            "x": 1078,
+            "y": 140.546875,
+            "width": 280,
+            "height": 43
+          },
+          "settings": {
+            "x": 1362,
+            "y": 23,
+            "width": 32,
+            "height": 32
+          },
+          "spaces": {
+            "x": 34,
+            "y": 580.59375,
+            "width": 175,
+            "height": 28
+          },
+          "overflow": false,
+          "font": "Inter, \"Helvetica Neue\", Arial, \"Hiragino Kaku Gothic ProN\", \"Noto Sans JP\", Meiryo, sans-serif",
+          "brand": "rgb(52, 55, 53)",
+          "ink": "rgb(52, 55, 53)"
+        },
+        {
+          "tool": "sketchbook",
+          "topbar": {
+            "x": 244,
+            "y": 0,
+            "width": 1196,
+            "height": 79
+          },
+          "search": {
+            "x": 1078,
+            "y": 140.546875,
+            "width": 280,
+            "height": 43
+          },
+          "settings": {
+            "x": 1362,
+            "y": 23,
+            "width": 32,
+            "height": 32
+          },
+          "spaces": {
+            "x": 34,
+            "y": 580.59375,
+            "width": 175,
+            "height": 28
+          },
+          "overflow": false,
+          "font": "Inter, \"Helvetica Neue\", Arial, \"Hiragino Kaku Gothic ProN\", \"Noto Sans JP\", Meiryo, sans-serif",
+          "brand": "rgb(52, 55, 53)",
+          "ink": "rgb(52, 55, 53)"
+        }
+      ]
+    },
+    {
+      "name": "スマホのツール切替はスクロール後も常に表示",
+      "pass": true
+    },
+    {
+      "name": "Recallの入力直後に移動してもメモの下書きが戻る",
+      "pass": true
+    },
+    {
+      "name": "下書き保存に失敗したときは移動せず、入力を残して再試行できる",
+      "pass": true
+    },
+    {
+      "name": "Collectの画像原本・タイトル・メモがツール移動後も下書きとして復元",
+      "pass": true
+    },
+    {
+      "name": "描画中は移動せず、描き終えた線・タイトル・未保存の関連メモが移動後に戻る",
+      "pass": true
+    },
+    {
+      "name": "Atlasの横断検索・プロジェクト・既存原本リンクが共通UIでも使える",
+      "pass": true
+    },
+    {
+      "name": "スマホ幅でもメモ・画像・描画の下書きを残して相互移動できる",
+      "pass": true
+    },
+    {
+      "name": "共通ヘッダーの手動ロックで下書きを保存し、再解錠で復元",
+      "pass": true
+    }
+  ]
+}

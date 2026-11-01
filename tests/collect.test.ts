@@ -15,7 +15,7 @@ const name=()=>`collect-test-${crypto.randomUUID()}`;
 const png=()=>new Blob([Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII="),char=>char.charCodeAt(0))],{type:"image/png"});
 const link=(title="資料",url="https://example.com/article#one"):SaveResourceInput=>({resourceType:"link",url,sourceUrl:"",title,memo:"自分のメモ",spaceIds:[],inbox:true,image:null});
 async function device(t:TestContext,owner:string){const repo=await openAccountRecallRepository(owner,{name:name()});t.after(()=>repo.close());return repo;}
-function transport(owner:string){return createSupabaseSyncTransport({async rpc(method,args){try{return {data:method==="apply_sync_operation"?await database.apply(owner,args.p_operation):await database.pullTools(owner,String(args.p_cursor),Number(args.p_limit)),error:null};}catch(error){return {data:null,error:{message:String(error)}};}}},owner);}
+function transport(owner:string){return createSupabaseSyncTransport({async rpc(method,args){try{return {data:method==="apply_sync_operation"?await database.apply(owner,args.p_operation):await database.pullAtlas(owner,String(args.p_cursor),Number(args.p_limit)),error:null};}catch(error){return {data:null,error:{message:String(error)}};}}},owner);}
 async function sync(repo:AccountRecallRepository,phase="idle"){
   const engine=createSyncEngine(repo,transport(repo.ownerId));try{const state=await engine.run();assert.equal(state.phase,phase,state.error);return state;}finally{engine.stop();}
 }
@@ -43,7 +43,7 @@ test("Collect: quota failure rolls back original, resource, draft clearing and s
   const dbName=name(),owner=await database.addUser(),repo=await openAccountRecallRepository(owner,{name:dbName});t.after(()=>repo.close());
   await repo.saveCollectDraft(link("残す下書き"));const pending=(await repo.pendingOperations()).length;
   const add=IDBObjectStore.prototype.add;
-  IDBObjectStore.prototype.add=function(value:unknown,key?:IDBValidKey){if(this.name==="syncOutbox"&&(value as {kind?:string}).kind==="put_resource")throw new DOMException("Full","QuotaExceededError");return add.call(this,value,key);};
+  IDBObjectStore.prototype.add=function(value:unknown,key?:IDBValidKey){if(this.name==="syncOutbox")throw new DOMException("Full","QuotaExceededError");return add.call(this,value,key);};
   try{await assert.rejects(repo.saveResource({...link(),resourceType:"image",url:"",image:await prepareResourceImage(png()),file:png()}),/Full/);}finally{IDBObjectStore.prototype.add=add;}
   assert.equal((await repo.snapshot()).resources.length,0);assert.equal(await storedCount(dbName,"resourceFiles"),0);
   assert.equal((await repo.pendingOperations()).length,pending);assert.equal((await repo.loadCollectDraft()).title,"残す下書き");
@@ -146,7 +146,7 @@ test("Collect sync race: a newer deferred remote survives an older in-flight ack
   resource=(await repo.snapshot()).resources[0];await repo.updateResource(resource.id,{memo:"local edit"},resource.localRevision);
   const op=(await repo.pendingOperations()).find(op=>op.kind==="put_resource")!,accepted=await database.apply(owner,op);
   const remote=await database.apply(owner,operation({...accepted.record as unknown as Resource,title:"newer remote"},Number(accepted.record.serverRevision)));
-  await repo.acceptPull(await database.pullTools(owner,(await repo.getSyncState()).cursor) as never);
+  await repo.acceptPull(await database.pullAtlas(owner,(await repo.getSyncState()).cursor) as never);
   assert.equal((await repo.snapshot()).resources[0].memo,"local edit");
   await repo.acceptPush(op,accepted as never);assert.equal((await repo.snapshot()).resources[0].title,"newer remote");assert.equal((await repo.snapshot()).resources[0].serverRevision,remote.record.serverRevision);
   assert.equal((await repo.getSyncState()).pending,0);
@@ -155,8 +155,8 @@ test("Collect sync race: a newer deferred remote survives an older in-flight ack
 test("Collect SQL: v2 and v3 streams hide resources, full stream paginates through every entity",async t=>{
   const owner=await database.addUser(),repo=await device(t,owner);await repo.saveResource(link());await repo.saveNote({body:"Recall",spaceIds:[]});await repo.saveSketch({title:"Sketchbook",strokes:[],spaceIds:[]});await sync(repo);
   const recall=await database.pull(owner),suite=await database.pullSuite(owner);assert.ok(recall.changes.every(c=>["note","space"].includes(c.entity)));assert.ok(suite.changes.some(c=>c.entity==="sketch"));assert.ok(suite.changes.every(c=>String(c.entity)!=="resource"));
-  const all=[];let cursor="0",more=true,pages=0;while(more){assert.ok(++pages<20,"pagination must advance");const page=await database.pullTools(owner,cursor,1);assert.equal(page.changes.length,1);assert.ok(BigInt(page.cursor)>BigInt(cursor));all.push(...page.changes);cursor=page.cursor;more=page.hasMore;}
-  assert.ok(all.some(c=>c.entity==="resource"));assert.equal((await database.pullTools(owner,cursor)).hasMore,false);
+  const all=[];let cursor="0",more=true,pages=0;while(more){assert.ok(++pages<20,"pagination must advance");const page=await database.pullAtlas(owner,cursor,1);assert.equal(page.changes.length,1);assert.ok(BigInt(page.cursor)>BigInt(cursor));all.push(...page.changes);cursor=page.cursor;more=page.hasMore;}
+  assert.ok(all.some(c=>c.entity==="resource"));assert.equal((await database.pullAtlas(owner,cursor)).hasMore,false);
   const empty=await database.pullSuite(owner,suite.cursor);assert.equal(empty.hasMore,false);assert.equal(empty.changes.length,0);
 });
 

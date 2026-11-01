@@ -6,14 +6,17 @@
   "packageManager": "pnpm@11.25.0",
   "scripts": {
     "dev": "node scripts/run-apps.mjs dev",
-    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect build",
+    "build": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect --filter @personal-tools/atlas build",
     "start": "node scripts/run-apps.mjs start",
-    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect typecheck",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect --filter @personal-tools/atlas typecheck",
+    "test": "node --experimental-strip-types --import ./tests/vault-setup.ts --test --test-concurrency=3 tests/*.test.ts",
     "dev:recall": "pnpm --filter @personal-tools/recall dev",
     "dev:sketchbook": "pnpm --filter @personal-tools/sketchbook dev",
     "dev:gateway": "node scripts/gateway.mjs",
     "start:gateway": "node scripts/gateway.mjs",
+    "dev:atlas": "pnpm --filter @personal-tools/atlas dev",
+    "atlas:worker": "node --env-file-if-exists=apps/atlas/.env.local --experimental-strip-types scripts/atlas-worker.ts",
+    "atlas:evaluate": "node --experimental-strip-types scripts/evaluate-atlas.ts",
     "dev:collect": "pnpm --filter @personal-tools/collect dev"
   },
   "devDependencies": {

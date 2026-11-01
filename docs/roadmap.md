@@ -65,6 +65,8 @@ URL貼り付け、画像ファイル追加、出典＋自分のメモ、未整�
 
 ## Phase 5 — Atlas＋画像意味検索
 
+2026-10-31：Atlasの横断一覧・絞り込み、全relationの追加／逆向き表示、プロジェクトと手動タグ、同期を実装。任意のcaption/OCR／タグ提案／text embeddingの永続jobと検索RPC、評価用25クエリーと集計を追加した。本人の私有資料による検索品質評価、実APIでの解析、実機PWA確認は未実施。[起動・設定](phase5-setup.md)／[検証記録](phase5-verification.md)。
+
 まず種類・スペースをまたぐ一覧と絞り込み、relation追加・逆向き表示、プロジェクトへの所属を実装。続けて少数の私有テスト資料でcaption/OCR、自動タグ提案、text embedding、必要ならmultimodal embeddingを評価する。
 
 参照：[Supabase semantic searchのSQL関数とrpc例](https://supabase.com/docs/guides/ai/semantic-search)、[vector columns](https://supabase.com/docs/guides/ai/vector-columns)、[Postgres text parser](https://www.postgresql.org/docs/current/textsearch-parsers.html)。
@@ -76,3 +78,11 @@ URL貼り付け、画像ファイル追加、出典＋自分のメモ、未整�
 ## Final — 継続的な検証
 
 各段階で採用版の公式資料と実装を照合し、未文書化API・仮の認証・秘密鍵のclient露出・RLS漏れ・公開cache内の個人データを点検する。必要な保存・同期・権限試験を行い、受け入れ条件を満たした範囲を明記する。PWAはiPhone Safari／Android Chromeで「初回オンライン→完全終了→機内モード再起動→記録→通信復帰」を毎回の重要変更で確認する。
+
+## 暗号化金庫
+
+AES-256-GCM / Argon2idによる端末内の解錠、暗号文の保存・同期・バックアップ、復旧鍵、ロック、既存データの検証付き移行を実装。外部AI・URL自動取得・GET共有ターゲットは停止。[利用と保護範囲](encrypted-vault.md)、[検証記録](vault-verification.md)を参照。本人の実データの移行は初回設定後に行う。
+
+## 改善計画・段階D
+
+既存Atlasプロジェクトの4ツール共通利用、原本を残すスペース削除、月末を考慮した1か月後のごみ箱整理を実装し、無料の公開先へ反映。[実装と検証](atlas-improvement-phase-d-verification-2026-11-01.md) に、端末側の索引移行、クラウド定期削除、共有画像の参照管理、実機の未確認範囲を記録。

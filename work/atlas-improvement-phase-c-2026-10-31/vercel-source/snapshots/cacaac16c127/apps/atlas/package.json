@@ -1,0 +1,5 @@
+{
+  "name":"@personal-tools/atlas","version":"0.1.0","private":true,"type":"module",
+  "scripts":{"dev":"next dev --hostname 127.0.0.1 --port 3104","build":"next build","start":"next start --hostname 127.0.0.1 --port 3104","typecheck":"tsc --noEmit"},
+  "dependencies":{"next":"16.4.3","react":"19.3.1","react-dom":"19.3.1","@personal-tools/core":"workspace:*","@personal-tools/api-client":"workspace:*","@personal-tools/auth":"workspace:*","@personal-tools/ui":"workspace:*"}
+}

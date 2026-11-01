@@ -1,0 +1,43 @@
+{
+  "origin": "https://personal-tools-seven-ruby.vercel.app",
+  "results": [
+    {
+      "name": "公開HTTPSの入口からAtlasへ進み、テスト専用の金庫を作成",
+      "pass": true
+    },
+    {
+      "name": "公開URLのRecallでメモ、Collectで画像原本を保存",
+      "pass": true
+    },
+    {
+      "name": "4ツールを初回の準備直後にオフラインで再読込し、画像原本・メモ・描画を復元",
+      "pass": true
+    },
+    {
+      "name": "4ツールが同じoriginで記録を共有し、描画下書きと解錠を再読込後も保持",
+      "pass": true
+    },
+    {
+      "name": "公開URLの390px幅で全ツールを移動し、横はみ出しなし",
+      "pass": true
+    },
+    {
+      "name": "公開URLでも手動ロックで再解錠となり、直前の下書きを復元",
+      "pass": true
+    },
+    {
+      "name": "公開版で3ツールの原本を同じプロジェクトへ所属させ、Atlasで3件を確認",
+      "pass": true
+    },
+    {
+      "name": "公開版でスペースだけを削除し、所属していたメモ原本を保持",
+      "pass": true
+    },
+    {
+      "name": "公開版でプロジェクトを削除してもメモ・画像・スケッチが残る",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "storage": "fresh isolated device context; no real account login"
+}

@@ -1,0 +1,19 @@
+{
+  "project": "zdixgamfhdgnqbgjckpj",
+  "migrations": [
+    "suite_lifecycle",
+    "harden_vault_retention"
+  ],
+  "edgeFunction": "vault-retention",
+  "edgeVersion": 1,
+  "cronName": "personal-tools-vault-retention",
+  "schedule": "*/10 * * * *",
+  "naturalCronRun": "succeeded",
+  "workerStatus": 200,
+  "unauthorizedWorkerStatus": 401,
+  "pgNetSchema": "extensions",
+  "securityNewFindings": 0,
+  "securityExistingFinding": "auth_leaked_password_protection",
+  "plan": "free",
+  "ciphertextUsedInRemoteExpiryFixture": false
+}

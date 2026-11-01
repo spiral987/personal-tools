@@ -1,0 +1,41 @@
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_5zPbrYH6h5s3JXRa4tEpRYuBUFTe",
+    "url": "https://personal-tools-atlas-43di3ktdq-spiral987-c31cbce1.vercel.app",
+    "productionUrl": null,
+    "inspectorUrl": "https://vercel.com/spiral987-c31cbce1/personal-tools-atlas/5zPbrYH6h5s3JXRa4tEpRYuBUFTe",
+    "readyState": "INITIALIZING",
+    "target": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_5zPbrYH6h5s3JXRa4tEpRYuBUFTe",
+    "buildMachine": {
+      "cores": 2,
+      "memory": 8192,
+      "machine": "basic",
+      "selectionType": "fixed",
+      "selectionSource": "plan-default"
+    },
+    "deploymentProtection": [
+      "vercel_authentication"
+    ]
+  },
+  "message": "Deployment personal-tools-atlas-43di3ktdq-spiral987-c31cbce1.vercel.app ready.",
+  "next": [
+    {
+      "command": "vercel git connect --scope spiral987-c31cbce1 --project prj_n4xUd7NHcTn36wSib2IDtW3HEVdE",
+      "when": "Automatically deploy changes on every push"
+    },
+    {
+      "command": "vercel curl https://personal-tools-atlas-43di3ktdq-spiral987-c31cbce1.vercel.app",
+      "when": "Verify deployment, including when Deployment Protection is enabled"
+    },
+    {
+      "command": "vercel inspect personal-tools-atlas-43di3ktdq-spiral987-c31cbce1.vercel.app --scope spiral987-c31cbce1",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod --scope spiral987-c31cbce1",
+      "when": "Promote to production"
+    }
+  ]
+}

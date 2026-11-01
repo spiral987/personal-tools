@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: retention SQL: legacy history and archives are indexed before expiry, then ciphertext and stale restores are removed
+ok 1 - retention SQL: legacy history and archives are indexed before expiry, then ciphertext and stale restores are removed
+  ---
+  duration_ms: 2586.7875
+  type: 'test'
+  ...
+# Subtest: retention SQL: a restore cancels the deadline; retrash uses its own deadline and background expiry blocks an offline resurrection
+ok 2 - retention SQL: a restore cancels the deadline; retrash uses its own deadline and background expiry blocks an offline resurrection
+  ---
+  duration_ms: 1642.4894
+  type: 'test'
+  ...
+# Subtest: retention SQL: space deletion bypasses stale revisions and is terminal while originals, other spaces, projects and tags survive
+ok 3 - retention SQL: space deletion bypasses stale revisions and is terminal while originals, other spaces, projects and tags survive
+  ---
+  duration_ms: 1979.1709
+  type: 'test'
+  ...
+# Subtest: retention SQL: GC retains shared paths, claims only orphans, rejects late uploads, and owner/worker privileges are isolated
+ok 4 - retention SQL: GC retains shared paths, claims only orphans, rejects late uploads, and owner/worker privileges are isolated
+  ---
+  duration_ms: 1642.8411
+  type: 'test'
+  ...
+# Subtest: retention worker: authenticates before claiming, removes Storage bytes, and retains failed deletions for retry
+ok 5 - retention worker: authenticates before claiming, removes Storage bytes, and retains failed deletions for retry
+  ---
+  duration_ms: 27.0199
+  type: 'test'
+  ...
+# Subtest: projects: all tools use one shared membership graph and project deletion preserves originals
+ok 6 - projects: all tools use one shared membership graph and project deletion preserves originals
+  ---
+  duration_ms: 126.0851
+  type: 'test'
+  ...
+# Subtest: space deletion: only memberships disappear across originals and every draft; sharing stays bound to the missing ID
+ok 7 - space deletion: only memberships disappear across originals and every draft; sharing stays bound to the missing ID
+  ---
+  duration_ms: 62.5414
+  type: 'test'
+  ...
+# Subtest: space deletion never mutates an immutable pending operation's payload
+ok 8 - space deletion never mutates an immutable pending operation's payload
+  ---
+  duration_ms: 28.7135
+  type: 'test'
+  ...
+# Subtest: permanent tombstones prevent an offline client from reviving a purged original or deleted space
+ok 9 - permanent tombstones prevent an offline client from reviving a purged original or deleted space
+  ---
+  duration_ms: 42.5282
+  type: 'test'
+  ...
+# Subtest: trash expiry removes original, history references and editing drafts, while a shared image survives
+ok 10 - trash expiry removes original, history references and editing drafts, while a shared image survives
+  ---
+  duration_ms: 53.6198
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9232.5646

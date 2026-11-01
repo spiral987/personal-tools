@@ -1,0 +1,711 @@
+{
+  "framework": {
+    "name": "Next.js",
+    "slug": "nextjs"
+  },
+  "basePath": "C:\\Users\\satou\\Documents\\repos\\tools\\personal-tools\\work\\atlas-improvement-phase-c-2026-10-31\\vercel-source\\snapshots\\8a3c7bc60101",
+  "fileCount": 100,
+  "totalSize": 604876,
+  "ignoredCount": 3,
+  "ignored": [
+    ".env.local",
+    ".gitignore",
+    ".vercel"
+  ],
+  "directories": [
+    {
+      "path": "apps",
+      "fileCount": 64,
+      "size": 333141
+    },
+    {
+      "path": "packages",
+      "fileCount": 31,
+      "size": 238981
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "fileCount": 1,
+      "size": 28964
+    },
+    {
+      "path": "scripts",
+      "fileCount": 2,
+      "size": 2255
+    },
+    {
+      "path": "package.json",
+      "fileCount": 1,
+      "size": 1496
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "fileCount": 1,
+      "size": 39
+    }
+  ],
+  "largestFiles": [
+    {
+      "path": "packages/api-client/src/repository.ts",
+      "size": 67993,
+      "mode": 33206,
+      "sha": "c38ae930b48e3a9733ae9df9f47ece3b1199c054"
+    },
+    {
+      "path": "apps/collect/app/page.tsx",
+      "size": 47245,
+      "mode": 33206,
+      "sha": "2f34ba629444ffcffad77a59b6b015df69d7f218"
+    },
+    {
+      "path": "apps/sketchbook/app/page.tsx",
+      "size": 37921,
+      "mode": 33206,
+      "sha": "bb7425ef8ee87ba6024d0dbef42cf9a99a3db01c"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "size": 28964,
+      "mode": 33206,
+      "sha": "accdc5b021c808841d0c915ef9195ccd67847155"
+    },
+    {
+      "path": "apps/recall/app/page.tsx",
+      "size": 24220,
+      "mode": 33206,
+      "sha": "e6de1d3fba3bbc60504de1df2e4cfe527d9be6cb"
+    },
+    {
+      "path": "apps/sketchbook/app/globals.css",
+      "size": 21002,
+      "mode": 33206,
+      "sha": "4f2846a47914aac3fffd208b3db75bdb958f235f"
+    },
+    {
+      "path": "apps/atlas/public/icon-512.png",
+      "size": 20472,
+      "mode": 33206,
+      "sha": "d39ec4ddc8b76880269ba4fac18a9281cd5c61d0"
+    },
+    {
+      "path": "apps/recall/app/globals.css",
+      "size": 20343,
+      "mode": 33206,
+      "sha": "11a49ac3989cc746bdad441c13e06c02729ef75b"
+    },
+    {
+      "path": "apps/collect/app/globals.css",
+      "size": 20045,
+      "mode": 33206,
+      "sha": "9260830b5087eda5274a87b905494cc350b3089c"
+    },
+    {
+      "path": "apps/atlas/app/page.tsx",
+      "size": 19241,
+      "mode": 33206,
+      "sha": "d6c3eba70e29b456194087782b38598acb8afc4c"
+    }
+  ],
+  "files": [
+    {
+      "path": "apps/atlas/app/api/ai/route.ts",
+      "size": 489,
+      "mode": 33206,
+      "sha": "4585a3b168f02b1ca7154c7f9e2a6e5135b6a4fc"
+    },
+    {
+      "path": "apps/atlas/app/globals.css",
+      "size": 13644,
+      "mode": 33206,
+      "sha": "b73ccbb3c375c78c019f38c493f5e50aad7969a4"
+    },
+    {
+      "path": "apps/atlas/app/layout.tsx",
+      "size": 727,
+      "mode": 33206,
+      "sha": "5c6958351ef0f299f1916bf66d9ae5b4c4b6ebe0"
+    },
+    {
+      "path": "apps/atlas/app/manifest.ts",
+      "size": 560,
+      "mode": 33206,
+      "sha": "22ba1c34d9b569115ff2e929e6d4fbd8c2ff4086"
+    },
+    {
+      "path": "apps/atlas/app/page.tsx",
+      "size": 19241,
+      "mode": 33206,
+      "sha": "d6c3eba70e29b456194087782b38598acb8afc4c"
+    },
+    {
+      "path": "apps/atlas/lib/ai.ts",
+      "size": 4615,
+      "mode": 33206,
+      "sha": "9d89497b5d619cade72d28bc32a1dd4bb227facc"
+    },
+    {
+      "path": "apps/atlas/lib/handler.ts",
+      "size": 4263,
+      "mode": 33206,
+      "sha": "66c2960b9c80d214fd0e738913536c2998de0785"
+    },
+    {
+      "path": "apps/atlas/next.config.ts",
+      "size": 619,
+      "mode": 33206,
+      "sha": "459220a2b4b5a2d43ae59341d1fe05f6ba58f5e4"
+    },
+    {
+      "path": "apps/atlas/package.json",
+      "size": 479,
+      "mode": 33206,
+      "sha": "d2ef955d32a5af6a8ca241d457bbc5b3173ec88c"
+    },
+    {
+      "path": "apps/atlas/proxy.ts",
+      "size": 242,
+      "mode": 33206,
+      "sha": "0e591eb1e73d4c4f91d8fb483d67cc1bea28addf"
+    },
+    {
+      "path": "apps/atlas/public/icon-192.png",
+      "size": 5153,
+      "mode": 33206,
+      "sha": "9597fa0ea4a86430f9f15d66a747fd5ca3d6a24a"
+    },
+    {
+      "path": "apps/atlas/public/icon-512.png",
+      "size": 20472,
+      "mode": 33206,
+      "sha": "d39ec4ddc8b76880269ba4fac18a9281cd5c61d0"
+    },
+    {
+      "path": "apps/atlas/public/icon.svg",
+      "size": 317,
+      "mode": 33206,
+      "sha": "f74449ae24148858bf6425d14321fea07fc9ffe4"
+    },
+    {
+      "path": "apps/atlas/public/sw.js",
+      "size": 1943,
+      "mode": 33206,
+      "sha": "434a623941363840cb26011f55ae799f4f6c35e1"
+    },
+    {
+      "path": "apps/atlas/tsconfig.json",
+      "size": 482,
+      "mode": 33206,
+      "sha": "23a1fdd05d8cdd962aeb87cd035bb369329637bf"
+    },
+    {
+      "path": "apps/collect/app/api/metadata/route.ts",
+      "size": 319,
+      "mode": 33206,
+      "sha": "17307e272bc968a6158dcb1a90d716da041f4ea2"
+    },
+    {
+      "path": "apps/collect/app/capture.ts",
+      "size": 5774,
+      "mode": 33206,
+      "sha": "5d64775e0b25a5d76939df0015aa83aaf591c57c"
+    },
+    {
+      "path": "apps/collect/app/clipboard.ts",
+      "size": 547,
+      "mode": 33206,
+      "sha": "b3214e3402156f3d2fa255adda1da2b7d3ea6656"
+    },
+    {
+      "path": "apps/collect/app/components.tsx",
+      "size": 2582,
+      "mode": 33206,
+      "sha": "debc41a430593e625b89611bc6e3954b6ba506b8"
+    },
+    {
+      "path": "apps/collect/app/draft-save.ts",
+      "size": 1256,
+      "mode": 33206,
+      "sha": "8b6f63c9d9839b03f059b4efb6f7a5e29cdcf1b5"
+    },
+    {
+      "path": "apps/collect/app/globals.css",
+      "size": 20045,
+      "mode": 33206,
+      "sha": "9260830b5087eda5274a87b905494cc350b3089c"
+    },
+    {
+      "path": "apps/collect/app/layout.tsx",
+      "size": 683,
+      "mode": 33206,
+      "sha": "a505f07ee033c7070141a87357b0a28217eb9b4d"
+    },
+    {
+      "path": "apps/collect/app/manifest.ts",
+      "size": 650,
+      "mode": 33206,
+      "sha": "e6c7d9e7a76e2ccf01f07e4c0b4fbad1e6df7e91"
+    },
+    {
+      "path": "apps/collect/app/page.tsx",
+      "size": 47245,
+      "mode": 33206,
+      "sha": "2f34ba629444ffcffad77a59b6b015df69d7f218"
+    },
+    {
+      "path": "apps/collect/lib/server/metadata-route.ts",
+      "size": 5284,
+      "mode": 33206,
+      "sha": "618f79cc6e0d3aba395b1da41d3c74b914a7a312"
+    },
+    {
+      "path": "apps/collect/lib/server/metadata.ts",
+      "size": 11584,
+      "mode": 33206,
+      "sha": "e3d458bd5780939882e9fe3a30e347adc02d799b"
+    },
+    {
+      "path": "apps/collect/next.config.ts",
+      "size": 722,
+      "mode": 33206,
+      "sha": "569f3afdfa7c67987c962966576a471a52a1b85e"
+    },
+    {
+      "path": "apps/collect/package.json",
+      "size": 617,
+      "mode": 33206,
+      "sha": "3c52f414d74f72a0c754a88d696add1856f5152a"
+    },
+    {
+      "path": "apps/collect/public/icon-192.png",
+      "size": 1174,
+      "mode": 33206,
+      "sha": "14a855fab7e6f7f9b4425560042e61915f4650c5"
+    },
+    {
+      "path": "apps/collect/public/icon-512.png",
+      "size": 3297,
+      "mode": 33206,
+      "sha": "2206eff83b4fd1c7b13199214244a5560b8860e2"
+    },
+    {
+      "path": "apps/collect/public/icon.svg",
+      "size": 411,
+      "mode": 33206,
+      "sha": "bd73a522c3da25838a2ca2b1c0203c68d40b0847"
+    },
+    {
+      "path": "apps/collect/public/sw.js",
+      "size": 1953,
+      "mode": 33206,
+      "sha": "febae2d5c70708b9f612819cdfbab499e5290f77"
+    },
+    {
+      "path": "apps/collect/tsconfig.json",
+      "size": 493,
+      "mode": 33206,
+      "sha": "c62cac0911c08a830b8837d4315377695b2e365e"
+    },
+    {
+      "path": "apps/recall/app/atlas-requests-sharing.tsx",
+      "size": 7112,
+      "mode": 33206,
+      "sha": "326141f8ed8cf18a0ee8ec9570e094fbf03cf150"
+    },
+    {
+      "path": "apps/recall/app/auth/callback/route.ts",
+      "size": 1173,
+      "mode": 33206,
+      "sha": "de88b85a0c193101844c9bbef56ca2c2488d54bb"
+    },
+    {
+      "path": "apps/recall/app/cloud-settings.tsx",
+      "size": 6343,
+      "mode": 33206,
+      "sha": "32463c0ae0a82fa2269c00b2a283e4a2ba1e64ae"
+    },
+    {
+      "path": "apps/recall/app/globals.css",
+      "size": 20343,
+      "mode": 33206,
+      "sha": "11a49ac3989cc746bdad441c13e06c02729ef75b"
+    },
+    {
+      "path": "apps/recall/app/layout.tsx",
+      "size": 648,
+      "mode": 33206,
+      "sha": "13d847313ff5363a05fc36a303420f8c77307aab"
+    },
+    {
+      "path": "apps/recall/app/manifest.ts",
+      "size": 467,
+      "mode": 33206,
+      "sha": "11ee14040562796603b3f11aae8a87d374f8392c"
+    },
+    {
+      "path": "apps/recall/app/page.tsx",
+      "size": 24220,
+      "mode": 33206,
+      "sha": "e6de1d3fba3bbc60504de1df2e4cfe527d9be6cb"
+    },
+    {
+      "path": "apps/recall/app/use-recall-cloud.ts",
+      "size": 227,
+      "mode": 33206,
+      "sha": "658f50d1b2d8fe45e9985b5d79e8e3ef31a66a3b"
+    },
+    {
+      "path": "apps/recall/next.config.ts",
+      "size": 1177,
+      "mode": 33206,
+      "sha": "296f7739b71b24866421405e56981b60b53aa722"
+    },
+    {
+      "path": "apps/recall/package.json",
+      "size": 588,
+      "mode": 33206,
+      "sha": "96629453fdb92573e9495f57977a2fd0114e0320"
+    },
+    {
+      "path": "apps/recall/proxy.ts",
+      "size": 424,
+      "mode": 33206,
+      "sha": "07705643ceba761eec399eac64028585f477dde3"
+    },
+    {
+      "path": "apps/recall/public/icon-192.png",
+      "size": 996,
+      "mode": 33206,
+      "sha": "0dd96bdde91df227392951b61ebdc8612271a1bd"
+    },
+    {
+      "path": "apps/recall/public/icon-512.png",
+      "size": 2816,
+      "mode": 33206,
+      "sha": "1cad9438fc6fce08118575506b95a71237bc40f0"
+    },
+    {
+      "path": "apps/recall/public/icon.svg",
+      "size": 286,
+      "mode": 33206,
+      "sha": "c6cb9ad06b27cbb1f93a8db3578bb68d6798489c"
+    },
+    {
+      "path": "apps/recall/public/sw.js",
+      "size": 2183,
+      "mode": 33206,
+      "sha": "d36134164067f278e640edad4b31dd06d16a93d4"
+    },
+    {
+      "path": "apps/recall/tsconfig.json",
+      "size": 493,
+      "mode": 33206,
+      "sha": "c62cac0911c08a830b8837d4315377695b2e365e"
+    },
+    {
+      "path": "apps/recall/vercel.json",
+      "size": 245,
+      "mode": 33206,
+      "sha": "a05cb668569048abfa0bb928718c37af87e7a322"
+    },
+    {
+      "path": "apps/sketchbook/app/draft-recovery.ts",
+      "size": 570,
+      "mode": 33206,
+      "sha": "3639e22b0aa2a1d2533d20d912960e3f53051356"
+    },
+    {
+      "path": "apps/sketchbook/app/drawing-canvas.tsx",
+      "size": 4299,
+      "mode": 33206,
+      "sha": "f763baa20f1fa4a199ecf36cbf4010631f326587"
+    },
+    {
+      "path": "apps/sketchbook/app/drawing.ts",
+      "size": 3099,
+      "mode": 33206,
+      "sha": "0787938cb09da12a06d969d3d3199426a6649268"
+    },
+    {
+      "path": "apps/sketchbook/app/globals.css",
+      "size": 21002,
+      "mode": 33206,
+      "sha": "4f2846a47914aac3fffd208b3db75bdb958f235f"
+    },
+    {
+      "path": "apps/sketchbook/app/layout.tsx",
+      "size": 664,
+      "mode": 33206,
+      "sha": "109a80141a7bbe8fa22c5a6f25e9e97c68fc975e"
+    },
+    {
+      "path": "apps/sketchbook/app/manifest.ts",
+      "size": 498,
+      "mode": 33206,
+      "sha": "d6f88022900417b866f9469c9d83f0ae0fe7f2c6"
+    },
+    {
+      "path": "apps/sketchbook/app/page.tsx",
+      "size": 37921,
+      "mode": 33206,
+      "sha": "bb7425ef8ee87ba6024d0dbef42cf9a99a3db01c"
+    },
+    {
+      "path": "apps/sketchbook/next.config.ts",
+      "size": 607,
+      "mode": 33206,
+      "sha": "e3c2410309a8b048384bf3be4a53deaaa08d3e4b"
+    },
+    {
+      "path": "apps/sketchbook/package.json",
+      "size": 565,
+      "mode": 33206,
+      "sha": "58c21bacf218f94f4e080f600f35f21cea931562"
+    },
+    {
+      "path": "apps/sketchbook/public/icon-192.png",
+      "size": 4014,
+      "mode": 33206,
+      "sha": "120bdb469d4ba0c9892f3c84b95b0b910e7b7d93"
+    },
+    {
+      "path": "apps/sketchbook/public/icon-512.png",
+      "size": 9323,
+      "mode": 33206,
+      "sha": "c859a32836297339d22e37a5ef1964611efcbdd2"
+    },
+    {
+      "path": "apps/sketchbook/public/icon.svg",
+      "size": 494,
+      "mode": 33206,
+      "sha": "2792065df7e8b956c53ad9552835614d2b3a4557"
+    },
+    {
+      "path": "apps/sketchbook/public/sw.js",
+      "size": 1969,
+      "mode": 33206,
+      "sha": "bc6eb5990f04f10fe0cc91f347194ff50984c49a"
+    },
+    {
+      "path": "apps/sketchbook/tsconfig.json",
+      "size": 493,
+      "mode": 33206,
+      "sha": "c62cac0911c08a830b8837d4315377695b2e365e"
+    },
+    {
+      "path": "package.json",
+      "size": 1496,
+      "mode": 33206,
+      "sha": "1468129778e25f6b88c5de1a1ebbbede955c937d"
+    },
+    {
+      "path": "packages/api-client/package.json",
+      "size": 189,
+      "mode": 33206,
+      "sha": "0d75c716c5536a859bf5b9844746cea8c93c5f89"
+    },
+    {
+      "path": "packages/api-client/src/index.ts",
+      "size": 368,
+      "mode": 33206,
+      "sha": "c0943191ff016adc19f5df99402591b7850f3dd5"
+    },
+    {
+      "path": "packages/api-client/src/repository.ts",
+      "size": 67993,
+      "mode": 33206,
+      "sha": "c38ae930b48e3a9733ae9df9f47ece3b1199c054"
+    },
+    {
+      "path": "packages/api-client/src/resource-files.ts",
+      "size": 9507,
+      "mode": 33206,
+      "sha": "e2cc64b5c95b5fbb0bf574e1da2957f0829867b3"
+    },
+    {
+      "path": "packages/api-client/src/sketch-preview.ts",
+      "size": 4406,
+      "mode": 33206,
+      "sha": "f8c097f5001ad449d7be11c11cf784b11a0eb8c1"
+    },
+    {
+      "path": "packages/api-client/src/sync.ts",
+      "size": 16727,
+      "mode": 33206,
+      "sha": "c30409939b6e773930c80cd7fac806ea1ecfb486"
+    },
+    {
+      "path": "packages/api-client/src/vault-cloud.ts",
+      "size": 6437,
+      "mode": 33206,
+      "sha": "3df7a0b2fbbf21b2f1c5293b2aa2e95dcc332266"
+    },
+    {
+      "path": "packages/api-client/src/vault-device.ts",
+      "size": 7378,
+      "mode": 33206,
+      "sha": "035792d80784b7971eb0a0f83fbdeff814677e31"
+    },
+    {
+      "path": "packages/api-client/src/vault-files.ts",
+      "size": 4208,
+      "mode": 33206,
+      "sha": "c5b7d0f691653867d60bfe3e85483450bdfbf452"
+    },
+    {
+      "path": "packages/api-client/src/vault-idb.ts",
+      "size": 7164,
+      "mode": 33206,
+      "sha": "7ea25bd523a0bcd4d8e51ea46ff99c9e0f45353a"
+    },
+    {
+      "path": "packages/api-client/src/vault.ts",
+      "size": 16607,
+      "mode": 33206,
+      "sha": "adcf2e48ca15ae7afe2ac12ed5ff08f5a4e1c485"
+    },
+    {
+      "path": "packages/auth/package.json",
+      "size": 602,
+      "mode": 33206,
+      "sha": "33037bfa51229bf749c4b1ccbf42629170423fef"
+    },
+    {
+      "path": "packages/auth/src/browser.ts",
+      "size": 647,
+      "mode": 33206,
+      "sha": "5b77ed501f887a36b9b8e7e948cf3d87980cdc3e"
+    },
+    {
+      "path": "packages/auth/src/index.ts",
+      "size": 2373,
+      "mode": 33206,
+      "sha": "33075a3b24024bfa11e4af2c4edcd603b915299b"
+    },
+    {
+      "path": "packages/auth/src/proxy.ts",
+      "size": 1191,
+      "mode": 33206,
+      "sha": "ba6114c22c506c5a48a6e945bdec07763d31b5da"
+    },
+    {
+      "path": "packages/auth/src/react.ts",
+      "size": 17713,
+      "mode": 33206,
+      "sha": "06571cfea23e35138e4ba42ff74d41ffa64a945c"
+    },
+    {
+      "path": "packages/auth/src/server.ts",
+      "size": 760,
+      "mode": 33206,
+      "sha": "850f39811406eaf438ddcc9044c0ebd4da5e6b35"
+    },
+    {
+      "path": "packages/auth/src/session-refresh.ts",
+      "size": 1535,
+      "mode": 33206,
+      "sha": "343cb7f8a5df47e8462f5c6ead56b49af9891c0a"
+    },
+    {
+      "path": "packages/auth/src/vault-gate.tsx",
+      "size": 14489,
+      "mode": 33206,
+      "sha": "20ca23791f8e96dd7f9fa248b82d2a80d54e46ab"
+    },
+    {
+      "path": "packages/auth/src/vault.tsx",
+      "size": 77,
+      "mode": 33206,
+      "sha": "6af0530360a107baa1189cda0811741acdf0a8b6"
+    },
+    {
+      "path": "packages/core/package.json",
+      "size": 109,
+      "mode": 33206,
+      "sha": "4fc65e07db606a6807e560193b0d72e9c965589c"
+    },
+    {
+      "path": "packages/core/src/atlas-requests.ts",
+      "size": 589,
+      "mode": 33206,
+      "sha": "7bade9404e95b5ef5b033da7d791aa486788557a"
+    },
+    {
+      "path": "packages/core/src/atlas.ts",
+      "size": 4692,
+      "mode": 33206,
+      "sha": "5a8404abc6187ab7deafb3dfbde682aa34f3c559"
+    },
+    {
+      "path": "packages/core/src/collect.ts",
+      "size": 10679,
+      "mode": 33206,
+      "sha": "62ab4da898c8295d8ea1530d8178378a944f47a2"
+    },
+    {
+      "path": "packages/core/src/index.ts",
+      "size": 12656,
+      "mode": 33206,
+      "sha": "998d294d1328221bbcd73df604c293c8efbd25f1"
+    },
+    {
+      "path": "packages/core/src/jsonb.ts",
+      "size": 2674,
+      "mode": 33206,
+      "sha": "051513892b1049c527f858f309b2ce10cb799789"
+    },
+    {
+      "path": "packages/ui/package.json",
+      "size": 187,
+      "mode": 33206,
+      "sha": "f68db54b3f3fc672cda4a6adac711f9d9e29a486"
+    },
+    {
+      "path": "packages/ui/src/index.tsx",
+      "size": 688,
+      "mode": 33206,
+      "sha": "8b72dfe4602c4c80a324966c0ccd87e817990109"
+    },
+    {
+      "path": "packages/ui/src/navigation.ts",
+      "size": 740,
+      "mode": 33206,
+      "sha": "66ba46c2bbdeee4bca83a70d70bbf287ac603575"
+    },
+    {
+      "path": "packages/ui/src/shell.tsx",
+      "size": 10058,
+      "mode": 33206,
+      "sha": "627579044a999be7b4b771272a41809b22033986"
+    },
+    {
+      "path": "packages/ui/src/styles.css",
+      "size": 15538,
+      "mode": 33206,
+      "sha": "6446f97c9a2ca051c253ce5ecaa53081d11b7670"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "size": 28964,
+      "mode": 33206,
+      "sha": "accdc5b021c808841d0c915ef9195ccd67847155"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "size": 39,
+      "mode": 33206,
+      "sha": "4b887e0f2ebfb20599601379b41431dac1c088b5"
+    },
+    {
+      "path": "scripts/zones.d.mts",
+      "size": 467,
+      "mode": 33206,
+      "sha": "fedeeaaa8b75611052e9c6078c3fe8ecf696bc31"
+    },
+    {
+      "path": "scripts/zones.mjs",
+      "size": 1788,
+      "mode": 33206,
+      "sha": "997b8c371c0fda09dc97a885eaff01e737f3a24d"
+    }
+  ]
+}

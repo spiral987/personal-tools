@@ -1,0 +1,522 @@
+[
+  {
+    "file": "package.json",
+    "sha": "1468129778e25f6b88c5de1a1ebbbede955c937d",
+    "size": 1496
+  },
+  {
+    "file": "pnpm-lock.yaml",
+    "sha": "accdc5b021c808841d0c915ef9195ccd67847155",
+    "size": 28964
+  },
+  {
+    "file": "pnpm-workspace.yaml",
+    "sha": "4b887e0f2ebfb20599601379b41431dac1c088b5",
+    "size": 39
+  },
+  {
+    "file": "scripts/zones.mjs",
+    "sha": "997b8c371c0fda09dc97a885eaff01e737f3a24d",
+    "size": 1788
+  },
+  {
+    "file": "scripts/zones.d.mts",
+    "sha": "fedeeaaa8b75611052e9c6078c3fe8ecf696bc31",
+    "size": 467
+  },
+  {
+    "file": "apps/atlas/app/api/ai/route.ts",
+    "sha": "4585a3b168f02b1ca7154c7f9e2a6e5135b6a4fc",
+    "size": 489
+  },
+  {
+    "file": "apps/atlas/app/globals.css",
+    "sha": "b73ccbb3c375c78c019f38c493f5e50aad7969a4",
+    "size": 13644
+  },
+  {
+    "file": "apps/atlas/app/layout.tsx",
+    "sha": "5c6958351ef0f299f1916bf66d9ae5b4c4b6ebe0",
+    "size": 727
+  },
+  {
+    "file": "apps/atlas/app/manifest.ts",
+    "sha": "22ba1c34d9b569115ff2e929e6d4fbd8c2ff4086",
+    "size": 560
+  },
+  {
+    "file": "apps/atlas/app/page.tsx",
+    "sha": "bd13f9ec476a6e6eb5db5d3650e35199f7e9f376",
+    "size": 16292
+  },
+  {
+    "file": "apps/atlas/lib/ai.ts",
+    "sha": "9d89497b5d619cade72d28bc32a1dd4bb227facc",
+    "size": 4615
+  },
+  {
+    "file": "apps/atlas/lib/handler.ts",
+    "sha": "66c2960b9c80d214fd0e738913536c2998de0785",
+    "size": 4263
+  },
+  {
+    "file": "apps/atlas/next.config.ts",
+    "sha": "459220a2b4b5a2d43ae59341d1fe05f6ba58f5e4",
+    "size": 619
+  },
+  {
+    "file": "apps/atlas/package.json",
+    "sha": "d2ef955d32a5af6a8ca241d457bbc5b3173ec88c",
+    "size": 479
+  },
+  {
+    "file": "apps/atlas/proxy.ts",
+    "sha": "0e591eb1e73d4c4f91d8fb483d67cc1bea28addf",
+    "size": 242
+  },
+  {
+    "file": "apps/atlas/public/icon-192.png",
+    "sha": "9597fa0ea4a86430f9f15d66a747fd5ca3d6a24a",
+    "size": 5153
+  },
+  {
+    "file": "apps/atlas/public/icon-512.png",
+    "sha": "d39ec4ddc8b76880269ba4fac18a9281cd5c61d0",
+    "size": 20472
+  },
+  {
+    "file": "apps/atlas/public/icon.svg",
+    "sha": "f74449ae24148858bf6425d14321fea07fc9ffe4",
+    "size": 317
+  },
+  {
+    "file": "apps/atlas/public/sw.js",
+    "sha": "434a623941363840cb26011f55ae799f4f6c35e1",
+    "size": 1943
+  },
+  {
+    "file": "apps/atlas/tsconfig.json",
+    "sha": "23a1fdd05d8cdd962aeb87cd035bb369329637bf",
+    "size": 482
+  },
+  {
+    "file": "apps/collect/app/api/metadata/route.ts",
+    "sha": "17307e272bc968a6158dcb1a90d716da041f4ea2",
+    "size": 319
+  },
+  {
+    "file": "apps/collect/app/capture.ts",
+    "sha": "5d64775e0b25a5d76939df0015aa83aaf591c57c",
+    "size": 5774
+  },
+  {
+    "file": "apps/collect/app/clipboard.ts",
+    "sha": "b3214e3402156f3d2fa255adda1da2b7d3ea6656",
+    "size": 547
+  },
+  {
+    "file": "apps/collect/app/components.tsx",
+    "sha": "debc41a430593e625b89611bc6e3954b6ba506b8",
+    "size": 2582
+  },
+  {
+    "file": "apps/collect/app/draft-save.ts",
+    "sha": "8b6f63c9d9839b03f059b4efb6f7a5e29cdcf1b5",
+    "size": 1256
+  },
+  {
+    "file": "apps/collect/app/globals.css",
+    "sha": "9260830b5087eda5274a87b905494cc350b3089c",
+    "size": 20045
+  },
+  {
+    "file": "apps/collect/app/layout.tsx",
+    "sha": "a505f07ee033c7070141a87357b0a28217eb9b4d",
+    "size": 683
+  },
+  {
+    "file": "apps/collect/app/manifest.ts",
+    "sha": "e6c7d9e7a76e2ccf01f07e4c0b4fbad1e6df7e91",
+    "size": 650
+  },
+  {
+    "file": "apps/collect/app/page.tsx",
+    "sha": "f250c3b5587452f6e130c34fed6e37a5f4f42bf5",
+    "size": 47794
+  },
+  {
+    "file": "apps/collect/lib/server/metadata-route.ts",
+    "sha": "618f79cc6e0d3aba395b1da41d3c74b914a7a312",
+    "size": 5284
+  },
+  {
+    "file": "apps/collect/lib/server/metadata.ts",
+    "sha": "e3d458bd5780939882e9fe3a30e347adc02d799b",
+    "size": 11584
+  },
+  {
+    "file": "apps/collect/next.config.ts",
+    "sha": "569f3afdfa7c67987c962966576a471a52a1b85e",
+    "size": 722
+  },
+  {
+    "file": "apps/collect/package.json",
+    "sha": "3c52f414d74f72a0c754a88d696add1856f5152a",
+    "size": 617
+  },
+  {
+    "file": "apps/collect/public/icon-192.png",
+    "sha": "14a855fab7e6f7f9b4425560042e61915f4650c5",
+    "size": 1174
+  },
+  {
+    "file": "apps/collect/public/icon-512.png",
+    "sha": "2206eff83b4fd1c7b13199214244a5560b8860e2",
+    "size": 3297
+  },
+  {
+    "file": "apps/collect/public/icon.svg",
+    "sha": "bd73a522c3da25838a2ca2b1c0203c68d40b0847",
+    "size": 411
+  },
+  {
+    "file": "apps/collect/public/sw.js",
+    "sha": "febae2d5c70708b9f612819cdfbab499e5290f77",
+    "size": 1953
+  },
+  {
+    "file": "apps/collect/tsconfig.json",
+    "sha": "c62cac0911c08a830b8837d4315377695b2e365e",
+    "size": 493
+  },
+  {
+    "file": "apps/recall/app/atlas-requests-sharing.tsx",
+    "sha": "391e6f5fe84fceeb8ff73c813b1dc40454375e29",
+    "size": 7226
+  },
+  {
+    "file": "apps/recall/app/auth/callback/route.ts",
+    "sha": "de88b85a0c193101844c9bbef56ca2c2488d54bb",
+    "size": 1173
+  },
+  {
+    "file": "apps/recall/app/cloud-settings.tsx",
+    "sha": "32463c0ae0a82fa2269c00b2a283e4a2ba1e64ae",
+    "size": 6343
+  },
+  {
+    "file": "apps/recall/app/globals.css",
+    "sha": "11a49ac3989cc746bdad441c13e06c02729ef75b",
+    "size": 20343
+  },
+  {
+    "file": "apps/recall/app/layout.tsx",
+    "sha": "13d847313ff5363a05fc36a303420f8c77307aab",
+    "size": 648
+  },
+  {
+    "file": "apps/recall/app/manifest.ts",
+    "sha": "11ee14040562796603b3f11aae8a87d374f8392c",
+    "size": 467
+  },
+  {
+    "file": "apps/recall/app/page.tsx",
+    "sha": "6316ce0316ec4b43b43ba8565e3462cb6dc5f5a5",
+    "size": 25101
+  },
+  {
+    "file": "apps/recall/app/use-recall-cloud.ts",
+    "sha": "658f50d1b2d8fe45e9985b5d79e8e3ef31a66a3b",
+    "size": 227
+  },
+  {
+    "file": "apps/recall/next.config.ts",
+    "sha": "296f7739b71b24866421405e56981b60b53aa722",
+    "size": 1177
+  },
+  {
+    "file": "apps/recall/package.json",
+    "sha": "96629453fdb92573e9495f57977a2fd0114e0320",
+    "size": 588
+  },
+  {
+    "file": "apps/recall/proxy.ts",
+    "sha": "07705643ceba761eec399eac64028585f477dde3",
+    "size": 424
+  },
+  {
+    "file": "apps/recall/public/icon-192.png",
+    "sha": "0dd96bdde91df227392951b61ebdc8612271a1bd",
+    "size": 996
+  },
+  {
+    "file": "apps/recall/public/icon-512.png",
+    "sha": "1cad9438fc6fce08118575506b95a71237bc40f0",
+    "size": 2816
+  },
+  {
+    "file": "apps/recall/public/icon.svg",
+    "sha": "c6cb9ad06b27cbb1f93a8db3578bb68d6798489c",
+    "size": 286
+  },
+  {
+    "file": "apps/recall/public/sw.js",
+    "sha": "8153110abcb1b3ddcfd62bf169917eeacca68db2",
+    "size": 2183
+  },
+  {
+    "file": "apps/recall/tsconfig.json",
+    "sha": "c62cac0911c08a830b8837d4315377695b2e365e",
+    "size": 493
+  },
+  {
+    "file": "apps/recall/vercel.json",
+    "sha": "a05cb668569048abfa0bb928718c37af87e7a322",
+    "size": 245
+  },
+  {
+    "file": "apps/sketchbook/app/draft-recovery.ts",
+    "sha": "3639e22b0aa2a1d2533d20d912960e3f53051356",
+    "size": 570
+  },
+  {
+    "file": "apps/sketchbook/app/drawing-canvas.tsx",
+    "sha": "f763baa20f1fa4a199ecf36cbf4010631f326587",
+    "size": 4299
+  },
+  {
+    "file": "apps/sketchbook/app/drawing.ts",
+    "sha": "0787938cb09da12a06d969d3d3199426a6649268",
+    "size": 3099
+  },
+  {
+    "file": "apps/sketchbook/app/globals.css",
+    "sha": "4f2846a47914aac3fffd208b3db75bdb958f235f",
+    "size": 21002
+  },
+  {
+    "file": "apps/sketchbook/app/layout.tsx",
+    "sha": "109a80141a7bbe8fa22c5a6f25e9e97c68fc975e",
+    "size": 664
+  },
+  {
+    "file": "apps/sketchbook/app/manifest.ts",
+    "sha": "d6f88022900417b866f9469c9d83f0ae0fe7f2c6",
+    "size": 498
+  },
+  {
+    "file": "apps/sketchbook/app/page.tsx",
+    "sha": "5f6ac29616c220df486fd76bdde182618ef3e86d",
+    "size": 38664
+  },
+  {
+    "file": "apps/sketchbook/next.config.ts",
+    "sha": "e3c2410309a8b048384bf3be4a53deaaa08d3e4b",
+    "size": 607
+  },
+  {
+    "file": "apps/sketchbook/package.json",
+    "sha": "58c21bacf218f94f4e080f600f35f21cea931562",
+    "size": 565
+  },
+  {
+    "file": "apps/sketchbook/public/icon-192.png",
+    "sha": "120bdb469d4ba0c9892f3c84b95b0b910e7b7d93",
+    "size": 4014
+  },
+  {
+    "file": "apps/sketchbook/public/icon-512.png",
+    "sha": "c859a32836297339d22e37a5ef1964611efcbdd2",
+    "size": 9323
+  },
+  {
+    "file": "apps/sketchbook/public/icon.svg",
+    "sha": "2792065df7e8b956c53ad9552835614d2b3a4557",
+    "size": 494
+  },
+  {
+    "file": "apps/sketchbook/public/sw.js",
+    "sha": "bc6eb5990f04f10fe0cc91f347194ff50984c49a",
+    "size": 1969
+  },
+  {
+    "file": "apps/sketchbook/tsconfig.json",
+    "sha": "c62cac0911c08a830b8837d4315377695b2e365e",
+    "size": 493
+  },
+  {
+    "file": "packages/api-client/package.json",
+    "sha": "0d75c716c5536a859bf5b9844746cea8c93c5f89",
+    "size": 189
+  },
+  {
+    "file": "packages/api-client/src/index.ts",
+    "sha": "c0943191ff016adc19f5df99402591b7850f3dd5",
+    "size": 368
+  },
+  {
+    "file": "packages/api-client/src/repository-lifecycle.ts",
+    "sha": "ba7e7c0e776472b438b159805500a6f9cd3ac469",
+    "size": 10278
+  },
+  {
+    "file": "packages/api-client/src/repository.ts",
+    "sha": "9d8ea01590b37b200f00478654e944b14eac4bbb",
+    "size": 71704
+  },
+  {
+    "file": "packages/api-client/src/resource-files.ts",
+    "sha": "e2cc64b5c95b5fbb0bf574e1da2957f0829867b3",
+    "size": 9507
+  },
+  {
+    "file": "packages/api-client/src/sketch-preview.ts",
+    "sha": "f8c097f5001ad449d7be11c11cf784b11a0eb8c1",
+    "size": 4406
+  },
+  {
+    "file": "packages/api-client/src/sync.ts",
+    "sha": "0f7fee66194a29fffb2c7ed28886ed3cdcdc1457",
+    "size": 17747
+  },
+  {
+    "file": "packages/api-client/src/vault-cloud.ts",
+    "sha": "854feb2103d86916affecc0976165e589867ad32",
+    "size": 6500
+  },
+  {
+    "file": "packages/api-client/src/vault-device.ts",
+    "sha": "035792d80784b7971eb0a0f83fbdeff814677e31",
+    "size": 7378
+  },
+  {
+    "file": "packages/api-client/src/vault-files.ts",
+    "sha": "f516ec4ee3a0f6ce8ed32356c9d270db5ef15061",
+    "size": 4563
+  },
+  {
+    "file": "packages/api-client/src/vault-idb.ts",
+    "sha": "7ea25bd523a0bcd4d8e51ea46ff99c9e0f45353a",
+    "size": 7164
+  },
+  {
+    "file": "packages/api-client/src/vault-retention.ts",
+    "sha": "f621c60149b1ef3f0a8a1ae4bd670672277c8476",
+    "size": 3812
+  },
+  {
+    "file": "packages/api-client/src/vault.ts",
+    "sha": "adcf2e48ca15ae7afe2ac12ed5ff08f5a4e1c485",
+    "size": 16607
+  },
+  {
+    "file": "packages/auth/package.json",
+    "sha": "33037bfa51229bf749c4b1ccbf42629170423fef",
+    "size": 602
+  },
+  {
+    "file": "packages/auth/src/browser.ts",
+    "sha": "5b77ed501f887a36b9b8e7e948cf3d87980cdc3e",
+    "size": 647
+  },
+  {
+    "file": "packages/auth/src/index.ts",
+    "sha": "33075a3b24024bfa11e4af2c4edcd603b915299b",
+    "size": 2373
+  },
+  {
+    "file": "packages/auth/src/proxy.ts",
+    "sha": "ba6114c22c506c5a48a6e945bdec07763d31b5da",
+    "size": 1191
+  },
+  {
+    "file": "packages/auth/src/react.ts",
+    "sha": "5adb6d7a559319e1602567efb190058d50f7ccc2",
+    "size": 18119
+  },
+  {
+    "file": "packages/auth/src/server.ts",
+    "sha": "850f39811406eaf438ddcc9044c0ebd4da5e6b35",
+    "size": 760
+  },
+  {
+    "file": "packages/auth/src/session-refresh.ts",
+    "sha": "343cb7f8a5df47e8462f5c6ead56b49af9891c0a",
+    "size": 1535
+  },
+  {
+    "file": "packages/auth/src/vault-gate.tsx",
+    "sha": "20ca23791f8e96dd7f9fa248b82d2a80d54e46ab",
+    "size": 14489
+  },
+  {
+    "file": "packages/auth/src/vault.tsx",
+    "sha": "6af0530360a107baa1189cda0811741acdf0a8b6",
+    "size": 77
+  },
+  {
+    "file": "packages/core/package.json",
+    "sha": "4fc65e07db606a6807e560193b0d72e9c965589c",
+    "size": 109
+  },
+  {
+    "file": "packages/core/src/atlas-requests.ts",
+    "sha": "7bade9404e95b5ef5b033da7d791aa486788557a",
+    "size": 589
+  },
+  {
+    "file": "packages/core/src/atlas.ts",
+    "sha": "5a8404abc6187ab7deafb3dfbde682aa34f3c559",
+    "size": 4692
+  },
+  {
+    "file": "packages/core/src/collect.ts",
+    "sha": "62ab4da898c8295d8ea1530d8178378a944f47a2",
+    "size": 10679
+  },
+  {
+    "file": "packages/core/src/index.ts",
+    "sha": "9d246d56516c9ef23739ea2b07b9480c6248896e",
+    "size": 12855
+  },
+  {
+    "file": "packages/core/src/jsonb.ts",
+    "sha": "051513892b1049c527f858f309b2ce10cb799789",
+    "size": 2674
+  },
+  {
+    "file": "packages/core/src/lifecycle.ts",
+    "sha": "d35aae4982a615666f83c8a9a81a7a69e452119d",
+    "size": 1933
+  },
+  {
+    "file": "packages/ui/package.json",
+    "sha": "f68db54b3f3fc672cda4a6adac711f9d9e29a486",
+    "size": 187
+  },
+  {
+    "file": "packages/ui/src/index.tsx",
+    "sha": "e5abed4ec29c7d4a73d6dd8f1deeaf51e71462fc",
+    "size": 746
+  },
+  {
+    "file": "packages/ui/src/navigation.ts",
+    "sha": "66ba46c2bbdeee4bca83a70d70bbf287ac603575",
+    "size": 740
+  },
+  {
+    "file": "packages/ui/src/organization.tsx",
+    "sha": "d012240dc0edacc9621f9f94827e8cd83fdae044",
+    "size": 8994
+  },
+  {
+    "file": "packages/ui/src/shell.tsx",
+    "sha": "86b05581de62766bd0d247e66eef48239572b2ad",
+    "size": 10121
+  },
+  {
+    "file": "packages/ui/src/styles.css",
+    "sha": "fc7908860d5033ea94cfdac305f9eca67f4640fa",
+    "size": 17427
+  }
+]

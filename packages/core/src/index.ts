@@ -1,5 +1,9 @@
 import type {Resource} from "./collect.ts";
 export * from "./collect.ts";
+export * from "./atlas.ts";
+export * from "./atlas-requests.ts";
+export * from "./lifecycle.ts";
+import type {AtlasProject, ItemLabels} from "./atlas.ts";
 import { jsonbByteLength } from "./jsonb.ts";
 export { jsonbByteLength } from "./jsonb.ts";
 export type AppId = "recall" | "sketchbook" | "collect" | "atlas";
@@ -11,6 +15,7 @@ export type Space = {
     ownerId?: string | null;
     serverRevision?: number | null;
     localRevision?: number;
+    deletedAt?: string|null;
 };
 export type Note = {
     id: string;
@@ -42,12 +47,12 @@ export type Sketch = {
     localRevision: number; serverRevision: number | null;
 };
 export type ItemRelation = Relation & {
-    kind: "relation"; type: "inspired_by"; ownerId: string | null;
+    kind: "relation"; ownerId: string | null;
     createdAt: string; updatedAt: string; deletedAt: string | null;
     localRevision: number; serverRevision: number | null;
 };
-export type SyncRecord = Note | Space | Sketch | ItemRelation | Resource;
-export type SketchDraft = { title: string; strokes: SketchStroke[]; spaceIds: string[]; editingId?: string; expectedRevision?: number };
+export type SyncRecord = Note | Space | Sketch | ItemRelation | Resource | AtlasProject | ItemLabels;
+export type SketchDraft = { title: string; strokes: SketchStroke[]; spaceIds: string[]; editingId?: string; expectedRevision?: number; sourceNoteId?:string };
 export type SketchBackup = {
     format: "personal-tools.sketchbook"; version: 1; exportedAt: string;
     sketches: Sketch[]; spaces: Space[];
@@ -70,7 +75,7 @@ export type Backup = {
 };
 export type SyncOperation = {
     id: string;
-    kind: "put_note" | "put_space" | "put_sketch" | "put_relation" | "put_resource";
+    kind: "put_note" | "put_space" | "put_sketch" | "put_relation" | "put_resource" | "put_project" | "put_labels";
     entityId: string;
     baseRevision: number | null;
     previousOperationId?: string;
@@ -79,7 +84,7 @@ export type SyncOperation = {
 };
 export type SyncConflict = {
     id: string;
-    entity: "note" | "space" | "sketch" | "relation" | "resource";
+    entity: "note" | "space" | "sketch" | "relation" | "resource" | "project" | "labels";
     entityId: string;
     local: SyncRecord;
     remote: SyncRecord;
@@ -87,7 +92,7 @@ export type SyncConflict = {
 };
 export type SyncChange = {
     cursor: string;
-    entity: "note" | "space" | "sketch" | "relation" | "resource";
+    entity: "note" | "space" | "sketch" | "relation" | "resource" | "project" | "labels";
     record: SyncRecord;
 };
 export type SyncPushResult = {
@@ -95,11 +100,12 @@ export type SyncPushResult = {
     operationId: string;
     record: SyncRecord;
     conflictId?: string;
-};
+} | {status:"purged";operationId:string;purged:import("./lifecycle.ts").PurgeNotice};
 export type SyncPullResult = {
     changes: SyncChange[];
     cursor: string;
     hasMore: boolean;
+    purges?:import("./lifecycle.ts").PurgeNotice[];
 };
 export type SyncStatus = {
     phase: "idle" | "syncing" | "error" | "conflict" | "stopped";

@@ -1,0 +1,47 @@
+"use client";
+import {useEffect,useState,type ReactNode} from "react";
+import {captureLegacyVaultShare,createVault,lockVault,migrateVaultDatabases,readVaultDescriptor,requestVaultLock,saveVaultDescriptor,subscribeVault,unlockVault,validateDescriptor,vaultSession,type VaultDescriptor} from "@personal-tools/api-client";
+import {cloudVaultDescriptor} from "../../api-client/src/vault-cloud.ts";
+import {getBrowserAuthClient} from "./browser.ts";
+import {callbackLocation} from "./index.ts";
+const panel:React.CSSProperties={width:"min(100% - 32px, 500px)",margin:"8vh auto",padding:28,border:"1px solid #d4dcd5",borderRadius:20,background:"#fffefb",color:"#263e37",boxShadow:"0 12px 60px #263e3710",fontFamily:"system-ui,sans-serif",lineHeight:1.8};
+const field:React.CSSProperties={display:"block",width:"100%",boxSizing:"border-box",padding:12,border:"1px solid #a6b7ae",borderRadius:8,margin:"8px 0 16px",fontSize:16};
+export function VaultGate({children}:{children:ReactNode}){
+ const [ready,setReady]=useState(false),[unlocked,setUnlocked]=useState(false),[descriptor,setDescriptor]=useState<VaultDescriptor|null>(null);
+ const [secret,setSecret]=useState(""),[confirm,setConfirm]=useState(""),[recovery,setRecovery]=useState(false),[recoveryKey,setRecoveryKey]=useState("");
+ const [email,setEmail]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[saved,setSaved]=useState(false);
+ function fail(e:unknown){setMessage(e instanceof Error?e.message:"金庫を開けませんでした。");}
+ useEffect(()=>{
+  captureLegacyVaultShare();
+  let active=true;const stop=subscribeVault(()=>{if(!vaultSession()&&active){setUnlocked(false);setSecret("");setConfirm("");}});
+  void (async()=>{const local=await readVaultDescriptor();if(active)setDescriptor(local);const client=getBrowserAuthClient();if(client){const {data}=await client.auth.getSession();if(data.session?.user){const remote=await cloudVaultDescriptor(client,data.session.user.id);if(remote){if(local&&local.id!==remote.id)throw new Error("この端末とアカウントの金庫が異なります。既存の金庫を解錠してください。");if(!local)await saveVaultDescriptor(remote);if(active)setDescriptor(local??validateDescriptor(remote));}}}})().catch(e=>{if(active)fail(e);}).finally(()=>{if(active)setReady(true);});
+  return()=>{active=false;stop();lockVault();};
+ },[]);
+ useEffect(()=>{
+  if(!unlocked)return;let last=Date.now(),hiddenAt=document.hidden?Date.now():0,locking=false;
+  const channel=new BroadcastChannel("personal-tools-vault-lock");
+  const lock=async(broadcast=true)=>{if(locking)return;locking=true;setBusy(true);if(broadcast)channel.postMessage("lock");try{await requestVaultLock();}catch(e){fail(e);}finally{setBusy(false);}};
+  channel.onmessage=e=>{if(e.data==="lock")void lock(false);};
+  const activity=()=>{last=Date.now();},visibility=()=>{if(document.hidden)hiddenAt=Date.now();else{if(hiddenAt&&Date.now()-hiddenAt>=60000)void lock();hiddenAt=0;}};
+  const timer=setInterval(()=>{if(Date.now()-last>=300000||hiddenAt&&Date.now()-hiddenAt>=60000)void lock();},1000);
+  const pagehide=()=>{channel.postMessage("lock");lockVault();};
+  for(const name of ["pointerdown","pointermove","keydown","input","scroll","wheel"])window.addEventListener(name,activity,{passive:true});document.addEventListener("visibilitychange",visibility);window.addEventListener("pagehide",pagehide);
+  const manual=()=>void lock();window.addEventListener("personal-tools-lock",manual);
+  return()=>{clearInterval(timer);channel.close();for(const name of ["pointerdown","pointermove","keydown","input","scroll","wheel"])window.removeEventListener(name,activity);document.removeEventListener("visibilitychange",visibility);window.removeEventListener("pagehide",pagehide);window.removeEventListener("personal-tools-lock",manual);};
+ },[unlocked]);
+ async function submit(){setBusy(true);setMessage("");try{
+  if(descriptor){await unlockVault(descriptor,secret,recovery);setSecret("");await migrateVaultDatabases();setUnlocked(true);}
+  else{if(secret!==confirm)throw new Error("確認用のパスフレーズが一致しません。");const created=await createVault(secret);await saveVaultDescriptor(created.descriptor);setDescriptor(created.descriptor);setRecoveryKey(created.recoveryKey);setSecret("");setConfirm("");}
+ }catch(e){lockVault();fail(e);}finally{setBusy(false);}}
+ async function signIn(){setBusy(true);setMessage("");try{const client=getBrowserAuthClient();if(!client)throw new Error("クラウド接続が未設定です。");const result=await client.auth.signInWithOtp({email:email.trim(),options:{shouldCreateUser:true,emailRedirectTo:callbackLocation(window.location.origin)}});if(result.error)throw new Error("ログインメールを送れませんでした。");setMessage("ログインメールをこのブラウザで開いてください。アカウントの金庫があれば読み込みます。");}catch(e){fail(e);}finally{setBusy(false);}}
+ if(unlocked)return <div inert={busy?true:undefined}>{children}</div>;
+ return <main style={panel}><p style={{letterSpacing:3,fontSize:12}}>PERSONAL TOOLS · PRIVATE VAULT</p><h1 style={{fontSize:27,margin:"12px 0"}}>{recoveryKey?"復旧鍵を別に保管":descriptor?"金庫を解錠":"自分だけの金庫を作る"}</h1>
+ {!ready?<p>鍵情報を確認しています…</p>:recoveryKey?<><p>この復旧鍵があれば、パスフレーズを忘れても金庫を開けます。データと同じ場所を避けて保管してください。</p><code style={{display:"block",overflowWrap:"anywhere",padding:16,background:"#edf1ed",userSelect:"all"}}>{recoveryKey}</code><label style={{display:"block",margin:"20px 0"}}><input type="checkbox" checked={saved} onChange={e=>setSaved(e.target.checked)}/> 復旧鍵を紙などの別の場所に保管しました</label><button disabled={!saved||busy} onClick={async()=>{setBusy(true);try{await migrateVaultDatabases();setRecoveryKey("");setUnlocked(true);}catch(e){fail(e);}finally{setBusy(false);}}}>{busy?"既存データを暗号化しています…":"暗号化した金庫を開く"}</button></>:<>
+ <p>{descriptor?"内容はこの端末でだけ復号します。メールでのパスフレーズ再発行はできません。":"記録・下書き・画像を暗号化します。既存データは解錠後に移行し、同期は暗号文だけを送ります。"}</p>
+ <form onSubmit={e=>{e.preventDefault();void submit();}}><label>{recovery?"復旧鍵":"専用パスフレーズ"}<input style={field} type="password" value={secret} onChange={e=>setSecret(e.target.value)} autoComplete={descriptor?"current-password":"new-password"} minLength={!descriptor?16:undefined} maxLength={1024} required disabled={busy}/></label>{!descriptor&&<label>パスフレーズをもう一度<input style={field} type="password" autoComplete="new-password" value={confirm} onChange={e=>setConfirm(e.target.value)} minLength={16} maxLength={1024} required disabled={busy}/></label>}<button disabled={busy}>{busy?"鍵を処理しています…":descriptor?"解錠する":"金庫と復旧鍵を作る"}</button></form>
+ {descriptor&&<button type="button" disabled={busy} style={{marginTop:16}} onClick={()=>{setRecovery(!recovery);setSecret("");}}>{recovery?"パスフレーズで開く":"復旧鍵で開く"}</button>}
+ {!descriptor&&<><p>別の端末ですでに使っている場合は、先に同じアカウントでログインしてください。</p><form onSubmit={e=>{e.preventDefault();void signIn();}}><label>メールアドレス<input style={field} type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required disabled={busy}/></label><button disabled={busy}>既存の金庫にログイン</button></form></>}
+ <label style={{display:"block",marginTop:24}}>暗号化バックアップから金庫の鍵情報を読み込む<input style={{display:"block",maxWidth:"100%"}} type="file" accept=".json,application/json" disabled={busy} onChange={async e=>{const file=e.target.files?.[0];e.target.value="";if(!file)return;try{if(file.size>100*1024*1024)throw new Error("100MB以下のバックアップを選んでください。");const value=JSON.parse(await file.text());if(value.format!=="personal-tools.encrypted-backup")throw new Error("暗号化バックアップを選んでください。");const d=validateDescriptor(value.vault);await saveVaultDescriptor(d);setDescriptor(d);setMessage("鍵情報を読み込みました。解錠後、各ツールでバックアップを追加読み込みしてください。");}catch(error){fail(error);}}}/></label>
+ </>}
+ {message&&<p role="status" style={{whiteSpace:"pre-wrap",color:"#883e31"}}>{message}</p>}<p style={{fontSize:12,color:"#617268",marginTop:24}}>5分間の無操作、または非表示から1分で自動ロック。外部AIとURL情報の自動取得は停止しています。パスフレーズと復旧鍵の両方を失うと復元できません。</p></main>;
+}

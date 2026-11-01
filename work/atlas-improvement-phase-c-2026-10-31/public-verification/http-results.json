@@ -1,0 +1,253 @@
+{
+  "origin": "https://personal-tools-seven-ruby.vercel.app",
+  "checks": 61,
+  "results": [
+    {
+      "path": "/",
+      "status": 307
+    },
+    {
+      "path": "/atlas/",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/2e9-8-1pv7th4.css",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/0wrcax0hccupq.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/0h5sq52ybmcgf.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/2bzfl0ehz6t-0.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/turbopack-1yh2zib5aj6b6.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/3_qdfjxmsb0_j.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/0q14tf1sztvjm.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/22y1u9kn06_bc.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/_next/static/immutable/chunks/0c0hxoamwjsbw.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/manifest.webmanifest",
+      "status": 200
+    },
+    {
+      "path": "/atlas/sw.js",
+      "status": 200
+    },
+    {
+      "path": "/atlas/icon-192.png",
+      "status": 200
+    },
+    {
+      "path": "/atlas/icon-512.png",
+      "status": 200
+    },
+    {
+      "path": "/recall/",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/20cltxhluunja.css",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/0wrcax0hccupq.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/145eowzbcrgw5.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/3ouwye9m4mbbo.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/turbopack-13cx_6qlidvd2.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/3_qdfjxmsb0_j.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/12cl98j8e3nr8.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/3qawm-689wd7y.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/_next/static/immutable/chunks/0c0hxoamwjsbw.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/manifest.webmanifest",
+      "status": 200
+    },
+    {
+      "path": "/recall/sw.js",
+      "status": 200
+    },
+    {
+      "path": "/recall/icon-192.png",
+      "status": 200
+    },
+    {
+      "path": "/recall/icon-512.png",
+      "status": 200
+    },
+    {
+      "path": "/collect/",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/2mv_4n4_5wlhr.css",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/0wrcax0hccupq.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/1wsqyj3xgagq0.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/3enu198ltqg55.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/turbopack-3bp43fzo0diek.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/3_qdfjxmsb0_j.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/1ahhvymjxnyci.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/2ba3qfhch9v-6.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/_next/static/immutable/chunks/0c0hxoamwjsbw.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/manifest.webmanifest",
+      "status": 200
+    },
+    {
+      "path": "/collect/sw.js",
+      "status": 200
+    },
+    {
+      "path": "/collect/icon-192.png",
+      "status": 200
+    },
+    {
+      "path": "/collect/icon-512.png",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/1ik90rav8lief.css",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/0wrcax0hccupq.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/3z3x2g66hep8w.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/1lkovrcmm2wk8.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/turbopack-0_q1b_kb-iriv.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/3_qdfjxmsb0_j.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/0iqu-c04jxks_.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/2j25rds9fo9e6.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/_next/static/immutable/chunks/0c0hxoamwjsbw.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/manifest.webmanifest",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/sw.js",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/icon-192.png",
+      "status": 200
+    },
+    {
+      "path": "/sketchbook/icon-512.png",
+      "status": 200
+    },
+    {
+      "path": "/atlas/api/ai/",
+      "status": 200
+    },
+    {
+      "path": "/atlas/api/ai/",
+      "method": "POST",
+      "status": 410
+    },
+    {
+      "path": "/collect/api/metadata/",
+      "method": "POST",
+      "status": 410
+    },
+    {
+      "path": "/recall/auth/callback/",
+      "status": 303,
+      "invalidLinkRedirect": true
+    }
+  ]
+}

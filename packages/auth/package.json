@@ -8,7 +8,8 @@
     "./browser": "./src/browser.ts",
     "./server": "./src/server.ts",
     "./proxy": "./src/proxy.ts",
-    "./react": "./src/react.ts"
+    "./react": "./src/react.ts",
+    "./vault": "./src/vault.tsx"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

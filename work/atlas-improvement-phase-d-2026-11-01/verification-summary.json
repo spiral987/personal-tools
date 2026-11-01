@@ -1,0 +1,21 @@
+{
+  "tests": 184,
+  "typecheck": "all four passed",
+  "build": "all four passed",
+  "lifecycleBrowserGroups": 9,
+  "publicHttpChecks": 61,
+  "publicBrowserGroups": 9,
+  "nativeRegressionGroups": 7,
+  "uiRegressionGroups": 20,
+  "vaultSessionGroups": 8,
+  "mockAuthGroups": 2,
+  "cronNaturalRun": "succeeded",
+  "workerHttpStatus": 200,
+  "workerUnauthorizedStatus": 401,
+  "supabasePlan": "free",
+  "vercelPlan": "hobby",
+  "realAccountLoginVerified": false,
+  "galaxyDeviceVerified": false,
+  "twoPhysicalDevicesVerified": false,
+  "workerUsedRealUserDataForExpiryTest": false
+}

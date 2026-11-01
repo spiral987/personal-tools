@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [{"source":"/","destination":"/atlas/","permanent":false}],
+  "headers": [{"source":"/recall/auth/:path*","headers":[{"key":"Cache-Control","value":"private, no-store"}]}]
+}

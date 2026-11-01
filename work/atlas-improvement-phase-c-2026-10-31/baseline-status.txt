@@ -1,0 +1,100 @@
+ M README.md
+ M apps/atlas/README.md
+ M apps/collect/app/api/metadata/route.ts
+ M apps/collect/app/capture.ts
+ M apps/collect/app/components.tsx
+ M apps/collect/app/globals.css
+ M apps/collect/app/layout.tsx
+ M apps/collect/app/manifest.ts
+ M apps/collect/app/page.tsx
+ M apps/collect/next.config.ts
+ M apps/collect/package.json
+ M apps/collect/public/sw.js
+ M apps/recall/app/globals.css
+ M apps/recall/app/layout.tsx
+ M apps/recall/app/manifest.ts
+ M apps/recall/app/page.tsx
+ M apps/recall/next.config.ts
+ M apps/recall/public/sw.js
+ M apps/sketchbook/app/globals.css
+ M apps/sketchbook/app/layout.tsx
+ M apps/sketchbook/app/manifest.ts
+ M apps/sketchbook/app/page.tsx
+ M apps/sketchbook/next.config.ts
+ M apps/sketchbook/package.json
+ M apps/sketchbook/public/sw.js
+ M deploy/Caddyfile.example
+ M docs/roadmap.md
+ M package.json
+ M packages/api-client/package.json
+ M packages/api-client/src/index.ts
+ M packages/api-client/src/repository.ts
+ M packages/api-client/src/sync.ts
+ M packages/auth/package.json
+ M packages/auth/src/react.ts
+ M packages/core/src/index.ts
+ M packages/ui/package.json
+ M packages/ui/src/index.tsx
+ M pnpm-lock.yaml
+ M scripts/gateway.mjs
+ M scripts/run-apps.mjs
+ M scripts/zones.d.mts
+ M scripts/zones.mjs
+ M supabase/README.md
+ M tests/collect-ui.test.ts
+ M tests/collect.test.ts
+ M tests/gateway.test.ts
+ M tests/helpers/database.ts
+ M tests/sketchbook.test.ts
+ M tests/sync-database.test.ts
+ M tests/sync.test.ts
+ M tests/zones.test.ts
+?? apps/atlas/.env.example
+?? apps/atlas/AGENTS.md
+?? apps/atlas/app/
+?? apps/atlas/lib/
+?? apps/atlas/next.config.ts
+?? apps/atlas/package.json
+?? apps/atlas/proxy.ts
+?? apps/atlas/public/
+?? apps/atlas/tsconfig.json
+?? apps/collect/app/clipboard.ts
+?? apps/recall/app/atlas-requests-sharing.tsx
+?? apps/sketchbook/app/draft-recovery.ts
+?? docs/atlas-improvement-phase-a-verification-2026-10-31.md
+?? docs/atlas-improvement-phase-b-verification-2026-10-31.md
+?? docs/atlas-improvement-plan-2026-10-31.md
+?? docs/atlas-requests.md
+?? docs/encrypted-vault.md
+?? docs/phase5-evaluation.template.json
+?? docs/phase5-setup.md
+?? docs/phase5-verification.md
+?? docs/vault-verification.md
+?? packages/api-client/src/vault-cloud.ts
+?? packages/api-client/src/vault-files.ts
+?? packages/api-client/src/vault-idb.ts
+?? packages/api-client/src/vault.ts
+?? packages/auth/src/vault.tsx
+?? packages/core/src/atlas-requests.ts
+?? packages/core/src/atlas.ts
+?? packages/ui/src/navigation.ts
+?? packages/ui/src/shell.tsx
+?? packages/ui/src/styles.css
+?? scripts/atlas-worker.ts
+?? scripts/evaluate-atlas.ts
+?? scripts/verify-atlas.mjs
+?? scripts/verify-collect-browser.mjs
+?? scripts/verify-collect-ui.mjs
+?? scripts/verify-suite-ui.mjs
+?? supabase/migrations/20261031072324_phase5_atlas.sql
+?? supabase/migrations/20261031082941_encrypted_vault.sql
+?? tests/atlas-ai.test.ts
+?? tests/atlas-requests.test.ts
+?? tests/atlas.test.ts
+?? tests/browser/
+?? tests/helpers/vault-fixtures.ts
+?? tests/suite-navigation.test.ts
+?? tests/vault-database.test.ts
+?? tests/vault-setup.ts
+?? tests/vault.test.ts
+?? work/

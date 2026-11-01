@@ -1,0 +1,1115 @@
+$ node --experimental-strip-types --import ./tests/vault-setup.ts --test --test-concurrency=3 tests/*.test.ts
+TAP version 13
+# Subtest: Atlas provider: disabled by default, server-only models and bounded finite embeddings
+ok 1 - Atlas provider: disabled by default, server-only models and bounded finite embeddings
+  ---
+  duration_ms: 2.7342
+  type: 'test'
+  ...
+# Subtest: Atlas provider: caption/OCR schema and image stay in fixed API request; manual tags are never returned as edits
+ok 2 - Atlas provider: caption/OCR schema and image stay in fixed API request; manual tags are never returned as edits
+  ---
+  duration_ms: 32.0785
+  type: 'test'
+  ...
+# Subtest: Atlas provider: incomplete, refused, malformed and wrong-model responses fail closed
+ok 3 - Atlas provider: incomplete, refused, malformed and wrong-model responses fail closed
+  ---
+  duration_ms: 3.6914
+  type: 'test'
+  ...
+# Subtest: Atlas embeddings: long Japanese OCR is bounded in bytes without splitting Unicode
+ok 4 - Atlas embeddings: long Japanese OCR is bounded in bytes without splitting Unicode
+  ---
+  duration_ms: 4.5336
+  type: 'test'
+  ...
+# Subtest: Atlas API: origin, configured models, verified login and consent gate all paid calls
+ok 5 - Atlas API: origin, configured models, verified login and consent gate all paid calls
+  ---
+  duration_ms: 4.2675
+  type: 'test'
+  ...
+# Subtest: Atlas API: filters enter SQL RPC before LIMIT and browser cannot select a paid model
+ok 6 - Atlas API: filters enter SQL RPC before LIMIT and browser cannot select a paid model
+  ---
+  duration_ms: 2.3023
+  type: 'test'
+  ...
+# Subtest: Atlas worker: persisted jobs run without a browser and completion uses lease token; private errors stay bounded
+ok 7 - Atlas worker: persisted jobs run without a browser and completion uses lease token; private errors stay bounded
+  ---
+  duration_ms: 2.8818
+  type: 'test'
+  ...
+# Subtest: Atlas worker: private image originals are hash-checked before any provider call
+ok 8 - Atlas worker: private image originals are hash-checked before any provider call
+  ---
+  duration_ms: 3.1008
+  type: 'test'
+  ...
+# Subtest: Atlas evaluation: records require human targets, report hit@k and MRR without claiming unevaluated quality
+ok 9 - Atlas evaluation: records require human targets, report hit@k and MRR without claiming unevaluated quality
+  ---
+  duration_ms: 1.1492
+  type: 'test'
+  ...
+# Subtest: Atlas requests: explicit setup binds one existing space, persists across reopening, and rejects other spaces
+ok 10 - Atlas requests: explicit setup binds one existing space, persists across reopening, and rejects other spaces
+  ---
+  duration_ms: 46.563
+  type: 'test'
+  ...
+# Subtest: Atlas requests: only selected live note bodies, IDs and update times cross the export boundary
+ok 11 - Atlas requests: only selected live note bodies, IDs and update times cross the export boundary
+  ---
+  duration_ms: 40.4048
+  type: 'test'
+  ...
+# Subtest: Atlas requests: each snapshot reflects updates, removals and trash restoration with stable management IDs
+ok 12 - Atlas requests: each snapshot reflects updates, removals and trash restoration with stable management IDs
+  ---
+  duration_ms: 44.3554
+  type: 'test'
+  ...
+# Subtest: Atlas requests: duplicate names require an explicit ID and never expand the allowed space
+ok 13 - Atlas requests: duplicate names require an explicit ID and never expand the allowed space
+  ---
+  duration_ms: 21.2373
+  type: 'test'
+  ...
+# Subtest: Atlas requests: a renamed or missing bound space never causes lookup by name on export
+ok 14 - Atlas requests: a renamed or missing bound space never causes lookup by name on export
+  ---
+  duration_ms: 18.9365
+  type: 'test'
+  ...
+# Subtest: Atlas requests: sharing configuration is ciphertext at rest and setup rolls back atomically
+ok 15 - Atlas requests: sharing configuration is ciphertext at rest and setup rolls back atomically
+  ---
+  duration_ms: 9.6967
+  type: 'test'
+  ...
+# Subtest: Atlas requests: sharing stays scoped to each account and device and queues only a new space for sync
+ok 16 - Atlas requests: sharing stays scoped to each account and device and queues only a new space for sync
+  ---
+  duration_ms: 32.2868
+  type: 'test'
+  ...
+# Subtest: Atlas requests: a locked vault cannot export or prepare sharing, and unlocking restores the binding
+ok 17 - Atlas requests: a locked vault cannot export or prepare sharing, and unlocking restores the binding
+  ---
+  duration_ms: 552.7266
+  type: 'test'
+  ...
+# Subtest: Atlas local: Japanese AND search spans original kinds, spaces, confirmed tags and projects without copies
+ok 18 - Atlas local: Japanese AND search spans original kinds, spaces, confirmed tags and projects without copies
+  ---
+  duration_ms: 2358.5483
+  type: 'test'
+  ...
+# Subtest: Atlas local: every relation supports incoming display; related_to is symmetric and deterministic
+ok 19 - Atlas local: every relation supports incoming display; related_to is symmetric and deterministic
+  ---
+  duration_ms: 39.43
+  type: 'test'
+  ...
+# Subtest: Atlas local: revisions, malformed memberships and tag limits preserve existing data
+ok 20 - Atlas local: revisions, malformed memberships and tag limits preserve existing data
+  ---
+  duration_ms: 17.7753
+  type: 'test'
+  ...
+# Subtest: Atlas sync: independent caches exchange general relations, projects, memberships, tags and tombstones
+ok 21 - Atlas sync: independent caches exchange general relations, projects, memberships, tags and tombstones
+  ---
+  duration_ms: 324.9023
+  type: 'test'
+  ...
+# Subtest: Atlas sync: stale project edits retain both versions and new stream hides kinds from legacy clients
+ok 22 - Atlas sync: stale project edits retain both versions and new stream hides kinds from legacy clients
+  ---
+  duration_ms: 177.6156
+  type: 'test'
+  ...
+# Subtest: Atlas RLS: owner checks precede mutations and no browser can write tables or lease AI jobs
+ok 23 - Atlas RLS: owner checks precede mutations and no browser can write tables or lease AI jobs
+  ---
+  duration_ms: 153.4212
+  type: 'test'
+  ...
+# Subtest: Atlas AI: explicit consent and excluded spaces gate durable jobs; duplicate enqueue preserves one job
+ok 24 - Atlas AI: explicit consent and excluded spaces gate durable jobs; duplicate enqueue preserves one job
+  ---
+  duration_ms: 140.4739
+  type: 'test'
+  ...
+# Subtest: Atlas AI: revision changes, reclassification, deletion and model changes invalidate old results and leased replies
+ok 25 - Atlas AI: revision changes, reclassification, deletion and model changes invalidate old results and leased replies
+  ---
+  duration_ms: 199.9347
+  type: 'test'
+  ...
+# Subtest: Atlas AI: owner, space, kind, tag and project apply before exact ranking and LIMIT; models/dimensions never mix
+ok 26 - Atlas AI: owner, space, kind, tag and project apply before exact ranking and LIMIT; models/dimensions never mix
+  ---
+  duration_ms: 282.9988
+  type: 'test'
+  ...
+# Subtest: Atlas AI: retry backoff, expiring leases and maximum attempts survive worker restarts
+ok 27 - Atlas AI: retry backoff, expiring leases and maximum attempts survive worker restarts
+  ---
+  duration_ms: 106.172
+  type: 'test'
+  ...
+# Subtest: 別タブのログインで共有ロックが解除され、SDK callback外で新しいcookieのsessionを読む
+ok 28 - 別タブのログインで共有ロックが解除され、SDK callback外で新しいcookieのsessionを読む
+  ---
+  duration_ms: 5.2616
+  type: 'test'
+  ...
+# Subtest: オフラインでログアウトしたままのタブは古いsessionを読み直さない
+ok 29 - オフラインでログアウトしたままのタブは古いsessionを読み直さない
+  ---
+  duration_ms: 1.042
+  type: 'test'
+  ...
+# Subtest: 新しいsession取得中にログアウトした場合、遅れて返った情報でアカウントを開かない
+ok 30 - 新しいsession取得中にログアウトした場合、遅れて返った情報でアカウントを開かない
+  ---
+  duration_ms: 0.6935
+  type: 'test'
+  ...
+# Subtest: アンマウント・切替後の予約済みSDK呼び出しを捨てる
+ok 31 - アンマウント・切替後の予約済みSDK呼び出しを捨てる
+  ---
+  duration_ms: 0.658
+  type: 'test'
+  ...
+# Subtest: 設定なし・片方のみの設定はローカル版を起動可能にする
+ok 32 - 設定なし・片方のみの設定はローカル版を起動可能にする
+  ---
+  duration_ms: 1.8523
+  type: 'test'
+  ...
+# Subtest: 秘密鍵とservice_role JWTは公開接続設定として受け付けない
+ok 33 - 秘密鍵とservice_role JWTは公開接続設定として受け付けない
+  ---
+  duration_ms: 0.5715
+  type: 'test'
+  ...
+# Subtest: 公開キーのHTTPS接続とローカルSupabaseのみを許可
+ok 34 - 公開キーのHTTPS接続とローカルSupabaseのみを許可
+  ---
+  duration_ms: 0.62
+  type: 'test'
+  ...
+# Subtest: 認証後の入口は常に同じoriginの固定コールバック
+ok 35 - 認証後の入口は常に同じoriginの固定コールバック
+  ---
+  duration_ms: 0.2041
+  type: 'test'
+  ...
+# Subtest: 同じユーザーIDでも別プロジェクトの端末キャッシュを分離
+ok 36 - 同じユーザーIDでも別プロジェクトの端末キャッシュを分離
+  ---
+  duration_ms: 0.421
+  type: 'test'
+  ...
+# Subtest: 認証callbackの全結果は固定の相対Locationと非キャッシュ303を返す
+ok 37 - 認証callbackの全結果は固定の相対Locationと非キャッシュ303を返す
+  ---
+  duration_ms: 31.5938
+  type: 'test'
+  ...
+# Subtest: 認証callbackから戻っても127.0.0.1・localhost・公開originを切り替えない
+ok 38 - 認証callbackから戻っても127.0.0.1・localhost・公開originを切り替えない
+  ---
+  duration_ms: 0.522
+  type: 'test'
+  ...
+# Subtest: 未知のcallback結果に秘密やURLを渡してもLocationへ反映しない
+ok 39 - 未知のcallback結果に秘密やURLを渡してもLocationへ反映しない
+  ---
+  duration_ms: 0.5662
+  type: 'test'
+  ...
+# Subtest: Collect image input: a link URL becomes the source without discarding a distinct existing source
+ok 40 - Collect image input: a link URL becomes the source without discarding a distinct existing source
+  ---
+  duration_ms: 2.1964
+  type: 'test'
+  ...
+# Subtest: Collect clipboard: text stays native, file lists are not duplicated, and multiple images require separate pastes
+ok 41 - Collect clipboard: text stays native, file lists are not duplicated, and multiple images require separate pastes
+  ---
+  duration_ms: 0.8524
+  type: 'test'
+  ...
+# Subtest: Collect UI: an unsaved image draft and original survive reopening and take priority over an item link
+ok 42 - Collect UI: an unsaved image draft and original survive reopening and take priority over an item link
+  ---
+  duration_ms: 64.1891
+  type: 'test'
+  ...
+# Subtest: Collect UI: opening a different item never attaches the previous draft's original
+ok 43 - Collect UI: opening a different item never attaches the previous draft's original
+  ---
+  duration_ms: 17.4634
+  type: 'test'
+  ...
+# Subtest: Collect UI: share GET remains a proposal and only explicit merge appends without replacing a draft
+ok 44 - Collect UI: share GET remains a proposal and only explicit merge appends without replacing a draft
+  ---
+  duration_ms: 1.0806
+  type: 'test'
+  ...
+# Subtest: Collect UI: share merge keeps image identity, refuses overflowing memo, and URL cleanup preserves navigation
+ok 45 - Collect UI: share merge keeps image identity, refuses overflowing memo, and URL cleanup preserves navigation
+  ---
+  duration_ms: 0.7916
+  type: 'test'
+  ...
+# Subtest: Collect UI: metadata revision rebasing preserves manual edits and refuses actual content changes
+ok 46 - Collect UI: metadata revision rebasing preserves manual edits and refuses actual content changes
+  ---
+  duration_ms: 19.7969
+  type: 'test'
+  ...
+# Subtest: Collect UI: JSONB image key order does not mark unchanged content dirty or block sync rebasing
+ok 47 - Collect UI: JSONB image key order does not mark unchanged content dirty or block sync rebasing
+  ---
+  duration_ms: 7.9491
+  type: 'test'
+  ...
+# Subtest: Collect UI: a metadata completion racing Save retries safely and preserves manual title/memo
+ok 48 - Collect UI: a metadata completion racing Save retries safely and preserves manual title/memo
+  ---
+  duration_ms: 16.1708
+  type: 'test'
+  ...
+# Subtest: Collect UI: a competing manual edit is surfaced without overwrite or duplicate creation
+ok 49 - Collect UI: a competing manual edit is surfaced without overwrite or duplicate creation
+  ---
+  duration_ms: 13.3673
+  type: 'test'
+  ...
+# Subtest: Collect UI: invalidated account scope cannot retry a save after an awaited snapshot
+ok 50 - Collect UI: invalidated account scope cannot retry a save after an awaited snapshot
+  ---
+  duration_ms: 8.3314
+  type: 'test'
+  ...
+# Subtest: Collect: original image, composer and editable link survive reopening with immutable originals
+ok 51 - Collect: original image, composer and editable link survive reopening with immutable originals
+  ---
+  duration_ms: 2389.5708
+  type: 'test'
+  ...
+# Subtest: Collect: quota failure rolls back original, resource, draft clearing and sync outbox together
+ok 52 - Collect: quota failure rolls back original, resource, draft clearing and sync outbox together
+  ---
+  duration_ms: 24.8693
+  type: 'test'
+  ...
+# Subtest: Collect: draft validation and canonical duplicate hints preserve existing records
+ok 53 - Collect: draft validation and canonical duplicate hints preserve existing records
+  ---
+  duration_ms: 15.6348
+  type: 'test'
+  ...
+# Subtest: Collect metadata: token CAS retains manual fields and ignores obsolete URL, retry and trash results
+ok 54 - Collect metadata: token CAS retains manual fields and ignores obsolete URL, retry and trash results
+  ---
+  duration_ms: 26.317
+  type: 'test'
+  ...
+# Subtest: Collect backup: portable round trip includes originals, rekeys spaces, validates bytes before any writes
+ok 55 - Collect backup: portable round trip includes originals, rekeys spaces, validates bytes before any writes
+  ---
+  duration_ms: 31.7008
+  type: 'test'
+  ...
+# Subtest: Collect backup: aggregate originals have a32MB limit and input JSON has a64MB limit
+ok 56 - Collect backup: aggregate originals have a32MB limit and input JSON has a64MB limit
+  ---
+  duration_ms: 763.3191
+  type: 'test'
+  ...
+# Subtest: Collect image validation: MIME, dimensions, signatures, limits and SHA256 are verified
+ok 57 - Collect image validation: MIME, dimensions, signatures, limits and SHA256 are verified
+  ---
+  duration_ms: 13.9384
+  type: 'test'
+  ...
+# Subtest: Collect accounts: device data is imported explicitly and separate owners cannot reuse a cache
+ok 58 - Collect accounts: device data is imported explicitly and separate owners cannot reuse a cache
+  ---
+  duration_ms: 34.0928
+  type: 'test'
+  ...
+# Subtest: Collect SQL: original metadata, offline chains, idempotence, deletion and restoration sync between independent caches
+ok 59 - Collect SQL: original metadata, offline chains, idempotence, deletion and restoration sync between independent caches
+  ---
+  duration_ms: 257.422
+  type: 'test'
+  ...
+# Subtest: Collect SQL: concurrent edits keep newest local conflict original in backup and keep both
+ok 60 - Collect SQL: concurrent edits keep newest local conflict original in backup and keep both
+  ---
+  duration_ms: 194.3401
+  type: 'test'
+  ...
+# Subtest: Collect sync race: a newer deferred remote survives an older in-flight acknowledgment
+ok 61 - Collect sync race: a newer deferred remote survives an older in-flight acknowledgment
+  ---
+  duration_ms: 143.9851
+  type: 'test'
+  ...
+# Subtest: Collect SQL: v2 and v3 streams hide resources, full stream paginates through every entity
+ok 62 - Collect SQL: v2 and v3 streams hide resources, full stream paginates through every entity
+  ---
+  duration_ms: 251.6898
+  type: 'test'
+  ...
+# Subtest: Collect SQL: owner RLS, original immutability and malformed inputs are enforced
+ok 63 - Collect SQL: owner RLS, original immutability and malformed inputs are enforced
+  ---
+  duration_ms: 134.6685
+  type: 'test'
+  ...
+# Subtest: Collect original SQL: only owner canonical private original can register, trash keeps it immutable
+ok 64 - Collect original SQL: only owner canonical private original can register, trash keeps it immutable
+  ---
+  duration_ms: 162.5363
+  type: 'test'
+  ...
+# Subtest: Collect original adapter: registered preflight skips upload and unregistered object only retries registration
+ok 65 - Collect original adapter: registered preflight skips upload and unregistered object only retries registration
+  ---
+  duration_ms: 7.6153
+  type: 'test'
+  ...
+# Subtest: Collect original adapter: legacy400 and current409 duplicates register without overwriting
+ok 66 - Collect original adapter: legacy400 and current409 duplicates register without overwriting
+  ---
+  duration_ms: 7.0863
+  type: 'test'
+  ...
+# Subtest: Collect original adapter: private download verifies bytes, allows trash and rejects other owner
+ok 67 - Collect original adapter: private download verifies bytes, allows trash and rejects other owner
+  ---
+  duration_ms: 8.2669
+  type: 'test'
+  ...
+# Subtest: Collect original adapter: scope changes stop later upload, registration and download operations
+ok 68 - Collect original adapter: scope changes stop later upload, registration and download operations
+  ---
+  duration_ms: 13.6358
+  type: 'test'
+  ...
+# Subtest: Collect upgrade: v3 notes, sketches, relations, composer and pending operations survive full resource replay
+ok 69 - Collect upgrade: v3 notes, sketches, relations, composer and pending operations survive full resource replay
+  ---
+  duration_ms: 137.9607
+  type: 'test'
+  ...
+# Subtest: SQL: 原本・スペース・変更cursorを同一transactionで保存
+ok 70 - SQL: 原本・スペース・変更cursorを同一transactionで保存
+  ---
+  duration_ms: 2393.6744
+  type: 'test'
+  ...
+# Subtest: SQL: 再送は同じ結果を返し、IDの内容変更は拒否
+ok 71 - SQL: 再送は同じ結果を返し、IDの内容変更は拒否
+  ---
+  duration_ms: 25.6746
+  type: 'test'
+  ...
+# Subtest: SQL: 同じ初期スペースを2端末で作っても競合しない
+ok 72 - SQL: 同じ初期スペースを2端末で作っても競合しない
+  ---
+  duration_ms: 13.9334
+  type: 'test'
+  ...
+# Subtest: SQL: 古いrevisionとその後続操作は両方の本文を残して競合
+ok 73 - SQL: 古いrevisionとその後続操作は両方の本文を残して競合
+  ---
+  duration_ms: 28.9474
+  type: 'test'
+  ...
+# Subtest: SQL: 同一端末で積んだ変更は前のoperationのrevisionに連結
+ok 74 - SQL: 同一端末で積んだ変更は前のoperationのrevisionに連結
+  ---
+  duration_ms: 18.9024
+  type: 'test'
+  ...
+# Subtest: SQL: ごみ箱への移動と復元を変更履歴に含める
+ok 75 - SQL: ごみ箱への移動と復元を変更履歴に含める
+  ---
+  duration_ms: 13.536
+  type: 'test'
+  ...
+# Subtest: SQL: ページングcursorは文字列でowner別に順序を保つ
+ok 76 - SQL: ページングcursorは文字列でowner別に順序を保つ
+  ---
+  duration_ms: 26.0782
+  type: 'test'
+  ...
+# Subtest: SQL: 外側のtransaction失敗は原本・operation・cursorをすべて戻す
+ok 77 - SQL: 外側のtransaction失敗は原本・operation・cursorをすべて戻す
+  ---
+  duration_ms: 11.6437
+  type: 'test'
+  ...
+# Subtest: SQL/RLS: 他人のItem・Space・原文・operation・競合を読めない
+ok 78 - SQL/RLS: 他人のItem・Space・原文・operation・競合を読めない
+  ---
+  duration_ms: 46.8992
+  type: 'test'
+  ...
+# Subtest: SQL/RLS: Relation・AssetはRPCを通す必要があり直接書き換えできない
+ok 79 - SQL/RLS: Relation・AssetはRPCを通す必要があり直接書き換えできない
+  ---
+  duration_ms: 24.204
+  type: 'test'
+  ...
+# Subtest: SQL/RLS: private Storageの所有者以外は読取・挿入・移動ができない
+ok 80 - SQL/RLS: private Storageの所有者以外は読取・挿入・移動ができない
+  ---
+  duration_ms: 23.9202
+  type: 'test'
+  ...
+# Subtest: SQL/RLS: 未認証からRPCとデータへアクセスできない
+ok 81 - SQL/RLS: 未認証からRPCとデータへアクセスできない
+  ---
+  duration_ms: 14.623
+  type: 'test'
+  ...
+# Subtest: SQL: 公開RPCはinvokerで、definer実装とreadersは非公開schemaに限定
+ok 82 - SQL: 公開RPCはinvokerで、definer実装とreadersは非公開schemaに限定
+  ---
+  duration_ms: 9.2803
+  type: 'test'
+  ...
+# Subtest: pointer coordinates map resized paper into bounded original coordinates
+ok 83 - pointer coordinates map resized paper into bounded original coordinates
+  ---
+  duration_ms: 1.5247
+  type: 'test'
+  ...
+# Subtest: undo redo preserve source stroke order and a new stroke clears redo
+ok 84 - undo redo preserve source stroke order and a new stroke clears redo
+  ---
+  duration_ms: 0.2844
+  type: 'test'
+  ...
+# Subtest: local gateway forwards exact paths, queries, cookies, HEAD, streamed bodies and independent app outages
+ok 85 - local gateway forwards exact paths, queries, cookies, HEAD, streamed bodies and independent app outages
+  ---
+  duration_ms: 95.7777
+  type: 'test'
+  ...
+# Subtest: local gateway routes Upgrade handshakes and buffered bidirectional bytes to the correct HMR backend
+ok 86 - local gateway routes Upgrade handshakes and buffered bidirectional bytes to the correct HMR backend
+  ---
+  duration_ms: 11.9189
+  type: 'test'
+  ...
+# Subtest: local gateway configuration keeps public origin stable and validates distinct loopback ports
+ok 87 - local gateway configuration keeps public origin stable and validates distinct loopback ports
+  ---
+  duration_ms: 0.7749
+  type: 'test'
+  ...
+# Subtest: retention SQL: legacy history and archives are indexed before expiry, then ciphertext and stale restores are removed
+ok 88 - retention SQL: legacy history and archives are indexed before expiry, then ciphertext and stale restores are removed
+  ---
+  duration_ms: 2498.6318
+  type: 'test'
+  ...
+# Subtest: retention SQL: a restore cancels the deadline; retrash uses its own deadline and background expiry blocks an offline resurrection
+ok 89 - retention SQL: a restore cancels the deadline; retrash uses its own deadline and background expiry blocks an offline resurrection
+  ---
+  duration_ms: 3164.9838
+  type: 'test'
+  ...
+# Subtest: retention SQL: space deletion bypasses stale revisions and is terminal while originals, other spaces, projects and tags survive
+ok 90 - retention SQL: space deletion bypasses stale revisions and is terminal while originals, other spaces, projects and tags survive
+  ---
+  duration_ms: 1549.1361
+  type: 'test'
+  ...
+# Subtest: retention SQL: GC retains shared paths, claims only orphans, rejects late uploads, and owner/worker privileges are isolated
+ok 91 - retention SQL: GC retains shared paths, claims only orphans, rejects late uploads, and owner/worker privileges are isolated
+  ---
+  duration_ms: 1356.634
+  type: 'test'
+  ...
+# Subtest: retention worker: authenticates before claiming, removes Storage bytes, and retains failed deletions for retry
+ok 92 - retention worker: authenticates before claiming, removes Storage bytes, and retains failed deletions for retry
+  ---
+  duration_ms: 23.6636
+  type: 'test'
+  ...
+# Subtest: offline image expiry retains encrypted bytes for a remote restore, then permanent deletion removes them
+ok 93 - offline image expiry retains encrypted bytes for a remote restore, then permanent deletion removes them
+  ---
+  duration_ms: 306.2352
+  type: 'test'
+  ...
+# Subtest: offline expiry: the server's active head survives unsent local trash, while permanent notices remain terminal
+ok 94 - offline expiry: the server's active head survives unsent local trash, while permanent notices remain terminal
+  ---
+  duration_ms: 48.8832
+  type: 'test'
+  ...
+# Subtest: projects: all tools use one shared membership graph and project deletion preserves originals
+ok 95 - projects: all tools use one shared membership graph and project deletion preserves originals
+  ---
+  duration_ms: 59.5641
+  type: 'test'
+  ...
+# Subtest: space deletion: only memberships disappear across originals and every draft; sharing stays bound to the missing ID
+ok 96 - space deletion: only memberships disappear across originals and every draft; sharing stays bound to the missing ID
+  ---
+  duration_ms: 45.2629
+  type: 'test'
+  ...
+# Subtest: space deletion never mutates an immutable pending operation's payload
+ok 97 - space deletion never mutates an immutable pending operation's payload
+  ---
+  duration_ms: 18.7035
+  type: 'test'
+  ...
+# Subtest: permanent tombstones prevent an offline client from reviving a purged original or deleted space
+ok 98 - permanent tombstones prevent an offline client from reviving a purged original or deleted space
+  ---
+  duration_ms: 31.0142
+  type: 'test'
+  ...
+# Subtest: trash expiry removes original, history references and editing drafts, while a shared image survives
+ok 99 - trash expiry removes original, history references and editing drafts, while a shared image survives
+  ---
+  duration_ms: 34.9798
+  type: 'test'
+  ...
+# Subtest: trash retention: one Japan calendar month clamps month end, including leap years
+ok 100 - trash retention: one Japan calendar month clamps month end, including leap years
+  ---
+  duration_ms: 3.2641
+  type: 'test'
+  ...
+# Subtest: trash retention: exact deadline expires, restore clears it, re-trash starts a new month
+ok 101 - trash retention: exact deadline expires, restore clears it, re-trash starts a new month
+  ---
+  duration_ms: 0.3291
+  type: 'test'
+  ...
+# Subtest: metadata refuses alternate IP spellings, credentials, local names and non-HTTPS destinations
+ok 102 - metadata refuses alternate IP spellings, credentials, local names and non-HTTPS destinations
+  ---
+  duration_ms: 9.0146
+  type: 'test'
+  ...
+# Subtest: metadata DNS classification denies all private, special and tunneled addresses
+ok 103 - metadata DNS classification denies all private, special and tunneled addresses
+  ---
+  duration_ms: 3.5854
+  type: 'test'
+  ...
+# Subtest: mixed DNS answers and private redirect targets never reach the network adapter
+ok 104 - mixed DNS answers and private redirect targets never reach the network adapter
+  ---
+  duration_ms: 2.8757
+  type: 'test'
+  ...
+# Subtest: every public redirect is re-resolved, bounded, and uses its vetted address
+ok 105 - every public redirect is re-resolved, bounded, and uses its vetted address
+  ---
+  duration_ms: 4.6355
+  type: 'test'
+  ...
+# Subtest: pinned HTTPS options prevent a second DNS lookup while retaining TLS name validation
+ok 106 - pinned HTTPS options prevent a second DNS lookup while retaining TLS name validation
+  ---
+  duration_ms: 0.4792
+  type: 'test'
+  ...
+# Subtest: production transport limits streamed and declared sizes and refuses compressed/non-HTML responses
+ok 107 - production transport limits streamed and declared sizes and refuses compressed/non-HTML responses
+  ---
+  duration_ms: 5.3298
+  type: 'test'
+  ...
+# Subtest: metadata timeout also bounds DNS and adapter hangs
+ok 108 - metadata timeout also bounds DNS and adapter hangs
+  ---
+  duration_ms: 29.6497
+  type: 'test'
+  ...
+# Subtest: HTML metadata is inert decoded text with model-aligned UTF-16 limits
+ok 109 - HTML metadata is inert decoded text with model-aligned UTF-16 limits
+  ---
+  duration_ms: 2.3405
+  type: 'test'
+  ...
+# Subtest: route uses browser Host despite Next loopback normalization, and rejects foreign browser origins
+ok 110 - route uses browser Host despite Next loopback normalization, and rejects foreign browser origins
+  ---
+  duration_ms: 28.5113
+  type: 'test'
+  ...
+# Subtest: route bounds malformed/oversized bodies and aggregate concurrency/rate without trusting client IP headers
+ok 111 - route bounds malformed/oversized bodies and aggregate concurrency/rate without trusting client IP headers
+  ---
+  duration_ms: 12.5193
+  type: 'test'
+  ...
+# Subtest: 日本語・全角英数字の正規化と複数語AND検索
+ok 112 - 日本語・全角英数字の正規化と複数語AND検索
+  ---
+  duration_ms: 26.5583
+  type: 'test'
+  ...
+# Subtest: 保存は別の接続で復元でき、下書きが正式なメモに変わる
+ok 113 - 保存は別の接続で復元でき、下書きが正式なメモに変わる
+  ---
+  duration_ms: 18.329
+  type: 'test'
+  ...
+# Subtest: 古いrevisionの更新を拒否して新しい本文を保持
+ok 114 - 古いrevisionの更新を拒否して新しい本文を保持
+  ---
+  duration_ms: 14.7985
+  type: 'test'
+  ...
+# Subtest: 入力・スペースの検証失敗で下書きを消さない
+ok 115 - 入力・スペースの検証失敗で下書きを消さない
+  ---
+  duration_ms: 10.6196
+  type: 'test'
+  ...
+# Subtest: outbox書き込みの例外時はメモ保存もロールバック
+ok 116 - outbox書き込みの例外時はメモ保存もロールバック
+  ---
+  duration_ms: 5.308
+  type: 'test'
+  ...
+# Subtest: ごみ箱はバックアップに含まれ、復元できる
+ok 117 - ごみ箱はバックアップに含まれ、復元できる
+  ---
+  duration_ms: 9.8987
+  type: 'test'
+  ...
+# Subtest: 読み込みはIDを再発行し、既存メモとスペース参照を守る
+ok 118 - 読み込みはIDを再発行し、既存メモとスペース参照を守る
+  ---
+  duration_ms: 10.6344
+  type: 'test'
+  ...
+# Subtest: ユーザー定義スペースを保存し全角同名の重複を防ぐ
+ok 119 - ユーザー定義スペースを保存し全角同名の重複を防ぐ
+  ---
+  duration_ms: 9.0104
+  type: 'test'
+  ...
+# Subtest: Sketchbook: unsaved source-note association survives tool navigation and reopening
+ok 120 - Sketchbook: unsaved source-note association survives tool navigation and reopening
+  ---
+  duration_ms: 3315.7489
+  type: 'test'
+  ...
+# Subtest: Sketchbook: original strokes, draft editing revision, and Recall relation survive reopening without note duplication
+ok 121 - Sketchbook: original strokes, draft editing revision, and Recall relation survive reopening without note duplication
+  ---
+  duration_ms: 72.3562
+  type: 'test'
+  ...
+# Subtest: Sketchbook: invalid geometry and broken backup cannot alter existing drawings
+ok 122 - Sketchbook: invalid geometry and broken backup cannot alter existing drawings
+  ---
+  duration_ms: 22.7994
+  type: 'test'
+  ...
+# Subtest: Sketchbook SQL: two independent caches sync sketches, source links, deletion and restoration
+ok 123 - Sketchbook SQL: two independent caches sync sketches, source links, deletion and restoration
+  ---
+  duration_ms: 342.3826
+  type: 'test'
+  ...
+# Subtest: Sketchbook SQL: offline chains replay once and concurrent edits keep the newest local original in backup
+ok 124 - Sketchbook SQL: offline chains replay once and concurrent edits keep the newest local original in backup
+  ---
+  duration_ms: 185.0103
+  type: 'test'
+  ...
+# Subtest: Sketchbook SQL: legacy Recall pulls never receive sketch rows, while full stream retains all changes
+ok 125 - Sketchbook SQL: legacy Recall pulls never receive sketch rows, while full stream retains all changes
+  ---
+  duration_ms: 50.8601
+  type: 'test'
+  ...
+# Subtest: Sketchbook SQL: owner scoping, invalid strokes and cross-owner source references are enforced server side
+ok 126 - Sketchbook SQL: owner scoping, invalid strokes and cross-owner source references are enforced server side
+  ---
+  duration_ms: 89.016
+  type: 'test'
+  ...
+# Subtest: Sketchbook preview SQL: private object must belong to the current owner and exact live revision
+ok 127 - Sketchbook preview SQL: private object must belong to the current owner and exact live revision
+  ---
+  duration_ms: 64.0095
+  type: 'test'
+  ...
+# Subtest: Sketchbook preview adapter: validates PNG, uploads immutable private path and reclaims stale upload
+ok 128 - Sketchbook preview adapter: validates PNG, uploads immutable private path and reclaims stale upload
+  ---
+  duration_ms: 8.3529
+  type: 'test'
+  ...
+# Subtest: Sketchbook upgrade: v2 notes/outbox/draft survive and full cursor replays sketches hidden behind legacy cursor
+ok 129 - Sketchbook upgrade: v2 notes/outbox/draft survive and full cursor replays sketches hidden behind legacy cursor
+  ---
+  duration_ms: 81.2086
+  type: 'test'
+  ...
+# Subtest: Sketchbook relations: independent devices create the same source edge idempotently
+ok 130 - Sketchbook relations: independent devices create the same source edge idempotently
+  ---
+  duration_ms: 105.6834
+  type: 'test'
+  ...
+# Subtest: Sketchbook previews: reload retries use one immutable path and never remove a preexisting revision
+ok 131 - Sketchbook previews: reload retries use one immutable path and never remove a preexisting revision
+  ---
+  duration_ms: 4.192
+  type: 'test'
+  ...
+# Subtest: Sketchbook preview: legacy400 Duplicate retries safely while unrelated400 is rejected
+ok 132 - Sketchbook preview: legacy400 Duplicate retries safely while unrelated400 is rejected
+  ---
+  duration_ms: 4.067
+  type: 'test'
+  ...
+# Subtest: shared sync: a newer pulled remote survives cursor commit, reopen, and an older in-flight conflict
+ok 133 - shared sync: a newer pulled remote survives cursor commit, reopen, and an older in-flight conflict
+  ---
+  duration_ms: 140.4335
+  type: 'test'
+  ...
+# Subtest: shared sync: deferred remote outranks an older successful ack without dropping a later local edit
+ok 134 - shared sync: deferred remote outranks an older successful ack without dropping a later local edit
+  ---
+  duration_ms: 166.2778
+  type: 'test'
+  ...
+# Subtest: Sketchbook JSONB budget matches actual PostgreSQL UTF-8, separators and exponent expansion without rounding
+ok 135 - Sketchbook JSONB budget matches actual PostgreSQL UTF-8, separators and exponent expansion without rounding
+  ---
+  duration_ms: 4.2039
+  type: 'test'
+  ...
+# Subtest: Sketchbook size boundaries: locally accepted regular and scientific originals reach actual SQL; oversized originals never enter outbox
+ok 136 - Sketchbook size boundaries: locally accepted regular and scientific originals reach actual SQL; oversized originals never enter outbox
+  ---
+  duration_ms: 3670.2127
+  type: 'test'
+  ...
+# Subtest: Sketchbook operation and space limits reject unsendable imports atomically and retain the prior draft
+ok 137 - Sketchbook operation and space limits reject unsendable imports atomically and retain the prior draft
+  ---
+  duration_ms: 73.919
+  type: 'test'
+  ...
+# Subtest: shared sync: an unchanged successful acknowledgement retains the editor revision
+ok 138 - shared sync: an unchanged successful acknowledgement retains the editor revision
+  ---
+  duration_ms: 46.6252
+  type: 'test'
+  ...
+# Subtest: Suite navigation: wait for the latest draft commit and reject duplicate clicks
+ok 139 - Suite navigation: wait for the latest draft commit and reject duplicate clicks
+  ---
+  duration_ms: 2.2548
+  type: 'test'
+  ...
+# Subtest: Suite navigation: a failed save keeps the screen open and allows retry
+ok 140 - Suite navigation: a failed save keeps the screen open and allows retry
+  ---
+  duration_ms: 0.4157
+  type: 'test'
+  ...
+# Subtest: Suite navigation: active drawing blocks both the initial click and a deferred save
+ok 141 - Suite navigation: active drawing blocks both the initial click and a deferred save
+  ---
+  duration_ms: 0.2734
+  type: 'test'
+  ...
+# Subtest: Suite navigation: an invalidated account/repository cannot complete a deferred navigation
+ok 142 - Suite navigation: an invalidated account/repository cannot complete a deferred navigation
+  ---
+  duration_ms: 0.3456
+  type: 'test'
+  ...
+# Subtest: independent: two tabs sending the same durable operation cause one server mutation
+ok 143 - independent: two tabs sending the same durable operation cause one server mutation
+  ---
+  duration_ms: 3058.9617
+  type: 'test'
+  ...
+# Subtest: independent: a late pull after sign-out does not advance the closed account cursor
+ok 144 - independent: a late pull after sign-out does not advance the closed account cursor
+  ---
+  duration_ms: 102.4366
+  type: 'test'
+  ...
+# Subtest: independent: failed pull persistence rolls back records and cursor together
+ok 145 - independent: failed pull persistence rolls back records and cursor together
+  ---
+  duration_ms: 115.8091
+  type: 'test'
+  ...
+# Subtest: independent: the real 100-row RPC page boundary preserves all 205 notes
+ok 146 - independent: the real 100-row RPC page boundary preserves all 205 notes
+  ---
+  duration_ms: 5902.2418
+  type: 'test'
+  ...
+# Subtest: independent: same item UUID in two owner namespaces cannot mix account contents
+ok 147 - independent: same item UUID in two owner namespaces cannot mix account contents
+  ---
+  duration_ms: 78.0617
+  type: 'test'
+  ...
+# Subtest: independent: unresolved latest conflict copy is included in portable backup
+ok 148 - independent: unresolved latest conflict copy is included in portable backup
+  ---
+  duration_ms: 107.6616
+  type: 'test'
+  ...
+# Subtest: independent: keep-remote resolves against the current canonical version without duplicate notes
+ok 149 - independent: keep-remote resolves against the current canonical version without duplicate notes
+  ---
+  duration_ms: 118.8258
+  type: 'test'
+  ...
+# Subtest: RPCは種類違い・壊れた日時・逆行cursorを拒否する
+ok 150 - RPCは種類違い・壊れた日時・逆行cursorを拒否する
+  ---
+  duration_ms: 3.2723
+  type: 'test'
+  ...
+# Subtest: SQL例外と任意のtransport例外を画面用statusに露出しない
+ok 151 - SQL例外と任意のtransport例外を画面用statusに露出しない
+  ---
+  duration_ms: 25.7512
+  type: 'test'
+  ...
+# Subtest: v1端末DBを移行してメモと下書きを保持する
+ok 152 - v1端末DBを移行してメモと下書きを保持する
+  ---
+  duration_ms: 1890.7212
+  type: 'test'
+  ...
+# Subtest: 2端末で新規・編集・削除・復元と任意スペースを同期する
+ok 153 - 2端末で新規・編集・削除・復元と任意スペースを同期する
+  ---
+  duration_ms: 230.3245
+  type: 'test'
+  ...
+# Subtest: 通信結果不明でも同じoperation IDを再送して重複しない
+ok 154 - 通信結果不明でも同じoperation IDを再送して重複しない
+  ---
+  duration_ms: 59.4763
+  type: 'test'
+  ...
+# Subtest: オフラインの連続編集をpredecessor順に適用して自身の競合を作らない
+ok 155 - オフラインの連続編集をpredecessor順に適用して自身の競合を作らない
+  ---
+  duration_ms: 73.8682
+  type: 'test'
+  ...
+# Subtest: 送信中に編集しても古いackで最新本文を上書きしない
+ok 156 - 送信中に編集しても古いackで最新本文を上書きしない
+  ---
+  duration_ms: 51.5857
+  type: 'test'
+  ...
+# Subtest: 競合は両方を保持し、端末の最新編集を別メモとして残せる
+ok 157 - 競合は両方を保持し、端末の最新編集を別メモとして残せる
+  ---
+  duration_ms: 142.7986
+  type: 'test'
+  ...
+# Subtest: 差分を複数ページ取得し、古い差分で新しい本文を上書きしない
+ok 158 - 差分を複数ページ取得し、古い差分で新しい本文を上書きしない
+  ---
+  duration_ms: 177.9699
+  type: 'test'
+  ...
+# Subtest: アカウント変更でlate replyを適用せず、再起動後の再送は安全
+ok 159 - アカウント変更でlate replyを適用せず、再起動後の再送は安全
+  ---
+  duration_ms: 73.0548
+  type: 'test'
+  ...
+# Subtest: 取り込みは明示操作でのみ行い、原本を保持したportable backupを作る
+ok 160 - 取り込みは明示操作でのみ行い、原本を保持したportable backupを作る
+  ---
+  duration_ms: 85.2593
+  type: 'test'
+  ...
+# Subtest: 別userの応答と不正なRPC結果を永続化しない
+ok 161 - 別userの応答と不正なRPC結果を永続化しない
+  ---
+  duration_ms: 34.1717
+  type: 'test'
+  ...
+# Subtest: vault SQL: ciphertext sync is isolated, idempotent across fresh encryption nonces, and preserves conflicts
+ok 162 - vault SQL: ciphertext sync is isolated, idempotent across fresh encryption nonces, and preserves conflicts
+  ---
+  duration_ms: 2000.153
+  type: 'test'
+  ...
+# Subtest: vault migration: archive and verified encrypted sync precede atomic removal of legacy originals and history
+ok 163 - vault migration: archive and verified encrypted sync precede atomic removal of legacy originals and history
+  ---
+  duration_ms: 1536.7025
+  type: 'test'
+  ...
+# Subtest: vault migration: an archive failure retains all legacy data and a retry completes without losing offline edits
+ok 164 - vault migration: an archive failure retains all legacy data and a retry completes without losing offline edits
+  ---
+  duration_ms: 1535.204
+  type: 'test'
+  ...
+# Subtest: device retention: native structured keys resume encrypted content with fixed 24h expiry
+ok 165 - device retention: native structured keys resume encrypted content with fixed 24h expiry
+  ---
+  duration_ms: 216.7109
+  type: 'test'
+  ...
+# Subtest: device retention: account, project and modified descriptor cannot reuse a key
+ok 166 - device retention: account, project and modified descriptor cannot reuse a key
+  ---
+  duration_ms: 633.0222
+  type: 'test'
+  ...
+# Subtest: device retention: expiry and backwards clock remove persistent keys
+ok 167 - device retention: expiry and backwards clock remove persistent keys
+  ---
+  duration_ms: 606.8849
+  type: 'test'
+  ...
+# Subtest: device retention: manual lock removes persisted keys and blocks a pending password unlock
+ok 168 - device retention: manual lock removes persisted keys and blocks a pending password unlock
+  ---
+  duration_ms: 439.5663
+  type: 'test'
+  ...
+# Subtest: device retention: failed draft save keeps input unlocked; forced expiry revokes it
+ok 169 - device retention: failed draft save keeps input unlocked; forced expiry revokes it
+  ---
+  duration_ms: 231.5352
+  type: 'test'
+  ...
+# Subtest: device retention: revocation is synchronous and short preference remains available
+ok 170 - device retention: revocation is synchronous and short preference remains available
+  ---
+  duration_ms: 227.7025
+  type: 'test'
+  ...
+# Subtest: device retention: extractable or corrupt persisted keys are rejected and removed
+ok 171 - device retention: extractable or corrupt persisted keys are rejected and removed
+  ---
+  duration_ms: 208.6708
+  type: 'test'
+  ...
+# Subtest: device retention: revocation during an in-flight persistence operation cannot restore a key
+ok 172 - device retention: revocation during an in-flight persistence operation cannot restore a key
+  ---
+  duration_ms: 202.7433
+  type: 'test'
+  ...
+# Subtest: device retention: a key deletion failure still closes memory after the synchronous revocation
+ok 173 - device retention: a key deletion failure still closes memory after the synchronous revocation
+  ---
+  duration_ms: 221.8239
+  type: 'test'
+  ...
+# Subtest: vault: fresh authenticated encryption rejects tampering and record/owner substitution
+ok 174 - vault: fresh authenticated encryption rejects tampering and record/owner substitution
+  ---
+  duration_ms: 6.645
+  type: 'test'
+  ...
+# Subtest: vault: password and offline recovery open the same data; wrong credentials and lock fail closed
+ok 175 - vault: password and offline recovery open the same data; wrong credentials and lock fail closed
+  ---
+  duration_ms: 621.3469
+  type: 'test'
+  ...
+# Subtest: vault: drafts, originals, outbox and conflicts are ciphertext in the actual IndexedDB
+ok 176 - vault: drafts, originals, outbox and conflicts are ciphertext in the actual IndexedDB
+  ---
+  duration_ms: 23.0284
+  type: 'test'
+  ...
+# Subtest: vault: encrypted backup round trip hides content and authenticates the payload
+ok 177 - vault: encrypted backup round trip hides content and authenticates the payload
+  ---
+  duration_ms: 2.6807
+  type: 'test'
+  ...
+# Subtest: vault: image storage contains only encrypted octet streams and round trips exact original bytes
+ok 178 - vault: image storage contains only encrypted octet streams and round trips exact original bytes
+  ---
+  duration_ms: 3.581
+  type: 'test'
+  ...
+# Subtest: vault: locking flushes registered drafts, invalidates open repositories, and never falls back to plaintext
+ok 179 - vault: locking flushes registered drafts, invalidates open repositories, and never falls back to plaintext
+  ---
+  duration_ms: 221.1511
+  type: 'test'
+  ...
+# Subtest: vault: backup headers cannot overwrite an existing key descriptor, and a wrong key cannot modify an encrypted database
+ok 180 - vault: backup headers cannot overwrite an existing key descriptor, and a wrong key cannot modify an encrypted database
+  ---
+  duration_ms: 678.5574
+  type: 'test'
+  ...
+# Subtest: multi-zone route preserves page slashes, files, nested assets and query in the Next compiler
+ok 181 - multi-zone route preserves page slashes, files, nested assets and query in the Next compiler
+  ---
+  duration_ms: 4.4554
+  type: 'test'
+  ...
+# Subtest: zone destination accepts an origin, never credentials, arbitrary paths or nonlocal plaintext
+ok 182 - zone destination accepts an origin, never credentials, arbitrary paths or nonlocal plaintext
+  ---
+  duration_ms: 0.639
+  type: 'test'
+  ...
+# Subtest: Atlas zone preserves AI routes, item links, manifest and static assets in the Next compiler
+ok 183 - Atlas zone preserves AI routes, item links, manifest and static assets in the Next compiler
+  ---
+  duration_ms: 1.6967
+  type: 'test'
+  ...
+# Subtest: Collect rewrite preserves share queries, metadata route and its independent asset paths
+ok 184 - Collect rewrite preserves share queries, metadata route and its independent asset paths
+  ---
+  duration_ms: 1.0194
+  type: 'test'
+  ...
+1..184
+# tests 184
+# suites 0
+# pass 184
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 22947.3568

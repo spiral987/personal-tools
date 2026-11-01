@@ -1,0 +1,33 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "results": [
+    {
+      "name": "画像の下書き保存・投稿・原本の再読込",
+      "pass": true
+    },
+    {
+      "name": "暗号処理とBlob読込の遅延・連続下書き保存",
+      "pass": true
+    },
+    {
+      "name": "同時編集はrevision比較で1件だけ確定",
+      "pass": true
+    },
+    {
+      "name": "容量不足で原本・記録・下書き・同期待ちが一括で戻る",
+      "pass": true
+    },
+    {
+      "name": "保存途中のロックは未確定の原本と記録を残さない",
+      "pass": true
+    },
+    {
+      "name": "非同期のIndexedDBエラーでも全体を取り消す",
+      "pass": true
+    },
+    {
+      "name": "旧形式の画像下書きは遅延暗号処理でも一括移行",
+      "pass": true
+    }
+  ]
+}

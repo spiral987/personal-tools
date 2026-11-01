@@ -68,3 +68,19 @@ Supabaseの実際のメール配信、PostgREST/JWT、Storage upload/download/si
 - [Storage access control](https://supabase.com/docs/guides/storage/security/access-control)
 - [PostgreSQL row locks](https://www.postgresql.org/docs/current/explicit-locking.html)
 - [PGlite API](https://pglite.dev/docs/api)
+
+## Phase 5
+
+Atlasのprojects・project_items・item_labelsと同期stream、任意のAI設定・analysis_jobs・search_documentsを追加します。可変次元のembeddingで少数資料を評価し、ownerと絞り込みをSQL内で順位より前に適用します。新規テーブルはRLS有効、変更はRPCのみ、解析workerはservice_role専用です。手順は [Phase 5](../docs/phase5-setup.md)、実際の反映履歴は [検証記録](../docs/phase5-verification.md) を参照してください。
+
+## 暗号化金庫
+
+`20261031082941_encrypted_vault.sql` が暗号文用の所有者RLS、同期RPC、移行アーカイブ、private画像bucketを追加します。初回の解錠・アカウント接続時に旧データを検証しながら移行します。鍵情報だけの追加で既存データが直ちに暗号化されるわけではありません。[手順と保護範囲](../docs/encrypted-vault.md)を参照してください。
+
+## ごみ箱の自動整理（段階D）
+
+`20261031174826_suite_lifecycle.sql` と `20261031225314_harden_vault_retention.sql` を追加。暗号化同期v2、所有者別の削除通知、削除期限、画像参照索引と再試行キューを使います。初回の端末側の索引移行完了後に期限削除を有効にします。
+
+`pg_cron` が10分ごとに `private.run_vault_retention()` を実行し、本文の暗号文と履歴を削除してから `vault-retention` Edge Functionを呼びます。関数はStorage APIで画像の実データを削除します。スケジューラーの専用トークンはSupabase Vault内で生成・保持し、service_roleはEdgeの実行環境内だけで利用します。ブラウザにはどちらも渡しません。`verify_jwt=false` の代わりに、専用トークンによる認証を関数内で必ず検証します。キューの取得・完了RPCはservice_role専用です。
+
+アプリを閉じた状態の定期実行、Freeでの休止、削除対象・保持する通知は [段階Dの記録](../docs/atlas-improvement-phase-d-verification-2026-11-01.md) と [保護範囲](../docs/encrypted-vault.md) を参照してください。

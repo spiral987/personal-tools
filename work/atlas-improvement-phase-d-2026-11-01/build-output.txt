@@ -1,0 +1,94 @@
+$ pnpm --filter @personal-tools/recall --filter @personal-tools/sketchbook --filter @personal-tools/collect --filter @personal-tools/atlas build
+Scope: 4 of 9 workspace projects
+apps/recall build$ next build
+apps/collect build$ next build
+apps/sketchbook build$ next build
+apps/atlas build$ next build
+apps/sketchbook build: ▲ Next.js 16.4.3 (Turbopack)
+apps/recall build: ▲ Next.js 16.4.3 (Turbopack)
+apps/recall build: - Environments: .env.local
+apps/collect build: ▲ Next.js 16.4.3 (Turbopack)
+apps/collect build: - Environments: .env.local
+apps/atlas build: ▲ Next.js 16.4.3 (Turbopack)
+apps/atlas build: - Environments: .env.local
+apps/sketchbook build: - Environments: .env.local
+apps/collect build: ✓ Running next.config.ts took 101ms
+apps/sketchbook build: ✓ Running next.config.ts took 104ms
+apps/atlas build: ✓ Running next.config.ts took 102ms
+apps/recall build: ✓ Running next.config.ts took 105ms
+apps/sketchbook build:   Creating an optimized production build ...
+apps/atlas build:   Creating an optimized production build ...
+apps/recall build:   Creating an optimized production build ...
+apps/collect build:   Creating an optimized production build ...
+apps/recall build: ✓ Compiled successfully in 2.5s
+apps/recall build:   Running TypeScript ...
+apps/sketchbook build: ✓ Compiled successfully in 2.9s
+apps/collect build: ✓ Compiled successfully in 2.9s
+apps/sketchbook build:   Running TypeScript ...
+apps/collect build:   Running TypeScript ...
+apps/atlas build: ✓ Compiled successfully in 3.0s
+apps/atlas build:   Running TypeScript ...
+apps/recall build:   Finished TypeScript in 6.1s ...
+apps/recall build:   Collecting page data using 6 workers ...
+apps/atlas build:   Finished TypeScript in 5.8s ...
+apps/atlas build:   Collecting page data using 6 workers ...
+apps/sketchbook build:   Finished TypeScript in 6.2s ...
+apps/sketchbook build:   Collecting page data using 5 workers ...
+apps/collect build:   Finished TypeScript in 6.5s ...
+apps/collect build:   Collecting page data using 6 workers ...
+apps/recall build:   Generating static pages using 6 workers (0/4) ...
+apps/atlas build:   Generating static pages using 6 workers (0/5) ...
+apps/sketchbook build:   Generating static pages using 5 workers (0/4) ...
+apps/collect build:   Generating static pages using 6 workers (0/4) ...
+apps/recall build:   Generating static pages using 6 workers (1/4)
+apps/atlas build:   Generating static pages using 6 workers (1/5)
+apps/recall build:   Generating static pages using 6 workers (2/4)
+apps/recall build:   Generating static pages using 6 workers (3/4)
+apps/recall build: ✓ Generating static pages using 6 workers (4/4) in 2.3s
+apps/recall build:   Finalizing page optimization ...
+apps/recall build: Route (app)
+apps/recall build: ┌ ○ /
+apps/recall build: ├ ○ /_not-found
+apps/recall build: ├ ƒ /auth/callback
+apps/recall build: └ ○ /manifest.webmanifest
+apps/recall build: ƒ Proxy (Middleware)
+apps/recall build: ○  (Static)   prerendered as static content
+apps/recall build: ƒ  (Dynamic)  server-rendered on demand
+apps/atlas build:   Generating static pages using 6 workers (2/5)
+apps/recall build: Done
+apps/atlas build:   Generating static pages using 6 workers (3/5)
+apps/atlas build: ✓ Generating static pages using 6 workers (5/5) in 2.1s
+apps/atlas build:   Finalizing page optimization ...
+apps/atlas build: Route (app)
+apps/atlas build: ┌ ○ /
+apps/atlas build: ├ ○ /_not-found
+apps/atlas build: ├ ƒ /api/ai
+apps/atlas build: └ ○ /manifest.webmanifest
+apps/atlas build: ƒ Proxy (Middleware)
+apps/atlas build: ○  (Static)   prerendered as static content
+apps/atlas build: ƒ  (Dynamic)  server-rendered on demand
+apps/sketchbook build:   Generating static pages using 5 workers (1/4)
+apps/collect build:   Generating static pages using 6 workers (1/4)
+apps/atlas build: Done
+apps/sketchbook build:   Generating static pages using 5 workers (2/4)
+apps/sketchbook build:   Generating static pages using 5 workers (3/4)
+apps/sketchbook build: ✓ Generating static pages using 5 workers (4/4) in 2.0s
+apps/collect build:   Generating static pages using 6 workers (2/4)
+apps/sketchbook build:   Finalizing page optimization ...
+apps/collect build:   Generating static pages using 6 workers (3/4)
+apps/collect build: ✓ Generating static pages using 6 workers (4/4) in 2.0s
+apps/collect build:   Finalizing page optimization ...
+apps/sketchbook build: Route (app)
+apps/sketchbook build: ┌ ○ /
+apps/sketchbook build: ├ ○ /_not-found
+apps/sketchbook build: └ ○ /manifest.webmanifest
+apps/sketchbook build: ○  (Static)  prerendered as static content
+apps/collect build: Route (app)
+apps/collect build: ┌ ○ /
+apps/collect build: ├ ○ /_not-found
+apps/collect build: ├ ƒ /api/metadata
+apps/collect build: └ ○ /manifest.webmanifest
+apps/collect build: ○  (Static)   prerendered as static content
+apps/collect build: ƒ  (Dynamic)  server-rendered on demand
+apps/sketchbook build: Done
+apps/collect build: Done

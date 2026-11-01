@@ -1,0 +1,14 @@
+4ツールの移動・再読込で再入力不要、期限は延長しない: 成功
+ブラウザプロセス終了・再起動後、非抽出鍵で下書きを復元: 成功
+準備済みの公開画面をオフラインで再読込し、期限内の下書きを復元: 成功
+ページ保存から復帰した場合も元の期限内で解錠を復元: 成功
+Checking locked test tab: http://127.0.0.1:3190/recall/
+Checking locked test tab: http://127.0.0.1:3190/recall/
+Checking locked test tab: http://127.0.0.1:3190/collect/
+Checking locked test tab: http://127.0.0.1:3190/collect/
+Checking locked test tab: http://127.0.0.1:3190/sketchbook/
+Checking locked test tab: http://127.0.0.1:3190/sketchbook/
+手動ロックは全タブの保存を待ち、未編集タブが3ツールの最新下書きを上書きしない: 成功
+設定の短時間ロックは保持鍵を残さず、無操作5分と再読込で再解錠: 成功
+24時間の期限超過で表示を閉じ、保持鍵を削除: 成功
+別アカウント・同期先の保持情報では画面を開かず鍵を削除: 成功

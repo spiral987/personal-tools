@@ -1,0 +1,2 @@
+import type {MetadataRoute} from "next";
+export default function manifest():MetadataRoute.Manifest{return {id:"/atlas/",name:"Atlas — 記録をつなぐ",short_name:"Atlas",description:"思考、スケッチ、資料を横断して見つける。",start_url:"/atlas/",scope:"/atlas/",display:"standalone",background_color:"#f4f3ee",theme_color:"#f4f3ee",icons:[{src:"/atlas/icon.svg",sizes:"any",type:"image/svg+xml",purpose:"any"},{src:"/atlas/icon-192.png",sizes:"192x192",type:"image/png"},{src:"/atlas/icon-512.png",sizes:"512x512",type:"image/png"}]};}

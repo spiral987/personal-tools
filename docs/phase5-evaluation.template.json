@@ -1,0 +1,127 @@
+[
+  {
+    "query": "青い夕方の路地",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "雨に濡れた夜の看板",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "俯瞰の人物構図",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "逆光のシルエット",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "暖かい室内の光",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "赤い差し色がある街",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "静かな水辺",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "木漏れ日の公園",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "遠近感の強い階段",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "狭い通路の構図",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "空を大きく入れた風景",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "二人が向かい合う構図",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "横顔の表情",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "手元のしぐさ",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "動きのあるポーズ",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "丸い形の建物",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "古い紙の質感",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "金属の反射",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "青と橙の配色",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "霧のある森",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "文字のあるポスター",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "横長の画面構成",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "人物を小さく配置した風景",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "見上げる視点",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  },
+  {
+    "query": "創作の着想になった写真",
+    "expectedItemIds": [],
+    "rankedItemIds": []
+  }
+]

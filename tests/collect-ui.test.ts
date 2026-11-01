@@ -4,6 +4,25 @@ import assert from "node:assert/strict";
 import {ConflictError,openRecallRepository,prepareResourceImage} from "../packages/api-client/src/index.ts";
 import {blankCapture,captureFingerprint,draftFor,initialCapture,mergeShareCapture,readShareCapture,rebaseMetadataDraft,safeLink,withoutShareParams} from "../apps/collect/app/capture.ts";
 import {saveCaptureResource} from "../apps/collect/app/draft-save.ts";
+import {clipboardImage} from "../apps/collect/app/clipboard.ts";
+import {imageCaptureFields} from "../apps/collect/app/capture.ts";
+
+test("Collect image input: a link URL becomes the source without discarding a distinct existing source",()=>{
+  const draft={...blankCapture(),url:"https://example.test/article",title:"残す題",memo:"残す本文",spaceIds:["research"]},before=structuredClone(draft);
+  assert.deepEqual(imageCaptureFields(draft),{resourceType:"image",url:"",sourceUrl:draft.url});
+  assert.deepEqual(draft,before);
+  assert.throws(()=>imageCaptureFields({...draft,sourceUrl:"https://example.test/original"}),/両方を残す/);
+});
+
+test("Collect clipboard: text stays native, file lists are not duplicated, and multiple images require separate pastes",()=>{
+  const file=new File(["image"],"pasted.png",{type:"image/png"});
+  const data=(items:unknown[],files:File[]=[])=>({items,files}) as unknown as Pick<DataTransfer,"items"|"files">;
+  assert.equal(clipboardImage(data([{kind:"string",type:"text/plain"}],[])),null);
+  assert.equal(clipboardImage(data([{kind:"file",type:"image/png",getAsFile:()=>file}],[file])),file);
+  assert.equal(clipboardImage(data([],[file])),file);
+  assert.equal(clipboardImage(data([{kind:"file",type:"image/png",getAsFile:()=>null}])),null);
+  assert.throws(()=>clipboardImage(data([],[file,file])),/1枚ずつ/);
+});
 
 const databaseName=()=>`collect-ui-${crypto.randomUUID()}`;
 const gif=()=>new Blob([Buffer.from("R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==","base64")],{type:"image/gif"});

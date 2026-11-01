@@ -1,0 +1,1 @@
+{"origin":"https://personal-tools-seven-ruby.vercel.app","checks":61,"pass":true}

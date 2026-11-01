@@ -5,12 +5,27 @@ import { openRecallRepository, openAccountRecallRepository, createSyncEngine, cr
     uploadSketchPreview, downloadSketchPreview, type SketchPreviewClient, type AccountRecallRepository } from "../packages/api-client/src/index.ts";
 import { parseSketchStrokes, parseSketchSpaceIds, parseSketchBackup, jsonbByteLength, assertSketchSyncBudget, type SketchStroke } from "../packages/core/src/index.ts";
 import { createTestDatabase } from "./helpers/database.ts";
+import {shouldRestoreSketchDraft} from "../apps/sketchbook/app/draft-recovery.ts";
 
 let database: Awaited<ReturnType<typeof createTestDatabase>>;
 before(async () => { database = await createTestDatabase(); });
 after(async () => { await database.close(); });
 const strokes = (x = 20): SketchStroke[] => [{ id: crypto.randomUUID(), tool: "pen", color: "#243449", width: 4, points: [{ x, y: 30, pressure: 0.5 }, { x: x + 10, y: 40, pressure: 0.6 }] }];
 const name = () => `sketch-test-${crypto.randomUUID()}`;
+test("Sketchbook: unsaved source-note association survives tool navigation and reopening",async()=>{
+    const dbName=name(),repo=await openRecallRepository(dbName),sourceNoteId=crypto.randomUUID();
+    const saved=await repo.saveSketch({title:"未保存の描画",strokes:strokes(),spaceIds:[]});
+    const draft={title:saved.title,strokes:saved.strokes,spaceIds:saved.spaceIds,editingId:saved.id,expectedRevision:saved.localRevision};
+    assert.equal(shouldRestoreSketchDraft(draft,saved),false);
+    await repo.saveSketchDraft({...draft,sourceNoteId});
+    repo.close();const reopened=await openRecallRepository(dbName);
+    try{
+        assert.equal((await reopened.loadSketchDraft()).sourceNoteId,sourceNoteId);
+        assert.equal(shouldRestoreSketchDraft(await reopened.loadSketchDraft(),saved),true,"Unsaved association must take priority over another original link");
+        await assert.rejects(reopened.saveSketchDraft({title:"拒否する版",strokes:[],spaceIds:[],sourceNoteId:"invalid"}));
+        assert.equal((await reopened.loadSketchDraft()).title,"未保存の描画");
+    }finally{reopened.close();}
+});
 async function device(t: TestContext, ownerId: string) {
     const repo = await openAccountRecallRepository(ownerId, { name: name() }); t.after(() => repo.close()); return repo;
 }
@@ -18,7 +33,7 @@ function transport(ownerId: string) {
     return createSupabaseSyncTransport({ async rpc(method, args) {
         try {
             return { data: method === "apply_sync_operation" ? await database.apply(ownerId, args.p_operation)
-                : await database.pullSuite(ownerId, String(args.p_cursor), Number(args.p_limit)), error: null };
+                : await database.pullAtlas(ownerId, String(args.p_cursor), Number(args.p_limit)), error: null };
         } catch (error) { return { data: null, error: { message: String(error) } }; }
     } }, ownerId);
 }
@@ -111,7 +126,7 @@ test("Sketchbook SQL: owner scoping, invalid strokes and cross-owner source refe
     await assert.rejects(database.apply(b, invalid), /Invalid stroke/);
     const relationId = crypto.randomUUID();
     await assert.rejects(database.apply(b, { id: crypto.randomUUID(), kind: "put_relation", entityId: relationId, baseRevision: null,
-        payload: { id: relationId, kind: "relation", type: "inspired_by", fromItemId: drawing.id, toItemId: note.id, createdAt: new Date().toISOString(), deletedAt: null } }), /not found in your account/);
+        payload: { id: relationId, kind: "relation", type: "inspired_by", fromItemId: drawing.id, toItemId: note.id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), deletedAt: null } }), /not found in your account/);
     assert.equal((await database.queryAs(a, "select * from public.sketches")).rows.length, 0);
     await assert.rejects(database.queryAs(a, "select private._sync_sketch($1,$2)", [b, drawing.id]), /permission denied/);
     await assert.rejects(database.queryAs(null, "select public.pull_suite_changes('0',100)"), /permission denied/);

@@ -1,5 +1,7 @@
-import { parseSketchStrokes, parseResource, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus } from "@personal-tools/core";
+import { RELATION_TYPES,parseProjectFields,parseTags, parseSketchStrokes, parseResource, type SyncRecord, type SyncOperation, type SyncChange, type SyncPushResult, type SyncPullResult, type SyncStatus,validatePurgeNotice,type PurgeNotice,purgeDeadline } from "@personal-tools/core";
 import type { AccountRecallRepository } from "./repository.ts";
+import {assertVault,encryptVault,decryptVault,requireVault,vaultCommitment,type CipherBox} from "./vault.ts";
+import {retentionMetadata} from "./vault-retention.ts";
 export interface SyncTransport {
     readonly userId: string;
     push(operation: SyncOperation): Promise<SyncPushResult>;
@@ -49,8 +51,11 @@ function validateRecord(value: unknown, userId: string): SyncRecord {
     }
     else if (record.kind === "relation") {
         const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        if (record.type !== "inspired_by" || typeof record.fromItemId !== "string" || !uuid.test(record.fromItemId) || typeof record.toItemId !== "string" || !uuid.test(record.toItemId) || record.fromItemId === record.toItemId ||
+        if (!RELATION_TYPES.includes(record.type as never) || typeof record.fromItemId !== "string" || !uuid.test(record.fromItemId) || typeof record.toItemId !== "string" || !uuid.test(record.toItemId) || record.fromItemId === record.toItemId ||
             !isDate(record.updatedAt) || !(record.deletedAt === null || isDate(record.deletedAt))) throw new SyncTransportError("関連付けの同期応答が正しくありません。");
+    }
+    else if(record.kind==="project"||record.kind==="labels"){
+        try{if(record.kind==="project")parseProjectFields(record);else parseTags(record.tags);if(!isDate(record.updatedAt)||!(record.deletedAt===null||isDate(record.deletedAt)))throw new Error();}catch{throw new SyncTransportError("Atlasの同期応答が正しくありません。");}
     }
     else if(record.kind==="resource"){
         try{parseResource(record);}catch{throw new SyncTransportError("資料の同期応答が正しくありません。");}
@@ -83,7 +88,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string): 
             };
         },
         async pull(cursor, limit) {
-            const { data, error } = await client.rpc("pull_tools_changes", {
+            const { data, error } = await client.rpc("pull_atlas_changes", {
                 p_cursor: cursor, p_limit: limit
             });
             if (error)
@@ -94,7 +99,7 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string): 
             let previousCursor = BigInt(cursor);
             const changes: SyncChange[] = result.changes.map(value => {
                 const change = asObject(value);
-                if (!["note", "space", "sketch", "relation","resource"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
+                if (!["note", "space", "sketch", "relation","resource","project","labels"].includes(String(change.entity)) || typeof change.cursor !== "string" || !/^\d{1,19}$/.test(change.cursor) || BigInt(change.cursor) <= previousCursor)
                     throw new SyncTransportError("同期の変更位置が正しくありません。");
                 previousCursor = BigInt(change.cursor);
                 const record = validateRecord(change.record, userId);
@@ -111,6 +116,35 @@ export function createSupabaseSyncTransport(client: RpcClient, userId: string): 
             };
         },
     };
+}
+export function createEncryptedSyncTransport(client:RpcClient,userId:string,options:{legacy?:boolean}={}):SyncTransport{
+ const vault=requireVault();
+ const context=(entity:string,id:string)=>`sync:${JSON.stringify([userId,entity,id])}`;
+ async function record(value:unknown){
+  const r=asObject(value);if(typeof r.entity!=="string"||typeof r.id!=="string"||!Number.isSafeInteger(r.revision)||Number(r.revision)<1)throw new SyncTransportError(RETRY_MESSAGE);
+  const payload=asObject(await decryptVault(r.box as CipherBox,context(r.entity,r.id),vault));
+  if(payload.id!==r.id||("kind" in payload?payload.kind:"space")!==r.entity)throw new SyncTransportError(RETRY_MESSAGE);
+  const record=validateRecord({...payload,serverRevision:r.revision},userId);
+  if(r.retention&&asObject(r.retention).purgeAt!==purgeDeadline(record))throw new SyncTransportError(RETRY_MESSAGE);
+  return record;
+ }
+ return {userId,async push(operation){
+  assertVault(vault);const entity=operation.kind.slice(4),box=await encryptVault(operation.payload,context(entity,operation.entityId),vault);
+  const retention=await retentionMetadata(operation.payload,userId);
+  const commitment=await vaultCommitment(options.legacy?operation.payload:{payload:operation.payload,retention},`operation:${userId}:${operation.id}`,vault);
+  const {data,error}=await client.rpc(options.legacy?"push_vault_record":"push_vault_record_v2",{p_operation:{id:operation.id,entity,entityId:operation.entityId,baseRevision:operation.baseRevision,previousOperationId:operation.previousOperationId??null,box,commitment,...(options.legacy?{}:{retention})}});assertVault(vault);if(error)throw rpcError(error);
+  const result=asObject(data);if(result.status==="purged"){const purged=validatePurgeNotice(result.purged,userId);if(result.operationId!==operation.id||purged.entity!==entity||purged.id!==operation.entityId)throw new SyncTransportError(RETRY_MESSAGE);return {status:"purged",operationId:operation.id,purged};}
+  if(result.operationId!==operation.id||!["applied","conflict"].includes(result.status as string))throw new SyncTransportError(RETRY_MESSAGE);
+  const canonical=await record(result.record);if(canonical.id!==operation.entityId||("kind" in canonical?canonical.kind:"space")!==entity)throw new SyncTransportError(RETRY_MESSAGE);
+  return {status:result.status as "applied"|"conflict",operationId:operation.id,record:canonical,...(typeof result.conflictId==="string"?{conflictId:result.conflictId}:{})};
+ },async pull(cursor,limit){
+  assertVault(vault);const {data,error}=await client.rpc(options.legacy?"pull_vault_changes":"pull_vault_changes_v2",{p_cursor:cursor,p_limit:limit});assertVault(vault);if(error)throw rpcError(error);
+  const result=asObject(data);if(typeof result.cursor!=="string"||!/^\d{1,19}$/.test(result.cursor)||typeof result.hasMore!=="boolean"||!Array.isArray(result.changes)||result.changes.length>limit)throw new SyncTransportError(RETRY_MESSAGE);
+  let previous=BigInt(cursor);const changes:SyncChange[]=[],purges:PurgeNotice[]=[];
+  for(const value of result.changes){const c=asObject(value);if(typeof c.cursor!=="string"||!/^\d{1,19}$/.test(c.cursor)||BigInt(c.cursor)<=previous)throw new SyncTransportError(RETRY_MESSAGE);previous=BigInt(c.cursor);if(c.purged){const purged=validatePurgeNotice(c.purged,userId);if(purged.entity!==c.entity)throw new SyncTransportError(RETRY_MESSAGE);purges.push({...purged,cursor:c.cursor});continue;}const payload=await record(c.record);if(c.entity!==("kind" in payload?payload.kind:"space"))throw new SyncTransportError(RETRY_MESSAGE);changes.push({cursor:c.cursor,entity:c.entity as SyncChange["entity"],record:payload});}
+  if(previous!==BigInt(result.cursor)||(result.hasMore&&!result.changes.length))throw new SyncTransportError(RETRY_MESSAGE);
+  return {cursor:result.cursor,hasMore:result.hasMore,changes,purges};
+ }};
 }
 export type SyncEngine = {
     run(): Promise<SyncStatus>;

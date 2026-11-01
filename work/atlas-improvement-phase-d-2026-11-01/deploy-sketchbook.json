@@ -1,0 +1,41 @@
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_7mj19gCMAaHVmBFv3jCevTD4obZD",
+    "url": "https://personal-tools-sketchbook-elnadipdj-spiral987-c31cbce1.vercel.app",
+    "productionUrl": null,
+    "inspectorUrl": "https://vercel.com/spiral987-c31cbce1/personal-tools-sketchbook/7mj19gCMAaHVmBFv3jCevTD4obZD",
+    "readyState": "INITIALIZING",
+    "target": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_7mj19gCMAaHVmBFv3jCevTD4obZD",
+    "buildMachine": {
+      "cores": 2,
+      "memory": 8192,
+      "machine": "basic",
+      "selectionType": "fixed",
+      "selectionSource": "plan-default"
+    },
+    "deploymentProtection": [
+      "vercel_authentication"
+    ]
+  },
+  "message": "Deployment personal-tools-sketchbook-elnadipdj-spiral987-c31cbce1.vercel.app ready.",
+  "next": [
+    {
+      "command": "vercel git connect --scope spiral987-c31cbce1 --project prj_GCR5Oe89SoKv82VMSX6SzcvcoUQC",
+      "when": "Automatically deploy changes on every push"
+    },
+    {
+      "command": "vercel curl https://personal-tools-sketchbook-elnadipdj-spiral987-c31cbce1.vercel.app",
+      "when": "Verify deployment, including when Deployment Protection is enabled"
+    },
+    {
+      "command": "vercel inspect personal-tools-sketchbook-elnadipdj-spiral987-c31cbce1.vercel.app --scope spiral987-c31cbce1",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod --scope spiral987-c31cbce1",
+      "when": "Promote to production"
+    }
+  ]
+}

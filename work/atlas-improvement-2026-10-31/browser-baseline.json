@@ -1,0 +1,11 @@
+{
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "results": [
+    {
+      "name": "画像の下書き保存・投稿・原本の再読込",
+      "pass": false,
+      "error": "TransactionInactiveError: Failed to execute 'put' on 'IDBObjectStore': The transaction is not active.",
+      "stack": "TransactionInactiveError: Failed to execute 'put' on 'IDBObjectStore': The transaction is not active.\n    at http://127.0.0.1:3190/packages/api-client/src/vault-idb.ts:51:212\n    at async http://127.0.0.1:3190/packages/api-client/src/vault-idb.ts:23:65"
+    }
+  ]
+}

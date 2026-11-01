@@ -1,7 +1,7 @@
 import type {NextConfig} from "next";
 const config:NextConfig={
   basePath:"/sketchbook",trailingSlash:true,
-  transpilePackages:["@personal-tools/core","@personal-tools/api-client","@personal-tools/auth"],
-  async headers(){return [{source:"/",headers:[{key:"X-Sketchbook-Public-Shell",value:"1"}]}];},
+  transpilePackages:["@personal-tools/core","@personal-tools/api-client","@personal-tools/auth","@personal-tools/ui"],
+  async headers(){return [{source:"/:path*",headers:[{key:"Referrer-Policy",value:"no-referrer"},{key:"X-Content-Type-Options",value:"nosniff"},{key:"X-Frame-Options",value:"DENY"},{key:"Content-Security-Policy",value:"frame-ancestors 'none'; object-src 'none'; base-uri 'self'"}]},{source:"/",headers:[{key:"X-Sketchbook-Public-Shell",value:"1"}]}];},
 };
 export default config;

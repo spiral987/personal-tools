@@ -11,6 +11,7 @@ export async function createTestDatabase() {
   const db=await PGlite.create();
   await db.exec(`
     create role anon nologin;
+    create role service_role nologin;
     create role authenticated nologin;
     create schema auth;
     create table auth.users(id uuid primary key);
@@ -54,6 +55,10 @@ export async function createTestDatabase() {
     async pullSuite(userId:string,cursor="0",limit=100) {
       const result=await queryAs(userId,"select public.pull_suite_changes($1,$2) as result",[cursor,limit]);
       return result.rows[0].result as {changes:{cursor:string;entity:"note"|"space"|"sketch"|"relation";record:Record<string,unknown>}[];cursor:string;hasMore:boolean};
+    },
+    async pullAtlas(userId:string,cursor="0",limit=100) {
+      const result=await queryAs(userId,"select public.pull_atlas_changes($1,$2) as result",[cursor,limit]);
+      return result.rows[0].result as import("../../packages/core/src/index.ts").SyncPullResult;
     },
     async pullTools(userId:string,cursor="0",limit=100) {
       const result=await queryAs(userId,"select public.pull_tools_changes($1,$2) as result",[cursor,limit]);

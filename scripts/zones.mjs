@@ -23,3 +23,10 @@ export function collectOrigin(value = "http://127.0.0.1:3103") {
 export function collectRewrites(value) {
   return [{source:"/collect/:path(.*)",destination:`${collectOrigin(value)}/collect/:path`,basePath:false}];
 }
+export function atlasOrigin(value = "http://127.0.0.1:3104") {
+  try { return sketchbookOrigin(value); }
+  catch { throw new Error("ATLAS_ORIGIN must be an HTTPS origin (or a local loopback HTTP origin)."); }
+}
+export function atlasRewrites(value) {
+  return [{source:"/atlas/:path(.*)",destination:`${atlasOrigin(value)}/atlas/:path`,basePath:false}];
+}

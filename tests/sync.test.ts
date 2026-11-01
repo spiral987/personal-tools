@@ -25,9 +25,9 @@ function transport(userId: string, pageSize = 100): SyncTransport {
                     return {
                         data: await database.pullSuite(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
                     };
-                if (name === "pull_tools_changes")
+                if (name === "pull_atlas_changes")
                     return {
-                        data: await database.pullTools(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
+                        data: await database.pullAtlas(userId, String(args.p_cursor), Math.min(Number(args.p_limit), pageSize)), error: null
                     };
                 throw new Error("Unknown application RPC");
             }
@@ -101,16 +101,18 @@ test("v1端末DBを移行してメモと下書きを保持する", async () => {
     assert.equal((await repo.loadDraft()).body, "書きかけ");
     repo.close();
     const upgraded = await new Promise<IDBDatabase>((resolve, reject) => {
-        const req = indexedDB.open(name, 4);
+        const req = indexedDB.open(name, 6);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
     });
     const originalIntent = await new Promise<{payload:Note}>((resolve, reject) => {
-        const req = upgraded.transaction("outbox", "readonly").objectStore("outbox").get(note.id);
-        req.onsuccess = () => resolve(req.result);
+        const req = upgraded.transaction("outbox", "readonly").objectStore("outbox").getAll();
+        req.onsuccess = () => resolve(req.result[0]);
         req.onerror = () => reject(req.error);
     });
-    assert.equal(originalIntent.payload.body, "移行前のメモ");
+    const {decryptVault}=await import("../packages/api-client/src/vault.ts");
+    const restored=await decryptVault<{payload:Note}>((originalIntent as any).sealed,`idb:${JSON.stringify([name,"outbox",(originalIntent as any).id])}`);
+    assert.equal(restored.payload.body, "移行前のメモ");
     upgraded.close();
 });
 test("2端末で新規・編集・削除・復元と任意スペースを同期する", async () => {

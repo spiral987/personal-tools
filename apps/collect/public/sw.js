@@ -1,5 +1,5 @@
 // Cache an anonymous public shell only. Originals, metadata API and sessions stay out.
-const CACHE="collect-shell-v1",BASE="/collect",SHELL=`${BASE}/`;
+const CACHE="collect-vault-shell-v2",BASE="/collect",SHELL=`${BASE}/`;
 self.addEventListener("install",event=>event.waitUntil((async()=>{
   const cache=await caches.open(CACHE);
   const response=await fetch(SHELL,{cache:"reload",credentials:"omit"});

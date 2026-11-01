@@ -15,6 +15,6 @@
     "react-dom": "19.3.1",
     "@personal-tools/core": "workspace:*",
     "@personal-tools/api-client": "workspace:*",
-    "@personal-tools/auth": "workspace:*"
+    "@personal-tools/auth": "workspace:*","@personal-tools/ui":"workspace:*"
   }
 }

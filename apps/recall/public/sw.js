@@ -1,5 +1,5 @@
 // v1 caches only the public shell and immutable scripts. Notes stay in IndexedDB.
-const CACHE = "recall-shell-v6";
+const CACHE = "recall-vault-shell-v5";
 const BASE = "/recall";
 const SHELL = `${BASE}/`;
 self.addEventListener("install", event => {
@@ -17,7 +17,7 @@ self.addEventListener("install", event => {
   // A new worker waits until all tabs of the previous version close.
 });
 self.addEventListener("activate", event => {
-  event.waitUntil((async()=>{for(const key of await caches.keys()) if(key.startsWith("recall-shell-") && key!==CACHE) await caches.delete(key);await self.clients.claim();})());
+  event.waitUntil((async()=>{for(const key of await caches.keys()) if((key.startsWith("recall-shell-") || key.startsWith("recall-vault-shell-")) && key!==CACHE) await caches.delete(key);await self.clients.claim();})());
 });
 self.addEventListener("fetch", event => {
   const url = new URL(event.request.url);
